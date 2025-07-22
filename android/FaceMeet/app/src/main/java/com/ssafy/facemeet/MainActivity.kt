@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             FacemeetTheme {
-                FaceMeetApp(Routes.Main.route) // 임시. 루트는 추후 정의해야함
+                FaceMeetApp(Routes.Main.route) // 임시. 루트는 추후 정의해야함dd
             }
         }
     }
