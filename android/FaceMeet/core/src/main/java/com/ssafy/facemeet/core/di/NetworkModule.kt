@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.core.di
 
+import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.network.ApiService
 import com.ssafy.facemeet.core.network.PersistentCookieJar
 import com.ssafy.facemeet.core.network.interceptor.AuthErrorInterceptor
@@ -18,6 +19,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
+    @Provides
+    @Singleton
+    fun providePersistentCookieJar(): PersistentCookieJar {
+        return PersistentCookieJar()
+    }
 
     @Provides
     @Singleton

@@ -15,4 +15,6 @@ interface AuthRepository {
     suspend fun logout(): Result<Unit>
 
     suspend fun refreshToken(): Result<Unit>
+
+    suspend fun checkAuthStatus() : Boolean //얜 api는 아니고 쿠키 확인용
 }

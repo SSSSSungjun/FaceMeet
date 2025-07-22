@@ -57,7 +57,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     // 추가: 앱 시작시 쿠키 유효성 확인용
-    suspend fun checkAuthStatus(): Boolean {
+    override suspend fun checkAuthStatus(): Boolean {
         return refreshToken().isSuccess
     }
 }
