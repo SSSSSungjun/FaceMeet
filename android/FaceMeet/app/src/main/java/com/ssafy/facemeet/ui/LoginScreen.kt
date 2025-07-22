@@ -31,14 +31,9 @@ import com.ssafy.facemeet.core.constant.CommonColor
 
 @Composable
 fun LoginScreen(
-    onNavigateToMain: () -> Unit,
+    onNavigateToClient: () -> Unit,
     onNavigateToAdmin: () -> Unit
 ) {
-    LoginUI()
-}
-
-@Composable
-fun LoginUI() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -81,7 +76,7 @@ fun LoginUI() {
                     shape = RoundedCornerShape(5.dp)
                 ),
             contentPadding = PaddingValues(0.dp),
-            onClick = { /* 클릭 이벤트 */ },
+            onClick = onNavigateToClient ,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 contentColor = Color.Black
@@ -152,8 +147,10 @@ fun LoginUI() {
     }
 }
 
+
+
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
-    LoginUI()
+
 }
