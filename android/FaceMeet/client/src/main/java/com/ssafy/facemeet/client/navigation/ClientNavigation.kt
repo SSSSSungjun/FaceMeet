@@ -7,7 +7,7 @@ import com.ssafy.facemeet.client.mainmenu.MainMenuScreen
 import com.ssafy.facemeet.core.navigation.Routes
 
 
-fun NavGraphBuilder.registerMainNavigation(navController: NavHostController) {
+fun NavGraphBuilder.registerClientNavigation(navController: NavHostController) {
     composable(Routes.Main.route) {
         MainMenuScreen(
             onNavigateBack = {

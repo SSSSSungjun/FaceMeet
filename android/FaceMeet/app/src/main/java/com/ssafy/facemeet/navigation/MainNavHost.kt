@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.ssafy.facemeet.client.navigation.registerMainNavigation
+import com.ssafy.facemeet.client.navigation.registerClientNavigation
 import com.ssafy.facemeet.core.navigation.Routes
 import com.ssafy.facemeet.ui.LoginScreen
 
@@ -16,7 +16,7 @@ fun MainNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = startDestination, //처음엔 무조건 splash 띄우게
+        startDestination = startDestination,
     ) {
         // 로그인 화면
         composable(Routes.Login.route) {
@@ -34,10 +34,9 @@ fun MainNavHost(
             )
         }
 
-        // feature1 모듈의 메인 화면 등록
-        registerMainNavigation(navController)
+        registerClientNavigation(navController) //client 네비게이션
 
-        // feature2 모듈의 관리자 화면 등록
-        //registerAdminNavigation(navController)
+
+
     }
 }

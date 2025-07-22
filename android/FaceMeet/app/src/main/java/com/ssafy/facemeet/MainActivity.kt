@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             FacemeetTheme {
-                FaceMeetApp(Routes.Main.route) // 임시. 루트는 추후 정의해야함dd
+                FaceMeetApp(Routes.Login.route) // 임시. 루트는 추후 정의해야함dd
             }
         }
     }
@@ -31,6 +31,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     FacemeetTheme {
-        FaceMeetApp(Routes.Main.route)
+        FaceMeetApp(Routes.Login.route)
     }
 }
