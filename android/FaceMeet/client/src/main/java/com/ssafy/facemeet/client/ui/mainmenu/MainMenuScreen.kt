@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.mainmenu
+package com.ssafy.facemeet.client.ui.mainmenu
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize

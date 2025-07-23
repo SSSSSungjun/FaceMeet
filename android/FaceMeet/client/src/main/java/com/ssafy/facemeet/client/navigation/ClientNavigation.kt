@@ -3,7 +3,8 @@ package com.ssafy.facemeet.client.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import com.ssafy.facemeet.client.mainmenu.MainMenuScreen
+import com.ssafy.facemeet.client.ui.camera.CameraCaptureScreen
+import com.ssafy.facemeet.client.ui.camera.CameraScreen
 import com.ssafy.facemeet.core.navigation.Routes
 
 

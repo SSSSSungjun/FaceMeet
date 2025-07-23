@@ -38,4 +38,15 @@ dependencies {
 
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.android)
+
+    // 카메라관련
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)          // PreviewView
+    implementation(libs.androidx.camera.mlkit.vision)   // MLKit integration helper
+    implementation(libs.face.detection)
+
+// 권한 처리용 (선택)
+    implementation(libs.accompanist.permissions)
 }
