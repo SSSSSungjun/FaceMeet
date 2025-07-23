@@ -33,7 +33,9 @@ class MainActivity : ComponentActivity() {
                 when (isLoggedIn) {
                     true -> MainNavHost(navController, Routes.ClientMain.route)
                     false -> MainNavHost(navController, Routes.Login.route)
-                    null -> TODO()
+                    null -> {
+                        TODO()
+                    }
                 }
             }
         }

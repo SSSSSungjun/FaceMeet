@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.implementation
 import java.util.Properties
 
 plugins {
@@ -7,12 +8,6 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
-
-val localProperties = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
-}
-val kakaoNativeAppKey = localProperties["kakao_native_app_key"] as String
-
 
 android {
     namespace = "com.ssafy.facemeet"
@@ -26,8 +21,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["kakaoScheme"] = "kakao$kakaoNativeAppKey"
-        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
     }
 
 
@@ -78,5 +71,5 @@ dependencies {
     implementation ("com.kakao.sdk:v2-user:2.21.5")
     implementation ("com.kakao.sdk:v2-common:2.21.5")
 
-
+    implementation ("androidx.webkit:webkit:1.7.0")
 }
