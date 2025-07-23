@@ -13,6 +13,7 @@ fun CameraScreen(
     onNavigateBack: () -> Unit,
     onLaunchCamera: () -> Unit
 ) {
+    
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

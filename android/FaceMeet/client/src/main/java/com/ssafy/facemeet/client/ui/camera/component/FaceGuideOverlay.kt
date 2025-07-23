@@ -29,11 +29,12 @@ fun FaceGuideOverlay(
     state: FaceState,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 3.dp,
-    scrimAlpha: Float = 0.6f
+    scrimAlpha: Float = 0.6f,
+    guideTextProvider: (() -> String)? = null
 ) {
     Box(modifier.fillMaxSize()) {
 
-        val guideText = when (state) {
+        val guideText = guideTextProvider?.invoke() ?: when (state) {
             FaceState.TOO_FAR -> "좀 더 가까이 와주세요"
             FaceState.TOO_CLOSE -> "조금만 멀어져주세요"
             FaceState.OUTSIDE -> "얼굴을 가이드에 맞춰주세요"
@@ -84,6 +85,8 @@ fun FaceGuideOverlay(
             )
         }
 
+
+
         countDown?.let { sec ->
             Text(
                 text = sec.toString(),
@@ -94,3 +97,4 @@ fun FaceGuideOverlay(
         }
     }
 }
+
