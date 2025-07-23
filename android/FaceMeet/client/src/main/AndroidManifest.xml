@@ -9,4 +9,8 @@
             android:theme="@style/Theme.FaceMeet" />
     </application>
 
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/> <!-- Q 이상은 MediaStore로 대체 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 </manifest>
