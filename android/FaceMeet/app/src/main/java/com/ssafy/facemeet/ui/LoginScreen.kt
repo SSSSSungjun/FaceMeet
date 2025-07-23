@@ -1,5 +1,7 @@
 package com.ssafy.facemeet.ui
 
+import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +23,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kakao.sdk.user.UserApiClient
 import com.ssafy.facemeet.R
 import com.ssafy.facemeet.core.constant.CommonColor
 
@@ -34,6 +38,9 @@ fun LoginScreen(
     onNavigateToClient: () -> Unit,
     onNavigateToAdmin: () -> Unit
 ) {
+
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -76,7 +83,13 @@ fun LoginScreen(
                     shape = RoundedCornerShape(5.dp)
                 ),
             contentPadding = PaddingValues(0.dp),
-            onClick = onNavigateToClient ,
+            onClick = {
+                handleKakaoLogin(
+                    context = context,
+                    onSuccess = { onNavigateToClient() },
+                    onError = { e -> Log.e("Login", "에러 발생", e) }
+                )
+            } ,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 contentColor = Color.Black
@@ -147,7 +160,20 @@ fun LoginScreen(
     }
 }
 
-
+fun handleKakaoLogin(context: Context, onSuccess: () -> Unit, onError: (Throwable) -> Unit = {}) {
+    UserApiClient.instance.loginWithKakaoAccount(
+        context,
+        callback = { token, error ->
+            if (error != null) {
+                Log.e("KakaoLogin", "로그인 실패", error)
+                onError(error)
+            } else if (token != null) {
+                Log.i("KakaoLogin", "로그인 성공: ${token.accessToken}")
+                onSuccess()
+            }
+        }
+    )
+}
 
 @Preview(showBackground = true)
 @Composable

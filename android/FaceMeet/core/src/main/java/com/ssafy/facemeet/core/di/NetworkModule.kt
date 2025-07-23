@@ -1,6 +1,5 @@
 package com.ssafy.facemeet.core.di
 
-import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.network.ApiService
 import com.ssafy.facemeet.core.network.PersistentCookieJar
 import com.ssafy.facemeet.core.network.interceptor.AuthErrorInterceptor

@@ -6,5 +6,5 @@ data class SignUpRequest(
     val latitude : Float,
     val longitude : Float,
     val preferAgeLower : Int,
-    val preferAgeUpper : Int
+    val preferAgeUpper : Int,
 )

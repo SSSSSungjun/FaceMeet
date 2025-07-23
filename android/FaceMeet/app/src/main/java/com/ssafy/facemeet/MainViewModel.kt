@@ -20,5 +20,8 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoggedIn.value = authRepository.checkAuthStatus()
         }
-    }
+    } // 자동 로그인 viewModelScope
+
+
 }
+

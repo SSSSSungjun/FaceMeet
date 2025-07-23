@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,12 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+val kakaoNativeAppKey = localProperties["kakao_native_app_key"] as String
+
 
 android {
     namespace = "com.ssafy.facemeet"
@@ -18,6 +26,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["kakaoScheme"] = "kakao$kakaoNativeAppKey"
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
     }
 
 
@@ -64,5 +74,9 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose) // 네비게이션
     implementation("androidx.core:core-splashscreen:1.0.1")
+
+    implementation ("com.kakao.sdk:v2-user:2.21.5")
+    implementation ("com.kakao.sdk:v2-common:2.21.5")
+
 
 }
