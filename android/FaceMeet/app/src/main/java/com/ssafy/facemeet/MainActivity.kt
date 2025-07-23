@@ -23,10 +23,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // 자동로그인 체크 실행
-        mainViewModel.checkAutoLogin()
         setContent {
-
             val isLoggedIn by mainViewModel.isLoggedIn.collectAsStateWithLifecycle()
             val navController = rememberNavController()
             FacemeetTheme {
