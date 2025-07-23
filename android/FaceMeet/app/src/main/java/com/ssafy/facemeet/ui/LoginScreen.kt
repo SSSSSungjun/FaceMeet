@@ -88,8 +88,8 @@ fun LoginScreen(
                     context = context,
                     onSuccess = { onNavigateToClient() },
                     onError = { e -> Log.e("Login", "에러 발생", e) }
-                )
-            } ,
+                )///////////////////////////////////////////////////////////////////////
+            },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 contentColor = Color.Black
@@ -156,6 +156,14 @@ fun LoginScreen(
             }
         }
 
+        Button(
+            onClick = {
+                onNavigateToClient()
+            },
+        ) {
+            Text("임시방편")
+        }
+
 
     }
 }
@@ -178,5 +186,5 @@ fun handleKakaoLogin(context: Context, onSuccess: () -> Unit, onError: (Throwabl
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
-
+    LoginScreen({}, {})
 }

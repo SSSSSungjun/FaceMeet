@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.navigation
 
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -9,6 +10,7 @@ import com.ssafy.facemeet.client.navigation.clientNavigation
 import com.ssafy.facemeet.core.navigation.Routes
 import com.ssafy.facemeet.ui.LoginScreen
 
+private const val TAG = "MainNavHost"
 @Composable
 fun MainNavHost(
     navController: NavHostController,
@@ -22,9 +24,10 @@ fun MainNavHost(
         composable(Routes.Login.route) {
             LoginScreen(
                 onNavigateToClient = {
-                    navController.navigate(Routes.ClientMain.route) {
+                    Log.d(TAG, "MainNavHost: 여기까지 인식")
+                    navController.navigate(Routes.Setting.route) {
                         popUpTo(Routes.Login.route) { inclusive = true }
-                    }
+                    } //임시
                 },
                 onNavigateToAdmin = {
                     navController.navigate(Routes.AdminMain.route) {
