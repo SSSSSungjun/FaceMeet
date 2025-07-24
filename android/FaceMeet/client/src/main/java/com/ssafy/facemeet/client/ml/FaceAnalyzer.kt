@@ -1,12 +1,12 @@
-@file:OptIn(
-    androidx.camera.core.ExperimentalGetImage::class
-)
+@file:OptIn(androidx.camera.core.ExperimentalGetImage::class)
 
 package com.ssafy.facemeet.client.ml
 
 import android.content.Context
 import android.graphics.RectF
+import android.util.Log
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageProxy
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.State
@@ -16,21 +16,45 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.ssafy.facemeet.client.ui.camera.CaptureMode
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.pow
 
+/* ===========================
+ *  CONFIG / CONSTANTS
+ * =========================== */
+private const val TAG = "FaceAnalyzer"
+
+// 촬영까지 유지해야 하는 시간 (ms)
 private const val HOLD_MS = 1_500L
+
+// 얼굴 높이(화면 대비) 허용 범위
 private const val MIN_FACE_H_RATIO = 0.18f
 private const val MAX_FACE_H_RATIO = 0.60f
+
+// 연속 OK 프레임 수
 private const val OK_STREAK_NEED = 3
+
+// 타원 여유 비율
 private const val OVAL_PADDING = 0.12f
 
+// 정면 포즈 허용 오차
+private const val FRONT_YAW_MAX = 12f
+private const val FRONT_ROLL_MAX = 15f
+
+// 옆면 (45~55도 사이 정도로 느끼게) — 좌/우 모두 허용
+private const val SIDE_MIN_YAW = 30f   // 최소
+private const val SIDE_MAX_YAW = 55f   // 최대
+
+/* ===========================
+ *  MAIN CLASS
+ * =========================== */
 class FaceAnalyzer(
     private val context: Context,
     private val controller: LifecycleCameraController,
     private val previewViewState: State<PreviewView?>,
     private val ovalSpec: FaceOvalSpec,
-    private val mode: CaptureMode,                 // ★ 추가
+    private val mode: CaptureMode,
     private val onHoldDone: () -> Unit,
     private val onProgress: (Int) -> Unit,
     private val onStateChanged: (FaceState) -> Unit
@@ -54,7 +78,7 @@ class FaceAnalyzer(
     fun bind() {
         val executor = ContextCompat.getMainExecutor(context)
 
-        controller.setImageAnalysisAnalyzer(executor) { imageProxy ->
+        controller.setImageAnalysisAnalyzer(executor) { imageProxy: ImageProxy ->
             if (fired) {
                 imageProxy.close(); return@setImageAnalysisAnalyzer
             }
@@ -69,6 +93,7 @@ class FaceAnalyzer(
                 imageProxy.close(); return@setImageAnalysisAnalyzer
             }
 
+            // 좌표 변환 준비
             val imgW = imageProxy.width.toFloat()
             val imgH = imageProxy.height.toFloat()
             val viewW = preview.width.toFloat().coerceAtLeast(1f)
@@ -81,13 +106,22 @@ class FaceAnalyzer(
                     var state = FaceState.OUTSIDE
                     var ok = false
 
-                    faces.forEach { face ->
-                        // 정면/옆면 체크 분기
-                        val passPose =
-                            if (mode == CaptureMode.FRONT) face.isFrontPose()
-                            else face.isSidePose()
+                    if (faces.isEmpty()) {
+                        Log.d(TAG, "No face")
+                    }
 
-                        if (!passPose) return@forEach
+                    faces.forEach { face ->
+                        val yaw = face.headEulerAngleY
+                        val roll = face.headEulerAngleZ
+
+                        val posePass = when (mode) {
+                            CaptureMode.FRONT -> face.isFrontPose(yaw, roll)
+                            CaptureMode.SIDE -> face.isSidePose(yaw)
+                        }
+                        if (!posePass) {
+                            Log.v(TAG, "Pose fail: mode=$mode yaw=$yaw roll=$roll")
+                            return@forEach
+                        }
 
                         val rect = face.boundingBox.toRectF()
                         rect.mapToPreview(sd, viewW)
@@ -96,17 +130,32 @@ class FaceAnalyzer(
                         val cy = rect.centerY() / viewH
                         val hRatio = rect.height() / viewH
 
-                        state = when {
-                            hRatio < MIN_FACE_H_RATIO -> FaceState.TOO_FAR
-                            hRatio > MAX_FACE_H_RATIO -> FaceState.TOO_CLOSE
-                            else -> {
-                                val a = (ovalSpec.widthRatio * (1f + OVAL_PADDING)) / 2f
-                                val b = (ovalSpec.heightRatio * (1f + OVAL_PADDING)) / 2f
-                                val inside = (((cx - ovalSpec.centerXRatio) / a).pow(2) +
-                                        ((cy - ovalSpec.centerYRatio) / b).pow(2)) <= 1f
-                                if (inside) FaceState.OK else FaceState.OUTSIDE
+                        state = if (mode == CaptureMode.SIDE) {
+                            // 옆면은 크기만 체크(멀거나 너무 가깝지만 아니면 OK)
+                            when {
+                                hRatio < MIN_FACE_H_RATIO -> FaceState.TOO_FAR
+                                hRatio > MAX_FACE_H_RATIO -> FaceState.TOO_CLOSE
+                                else -> FaceState.OK
+                            }
+                        } else {
+                            // 정면은 타원 기준
+                            when {
+                                hRatio < MIN_FACE_H_RATIO -> FaceState.TOO_FAR
+                                hRatio > MAX_FACE_H_RATIO -> FaceState.TOO_CLOSE
+                                else -> {
+                                    val a = (ovalSpec.widthRatio * (1f + OVAL_PADDING)) / 2f
+                                    val b = (ovalSpec.heightRatio * (1f + OVAL_PADDING)) / 2f
+                                    val inside = (((cx - ovalSpec.centerXRatio) / a).pow(2) +
+                                            ((cy - ovalSpec.centerYRatio) / b).pow(2)) <= 1f
+                                    if (inside) FaceState.OK else FaceState.OUTSIDE
+                                }
                             }
                         }
+
+                        Log.v(
+                            TAG,
+                            "mode=$mode yaw=$yaw roll=$roll hRatio=$hRatio state=$state"
+                        )
 
                         if (state == FaceState.OK) {
                             ok = true
@@ -134,6 +183,7 @@ class FaceAnalyzer(
                             }
                             if (!fired && elapsed >= HOLD_MS) {
                                 fired = true
+                                Log.d(TAG, "HOLD done -> fire")
                                 onHoldDone()
                             }
                         }
@@ -142,6 +192,9 @@ class FaceAnalyzer(
                         startAt = null
                         lastReported = -1
                     }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "MLKit error: ${e.message}", e)
                 }
                 .addOnCompleteListener { imageProxy.close() }
         }
@@ -153,22 +206,21 @@ class FaceAnalyzer(
     }
 }
 
-/* ========= Pose 판단 간단 버전 ========= */
-private fun com.google.mlkit.vision.face.Face.isFrontPose(): Boolean {
-    // Euler Y, Z가 너무 크지 않으면 정면으로 간주 (±15° 정도)
-    val yaw = headEulerAngleY
-    val roll = headEulerAngleZ
-    return (yaw in -15f..15f) && (roll in -15f..15f)
+/* ===========================
+ *  Pose Helpers
+ * =========================== */
+private fun com.google.mlkit.vision.face.Face.isFrontPose(yaw: Float, roll: Float): Boolean {
+    return (yaw in -FRONT_YAW_MAX..FRONT_YAW_MAX) && (roll in -FRONT_ROLL_MAX..FRONT_ROLL_MAX)
 }
 
-private fun com.google.mlkit.vision.face.Face.isSidePose(): Boolean {
-    // 옆면: yaw가 크게 꺾여있고(예: ±70° 이상) 정면은 아닌 경우
-    val yaw = headEulerAngleY
-    return yaw > 60f || yaw < -60f
+private fun com.google.mlkit.vision.face.Face.isSidePose(yaw: Float): Boolean {
+    val absYaw = abs(yaw)
+    return absYaw in SIDE_MIN_YAW..SIDE_MAX_YAW
 }
 
-/* ========= 좌표 변환 유틸 ========= */
-
+/* ===========================
+ *  Transform Utils
+ * =========================== */
 data class ScaleData(
     val scale: Float,
     val offsetX: Float,
@@ -177,8 +229,10 @@ data class ScaleData(
 )
 
 fun calcFillCenter(
-    imgW: Float, imgH: Float,
-    viewW: Float, viewH: Float,
+    imgW: Float,
+    imgH: Float,
+    viewW: Float,
+    viewH: Float,
     mirrorX: Boolean
 ): ScaleData {
     val srcRatio = imgW / imgH

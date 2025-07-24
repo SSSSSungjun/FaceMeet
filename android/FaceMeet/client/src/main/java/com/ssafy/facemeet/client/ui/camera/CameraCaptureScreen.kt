@@ -33,14 +33,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.ssafy.facemeet.client.camerax.fixRotation
 import com.ssafy.facemeet.client.ml.FaceAnalyzer
 import com.ssafy.facemeet.client.ml.FaceOvalSpec
 import com.ssafy.facemeet.client.ml.FaceState
 import com.ssafy.facemeet.client.ui.camera.component.CaptureChecklistBar
 import com.ssafy.facemeet.client.ui.camera.component.FaceGuideOverlay
 import com.ssafy.facemeet.client.ui.camera.component.FaceSideOverlay
-
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -71,44 +69,36 @@ fun CameraCaptureScreen(
         if (cameraPerm.status.isGranted) controller.bindToLifecycle(lifecycleOwner)
     }
 
-    // 상태
     val spec = remember { FaceOvalSpec() }
     var faceState by remember { mutableStateOf(FaceState.OUTSIDE) }
     var countDown by remember { mutableStateOf<Int?>(null) }
     var analyzer: FaceAnalyzer? by remember { mutableStateOf(null) }
+
     DisposableEffect(controller, mode) {
         val a = FaceAnalyzer(
             context = context,
             controller = controller,
             previewViewState = previewViewRef,
             ovalSpec = spec,
-            mode = mode,   // ui.camera.CaptureMode
+            mode = mode,
             onHoldDone = {
-                controller.takePicture(                       // ← 여기!
+                controller.takePicture(
                     ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageCapturedCallback() {
                         @Suppress("UnsafeOptInUsageError")
-                        override fun onCaptureSuccess(image: ImageProxy) {
-                            val bmp = image.toBitmap()
-                                .fixRotation(
-                                    rotationDegrees = image.imageInfo.rotationDegrees,
-                                    mirror = controller.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
-                                )
-                            image.close()
-
+                        override fun onCaptureSuccess(imageProxy: ImageProxy) {
+                            val bmp = imageProxy.toBitmap()
+                            imageProxy.close()
                             if (mode == CaptureMode.FRONT) vm.setFront(bmp) else vm.setSide(bmp)
                             onCaptured()
                         }
 
                         override fun onError(exc: ImageCaptureException) {
-                            // 실패 처리만 해 주세요 (토스트/로그 등)
-                            Log.e("CameraX", "capture failed", exc)
+                            Log.e("Camera", "capture error", exc)
                         }
-
                     }
                 )
             },
-
             onProgress = { sec -> countDown = if (sec in 1..3) sec else null },
             onStateChanged = { st -> faceState = st }
         )
@@ -118,15 +108,11 @@ fun CameraCaptureScreen(
     }
 
 
-
     Box(Modifier.fillMaxSize()) {
 
         CaptureChecklistBar(
             frontDone = vm.front.value != null,
-            sideDone = vm.side.value != null,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .zIndex(2f)
+            sideDone = vm.side.value != null
         )
 
         AndroidView(
@@ -161,7 +147,7 @@ fun CameraCaptureScreen(
         Button(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .zIndex(3f),
+                .zIndex(2f),
             onClick = onNavigateBack
         ) { Text("Back") }
     }
