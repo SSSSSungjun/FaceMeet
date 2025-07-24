@@ -1,6 +1,7 @@
 // File: client/src/main/java/com/ssafy/facemeet/client/ui/camera/CameraCaptureScreen.kt
 package com.ssafy.facemeet.client.ui.camera
 
+import FaceSideOverlay
 import android.Manifest
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -36,7 +37,6 @@ import com.ssafy.facemeet.client.ml.FaceOvalSpec
 import com.ssafy.facemeet.client.ml.FaceState
 import com.ssafy.facemeet.client.ui.camera.component.CaptureChecklistBar
 import com.ssafy.facemeet.client.ui.camera.component.FaceGuideOverlay
-import com.ssafy.facemeet.client.ui.camera.component.FaceSideOverlay
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable

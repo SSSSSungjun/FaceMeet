@@ -1,5 +1,3 @@
-package com.ssafy.facemeet.client.ui.camera.component
-
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,7 +6,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -20,11 +17,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 옆면(측면) 가이드:
- *  - 타원
- *  - 코 위치 가이드(라인 두 개로 간단히 표시)
- */
 @Composable
 fun FaceSideOverlay(
     countDown: Int?,
@@ -67,7 +59,7 @@ fun FaceSideOverlay(
             }
             drawPath(path = clipPath, color = Color.Black.copy(alpha = scrimAlpha), style = Fill)
 
-            // 타원 테두리
+            // 얼굴 타원 테두리
             drawOval(
                 color = Color.White,
                 topLeft = ovalRect.topLeft,
@@ -75,21 +67,25 @@ fun FaceSideOverlay(
                 style = Stroke(strokeWidth.toPx())
             )
 
-            // 코 위치 가이드 (간단한 라인 2개)
-            val noseX = cx + faceW * 0.2f
-            val noseTop = cy - faceH * 0.1f
-            val noseBottom = cy + faceH * 0.1f
-            drawLine(
+            // ⬇️ SVG path 변환한 코 윤곽선
+            // 원본 뷰박스: width = 28, height = 60
+            // 우리가 그릴 높이 기준: faceH * 0.8
+            val scale = faceH * 0.8f / 150f
+            val offsetX = cx - faceW * 0.35f
+            val offsetY = cy - (60f * scale) / 3f
+
+            val path = Path().apply {
+                moveTo(offsetX + 22.4831f * scale, offsetY + 1f * scale)
+                cubicTo(
+                    offsetX + -1.00005f * scale, offsetY + 46f * scale,
+                    offsetX + -10f * scale, offsetY + 41.5f * scale,
+                    offsetX + 18f * scale, offsetY + 57f * scale
+                )
+            }
+            drawPath(
+                path = path,
                 color = Color.White,
-                start = Offset(noseX, noseTop),
-                end = Offset(noseX, noseBottom),
-                strokeWidth = 2.dp.toPx()
-            )
-            drawLine(
-                color = Color.White,
-                start = Offset(noseX - faceW * 0.05f, cy),
-                end = Offset(noseX + faceW * 0.05f, cy),
-                strokeWidth = 2.dp.toPx()
+                style = Stroke(width = 2.dp.toPx())
             )
         }
 
