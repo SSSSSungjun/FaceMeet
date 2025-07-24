@@ -89,4 +89,7 @@ dependencies {
     implementation ("com.kakao.sdk:v2-common:2.21.5")
 
     implementation ("androidx.webkit:webkit:1.14.0")
+
+
+
 }

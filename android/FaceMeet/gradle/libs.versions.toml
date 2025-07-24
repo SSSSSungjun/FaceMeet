@@ -4,6 +4,7 @@ agp = "8.10.1"
 cameraCore = "1.4.2"
 faceDetection = "16.1.7"
 hilt = "2.53.1"
+hiltNavigationCompose = "1.2.0"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.28"
 coreKtx = "1.16.0"
@@ -27,6 +28,7 @@ androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", versi
 androidx-camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version.ref = "cameraCore" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraCore" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 face-detection = { module = "com.google.mlkit:face-detection", version.ref = "faceDetection" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }

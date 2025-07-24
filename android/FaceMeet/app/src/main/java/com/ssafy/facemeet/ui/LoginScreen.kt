@@ -1,7 +1,5 @@
 package com.ssafy.facemeet.ui
 
-import android.util.Log
-import android.webkit.WebView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,174 +30,141 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.ssafy.facemeet.R
 import com.ssafy.facemeet.core.util.constant.CommonColor
-import com.ssafy.facemeet.util.configureKakaoWebView
+import com.ssafy.facemeet.ui.web.WebLoginScreen
 
-const val BASE_KAKAO_URL = "http://i13d201.p.ssafy.io/oauth2/authorization/kakao"
+
 
 @Composable
 fun LoginScreen(
-    onNavigateToClient: () -> Unit,
+    onNavigateToClient: () -> Unit, //일단 카카오만
     onNavigateToAdmin: () -> Unit
 ) {
-    var showWebView by rememberSaveable { mutableStateOf(false) }
-    var showFakeScreen by rememberSaveable { mutableStateOf(false) }
+    var socialState by rememberSaveable { mutableStateOf(SocialLoginProvider.NONE) }
 
-    //val mainViewModel: MainViewModel =viewModel ()
-    when {
-        showFakeScreen -> {
-            Fscreen()
+    if (socialState != SocialLoginProvider.NONE) {
+
+        WebLoginScreen(socialState) {
+            socialState = SocialLoginProvider.NONE
         }
-
-        showWebView -> {
-            AndroidView(
-                factory = { context ->
-                    WebView(context).apply {
-                        configureKakaoWebView(
-                            onTokenExtracted = { accessToken, refreshToken ->
-                                Log.d("Login", "로그인 성공")
-                                //mainViewModel.saveTokensFromWebView(accessToken, refreshToken)
-                                showFakeScreen = true
-                                onNavigateToClient()
-                            },
-                            onError = { error ->
-                                Log.e("Login", "로그인 에러: $error")
-                                showWebView = false
-                            },
-                            onCancel = {
-                                Log.d("Login", "로그인 취소")
-                                showWebView = false
-                            },
-
-                            onDismiss = {
-                                showWebView = false
-                            }
-                        )
-                        loadUrl(BASE_KAKAO_URL)
-
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = CommonColor.background1),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "상견례",
+                color = Color.White,
+                fontSize = 36.sp
             )
-        }
 
-        else -> {
-            Column(
+            Spacer(modifier = Modifier.padding(20.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "로고",
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = CommonColor.background1),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(200.dp)
+                    .height(200.dp)
+            )
+
+            Spacer(modifier = Modifier.padding(20.dp))
+
+            Text(
+                text = "로그인하고 AI로 분석한 \n 내 관상으로 프로필을 만들어보세요!",
+                color = Color.White,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.padding(30.dp))
+
+            Button(
+                modifier = Modifier
+                    .width(340.dp)
+                    .background(
+                        color = Color(0xFFFFE812),
+                        shape = RoundedCornerShape(5.dp)
+                    ),
+                contentPadding = PaddingValues(0.dp),
+                onClick = {
+                    socialState = SocialLoginProvider.KAKAO
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.Black
+                ),
+                elevation = null,
             ) {
-                Text(
-                    text = "상견례",
-                    color = Color.White,
-                    fontSize = 36.sp
-                )
-
-                Spacer(modifier = Modifier.padding(20.dp))
-
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "로고",
+                Box(
                     modifier = Modifier
-                        .width(200.dp)
-                        .height(200.dp)
-                )
-
-                Spacer(modifier = Modifier.padding(20.dp))
-
-                Text(
-                    text = "로그인하고 AI로 분석한 \n 내 관상으로 프로필을 만들어보세요!",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.padding(30.dp))
-
-                Button(
-                    modifier = Modifier
-                        .width(340.dp)
-                        .background(
-                            color = Color(0xFFFFE812),
-                            shape = RoundedCornerShape(5.dp)
-                        ),
-                    contentPadding = PaddingValues(0.dp),
-                    onClick = {
-                        showWebView = true
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = Color.Black
-                    ),
-                    elevation = null,
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
                 ) {
-                    Box(
+
+                    Image(
+                        painter = painterResource(id = R.drawable.kakao_logo),
+                        contentDescription = "카카오 로그인",
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp)
-                    ) {
-
-                        Image(
-                            painter = painterResource(id = R.drawable.kakao_logo),
-                            contentDescription = "카카오 로그인",
-                            modifier = Modifier
-                                .size(33.dp)
-                                .align(Alignment.CenterStart)
-                        )
-                        Text(
-                            text = "카카오 로그인",
-                            modifier = Modifier.align(Alignment.Center),
-                            fontSize = 15.sp
-                        )
-                    }
+                            .size(33.dp)
+                            .align(Alignment.CenterStart)
+                    )
+                    Text(
+                        text = "카카오 로그인",
+                        modifier = Modifier.align(Alignment.Center),
+                        fontSize = 15.sp
+                    )
                 }
-
-                Spacer(modifier = Modifier.padding(10.dp))
-
-                Button(
-                    modifier = Modifier
-                        .width(340.dp)
-                        .background(
-                            color = Color(0xFF03C75A),
-                            shape = RoundedCornerShape(5.dp)
-                        ),
-                    contentPadding = PaddingValues(0.dp),
-                    onClick = { /* 클릭 이벤트 */ },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = Color.Black
-                    ),
-                    elevation = null,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp)
-                    ) {
-
-                        Image(
-                            painter = painterResource(id = R.drawable.naver_logo),
-                            contentDescription = "네이버 로그인",
-                            modifier = Modifier
-                                .size(33.dp)
-                                .align(Alignment.CenterStart)
-                        )
-                        Text(
-                            text = "네이버 로그인",
-                            modifier = Modifier.align(Alignment.Center),
-                            fontSize = 15.sp,
-                            color = Color.White
-                        )
-                    }
-                }
-
             }
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Button(
+                modifier = Modifier
+                    .width(340.dp)
+                    .background(
+                        color = Color(0xFF03C75A),
+                        shape = RoundedCornerShape(5.dp)
+                    ),
+                contentPadding = PaddingValues(0.dp),
+                onClick = {
+                    socialState = SocialLoginProvider.NAVER
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.Black
+                ),
+                elevation = null,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
+                ) {
+
+                    Image(
+                        painter = painterResource(id = R.drawable.naver_logo),
+                        contentDescription = "네이버 로그인",
+                        modifier = Modifier
+                            .size(33.dp)
+                            .align(Alignment.CenterStart)
+                    )
+                    Text(
+                        text = "네이버 로그인",
+                        modifier = Modifier.align(Alignment.Center),
+                        fontSize = 15.sp,
+                        color = Color.White
+                    )
+                }
+            }
+
         }
     }
+
 }
 
 @Composable
@@ -210,8 +175,15 @@ fun Fscreen() {
     }
 } // 여기 뭐 애니메이트 넣던지 프로그래스 바 넣던지 하면 됨 그냥.
 
+
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
     LoginScreen({}, {})
+}
+
+enum class SocialLoginProvider {
+    KAKAO,
+    NAVER,
+    NONE
 }
