@@ -167,14 +167,6 @@ fun LoginScreen(
 
 }
 
-@Composable
-fun Fscreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
-    }
-} // 여기 뭐 애니메이트 넣던지 프로그래스 바 넣던지 하면 됨 그냥.
-
 
 @Preview(showBackground = true)
 @Composable

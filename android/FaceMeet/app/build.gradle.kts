@@ -29,13 +29,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // Manifest에서 사용할 값들
         manifestPlaceholders["kakaoScheme"] = kakaoScheme
 
-        // BuildConfig에서 사용할 값들
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
 
-        // strings.xml에 추가할 값들
         resValue("string", "kakao_app_key", kakaoNativeKey)
         resValue("string", "kakao_scheme", kakaoScheme)
     }

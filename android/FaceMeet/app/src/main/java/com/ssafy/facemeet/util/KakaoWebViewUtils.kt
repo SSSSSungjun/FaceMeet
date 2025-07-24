@@ -1,8 +1,12 @@
 package com.ssafy.facemeet.util
 
-private const val TAG = "KaKaoLoginWebView"
+import android.util.Log
+
+private const val TAG = "KakaoWebViewUtils"
 
 fun parseTokensFromText(text: String): Pair<String, String>? {
+
+    Log.d(TAG, "parseTokensFromText: 진입")
     return try {
         val accessTokenRegex = """accessToken\s*:\s*([^,}]+)""".toRegex()
         val refreshTokenRegex = """refreshToken\s*:\s*([^,}]+)""".toRegex()

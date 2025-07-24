@@ -9,7 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 
 private const val TAG = "KaKaoLoginWebView"
-private const val REDIRECT_DOMAIN = "http://i13d201.p.ssafy.io/"
+private const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
 
 fun WebView.configureKakaoWebView(
     onTokenExtracted: (accessToken: String, refreshToken: String) -> Unit,
@@ -29,6 +29,8 @@ fun WebView.configureKakaoWebView(
     isHorizontalScrollBarEnabled = true
     setBackgroundColor(Color.WHITE)
 
+    settings.userAgentString = "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36"
+
     webViewClient = object : WebViewClient() {
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
@@ -40,7 +42,7 @@ fun WebView.configureKakaoWebView(
             Log.d(TAG, "Page finished: $url")
 
             if (url == null) return
-            if (url==REDIRECT_DOMAIN) {
+            if (url==BASE_DOMAIN) {
                 onDismiss()
                 return
             }
