@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.implementation
 import java.util.Properties
 
 plugins {
@@ -33,8 +34,8 @@ android {
 
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
 
-        resValue("string", "kakao_app_key", kakaoNativeKey)
-        resValue("string", "kakao_scheme", kakaoScheme)
+//        resValue("string", "kakao_app_key", kakaoNativeKey)
+//        resValue("string", "kakao_scheme", kakaoScheme)
     }
 
 
@@ -86,6 +87,7 @@ dependencies {
     implementation ("com.kakao.sdk:v2-common:2.21.5")
 
     implementation ("androidx.webkit:webkit:1.14.0")
+    implementation ("com.google.code.gson:gson:2.11.0")
 
 
 

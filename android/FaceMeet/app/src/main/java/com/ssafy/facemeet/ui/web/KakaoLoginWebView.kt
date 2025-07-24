@@ -2,14 +2,15 @@ package com.ssafy.facemeet.util
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.util.Log
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.util.Log
 
 private const val TAG = "KaKaoLoginWebView"
-private const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
+internal const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
 
 fun WebView.configureKakaoWebView(
     onTokenExtracted: (accessToken: String, refreshToken: String) -> Unit,
@@ -17,21 +18,32 @@ fun WebView.configureKakaoWebView(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    settings.javaScriptEnabled = true
-    settings.domStorageEnabled = true
-    settings.loadWithOverviewMode = true
-    settings.useWideViewPort = true
-    settings.builtInZoomControls = false
-    settings.displayZoomControls = false
-    setInitialScale(1)
+    settings.apply {
+        javaScriptEnabled = true
+        domStorageEnabled = true
+        loadWithOverviewMode = true
+        useWideViewPort = true
+        builtInZoomControls = false
+        displayZoomControls = false
+        cacheMode = WebSettings.LOAD_NO_CACHE
+        setSupportMultipleWindows(false)
+        javaScriptCanOpenWindowsAutomatically = false
+        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        userAgentString =  WebSettings.getDefaultUserAgent(context)
+    }
 
+    setInitialScale(1)
     isVerticalScrollBarEnabled = true
     isHorizontalScrollBarEnabled = true
     setBackgroundColor(Color.WHITE)
 
-    settings.userAgentString = "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36"
-
     webViewClient = object : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+            val url = request?.url?.toString() ?: return false
+            Log.d(TAG, "shouldOverrideUrlLoading: $url")
+            return false
+        }
+
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
             Log.d(TAG, "Page started: $url")
@@ -41,42 +53,10 @@ fun WebView.configureKakaoWebView(
             super.onPageFinished(view, url)
             Log.d(TAG, "Page finished: $url")
 
-            if (url == null) return
-            if (url==BASE_DOMAIN) {
-                onDismiss()
-                return
-            }
-            if (isCancelUrl(url)) {
-                Log.d(TAG, " WebView close")
-                onCancel()
-                onDismiss()
-                return
-            }
-
-            if (url.contains("success") || url.contains("callback") || url.contains("login")) {
-                evaluateJavascript(
-                    """
-                    (function() {
-                        var bodyText = document.body.innerText || document.body.textContent || '';
-                        return bodyText;
-                    })();
-                    """.trimIndent()
-                ) { result ->
-                    val cleanResult = result.replace("\"", "").replace("\\", "")
-                    try {
-                        if (cleanResult.contains("accessToken") && cleanResult.contains("refreshToken")) {
-                            val tokens = parseTokensFromText(cleanResult)
-                            if (tokens != null) {
-                                onTokenExtracted(tokens.first, tokens.second)
-                                onDismiss()
-                            } else {
-
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "token error", e)
-                        onError("token exception: ${e.message}")
-                    }
+            url?.let { currentUrl ->
+                if (currentUrl.startsWith(BASE_DOMAIN)) {
+                    Log.d(TAG, "베이스 도메인 도달")
+                    checkForTokens(view, currentUrl, onTokenExtracted, onError, onDismiss,onCancel)
                 }
             }
         }
@@ -87,23 +67,8 @@ fun WebView.configureKakaoWebView(
             error: WebResourceError?
         ) {
             super.onReceivedError(view, request, error)
-            Log.e(TAG, "error: ${error?.description}")
-
-            if (error?.errorCode == ERROR_HOST_LOOKUP ||
-                error?.errorCode == ERROR_CONNECT ||
-                error?.errorCode == ERROR_TIMEOUT) {
-                onError("ERROR : ${error.description}")
-            }
+            Log.e(TAG, "WebView error: ${error?.description}")
+            onError("네트워크 오류: ${error?.description}")
         }
     }
-}
-
-private fun isCancelUrl(url: String): Boolean {
-    return url.contains("cancel", ignoreCase = true) ||
-            url.contains("deny", ignoreCase = true) ||
-            url.contains("error", ignoreCase = true) ||
-            url.contains("denied", ignoreCase = true) ||
-            url.contains("oauth/cancel", ignoreCase = true) ||
-            url.contains("auth/cancel", ignoreCase = true) ||
-            (url.contains("error") && url.contains("access_denied"))
 }
