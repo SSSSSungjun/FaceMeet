@@ -1,13 +1,10 @@
-@file:OptIn(androidx.camera.core.ExperimentalGetImage::class)
-
+// File: client/src/main/java/com/ssafy/facemeet/client/ui/camera/CameraCaptureScreen.kt
 package com.ssafy.facemeet.client.ui.camera
 
 import android.Manifest
-import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
@@ -33,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.ssafy.facemeet.client.camerax.fixRotation
 import com.ssafy.facemeet.client.ml.FaceAnalyzer
 import com.ssafy.facemeet.client.ml.FaceOvalSpec
 import com.ssafy.facemeet.client.ml.FaceState
@@ -51,34 +49,34 @@ fun CameraCaptureScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // 항상 전면 카메라 사용
+    val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
     val controller = remember {
         LifecycleCameraController(context).apply {
             setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
-            cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+            this.cameraSelector = cameraSelector
         }
     }
-    val previewViewRef = remember { mutableStateOf<PreviewView?>(null) }
+    val previewRef = remember { mutableStateOf<PreviewView?>(null) }
 
-    // 권한
-    val cameraPerm = rememberPermissionState(Manifest.permission.CAMERA)
-    LaunchedEffect(Unit) {
-        if (!cameraPerm.status.isGranted) cameraPerm.launchPermissionRequest()
-        else controller.bindToLifecycle(lifecycleOwner)
-    }
-    LaunchedEffect(cameraPerm.status.isGranted) {
-        if (cameraPerm.status.isGranted) controller.bindToLifecycle(lifecycleOwner)
+    // 권한 처리
+    val perm = rememberPermissionState(Manifest.permission.CAMERA)
+    LaunchedEffect(perm.status.isGranted) {
+        if (perm.status.isGranted) controller.bindToLifecycle(lifecycleOwner)
+        else perm.launchPermissionRequest()
     }
 
+    // Face guide state
     val spec = remember { FaceOvalSpec() }
     var faceState by remember { mutableStateOf(FaceState.OUTSIDE) }
     var countDown by remember { mutableStateOf<Int?>(null) }
-    var analyzer: FaceAnalyzer? by remember { mutableStateOf(null) }
+    var analyzer by remember { mutableStateOf<FaceAnalyzer?>(null) }
 
     DisposableEffect(controller, mode) {
-        val a = FaceAnalyzer(
+        val fa = FaceAnalyzer(
             context = context,
             controller = controller,
-            previewViewState = previewViewRef,
+            previewViewState = previewRef,
             ovalSpec = spec,
             mode = mode,
             onHoldDone = {
@@ -86,64 +84,56 @@ fun CameraCaptureScreen(
                     ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageCapturedCallback() {
                         @Suppress("UnsafeOptInUsageError")
-                        override fun onCaptureSuccess(imageProxy: ImageProxy) {
-                            val bmp = imageProxy.toBitmap()
+                        override fun onCaptureSuccess(imageProxy: androidx.camera.core.ImageProxy) {
+                            val raw = imageProxy.toBitmap()
                             imageProxy.close()
-                            if (mode == CaptureMode.FRONT) vm.setFront(bmp) else vm.setSide(bmp)
+                            val fixed = raw.fixRotation(
+                                rotationDegrees = imageProxy.imageInfo.rotationDegrees,
+                                mirror = (mode == CaptureMode.FRONT)
+                            )
+
+                            if (mode == CaptureMode.FRONT) vm.setFront(fixed) else vm.setSide(fixed)
                             onCaptured()
                         }
 
                         override fun onError(exc: ImageCaptureException) {
-                            Log.e("Camera", "capture error", exc)
                         }
                     }
                 )
+
             },
             onProgress = { sec -> countDown = if (sec in 1..3) sec else null },
-            onStateChanged = { st -> faceState = st }
+            onStateChanged = { faceState = it }
         )
-        analyzer = a
-        a.bind()
+        analyzer = fa
+        fa.bind()
         onDispose { analyzer?.clear() }
     }
 
-
     Box(Modifier.fillMaxSize()) {
-
+        // 체크리스트
         CaptureChecklistBar(
             frontDone = vm.front.value != null,
             sideDone = vm.side.value != null
         )
-
+        // 프리뷰
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 PreviewView(ctx).apply {
                     this.controller = controller
                     scaleType = PreviewView.ScaleType.FILL_CENTER
-                    previewViewRef.value = this
+                    previewRef.value = this
                 }
             }
         )
-
+        // overlay 선택
         if (mode == CaptureMode.FRONT) {
-            FaceGuideOverlay(
-                countDown = countDown,
-                state = faceState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(1f)
-            )
+            FaceGuideOverlay(countDown, faceState)
         } else {
-            FaceSideOverlay(
-                countDown = countDown,
-                guideText = "옆모습이 가이드에 들어오도록 맞춰주세요",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(1f)
-            )
+            FaceSideOverlay(countDown, "옆모습을 가이드에 맞춰주세요")
         }
-
+        // 뒤로
         Button(
             modifier = Modifier
                 .align(Alignment.TopStart)
