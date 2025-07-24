@@ -15,4 +15,4 @@ object AppModule {
     @Singleton
     @Named("isDebug")
     fun provideIsDebug(): Boolean = BuildConfig.DEBUG
-}
+} //삭제해도 될듯

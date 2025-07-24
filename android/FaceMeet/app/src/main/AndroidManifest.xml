@@ -17,7 +17,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FaceMeet"
         tools:targetApi="31">
-
         <!-- 나중에 수정 필요함 usesCleartextTraffic-->
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
@@ -30,6 +29,7 @@
                     android:scheme="${kakaoScheme}" />
             </intent-filter>
         </activity>
+
 
         <activity
             android:name=".MainActivity"
