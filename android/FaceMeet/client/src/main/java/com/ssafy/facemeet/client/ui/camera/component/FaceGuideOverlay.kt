@@ -41,15 +41,6 @@ fun FaceGuideOverlay(
             FaceState.OK -> "좋아요! 그대로 유지하세요"
         }
 
-        Text(
-            text = guideText,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 48.dp),
-            textAlign = TextAlign.Center,
-            fontSize = 16.sp,
-            color = Color.White
-        )
 
         Canvas(Modifier.fillMaxSize()) {
             val shortSide = min(size.width, size.height)
@@ -85,7 +76,15 @@ fun FaceGuideOverlay(
             )
         }
 
-
+        Text(
+            text = guideText,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 48.dp),
+            textAlign = TextAlign.Center,
+            fontSize = 16.sp,
+            color = Color.White
+        )
 
         countDown?.let { sec ->
             Text(

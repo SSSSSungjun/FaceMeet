@@ -49,7 +49,7 @@ fun ClientNavHost(onNavigateBack: () -> Unit) {
         composable(ClientRoutes.FrontPreview.route) {
             ShotPreviewScreen(
                 image = vm.front.value?.asImageBitmap(),
-                title = "정면 사진 확인",
+                title = "전면 사진에 이상 없으면 다음을 눌러주세요.",
                 onRetake = {
                     vm.resetFront()
                     nav.popBackStack(ClientRoutes.FrontCamera.route, false)
@@ -61,7 +61,7 @@ fun ClientNavHost(onNavigateBack: () -> Unit) {
         composable(ClientRoutes.SidePreview.route) {
             ShotPreviewScreen(
                 image = vm.side.value?.asImageBitmap(),
-                title = "옆면 사진 확인",
+                title = "후면 사진에 이상 없으면 다음을 눌러주세요.",
                 onRetake = {
                     vm.resetSide()
                     nav.popBackStack(ClientRoutes.SideCamera.route, false)

@@ -27,16 +27,6 @@ fun FaceSideOverlay(
 ) {
     Box(modifier.fillMaxSize()) {
 
-        Text(
-            text = guideText,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 48.dp),
-            textAlign = TextAlign.Center,
-            fontSize = 16.sp,
-            color = Color.White
-        )
-
         Canvas(Modifier.fillMaxSize()) {
             val short = minOf(size.width, size.height)
             val faceW = short * 0.70f
@@ -89,6 +79,18 @@ fun FaceSideOverlay(
             )
         }
 
+
+        Text(
+            text = guideText,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 48.dp),
+            textAlign = TextAlign.Center,
+            fontSize = 16.sp,
+            color = Color.White
+        )
+
+        
         countDown?.let {
             Text(
                 text = it.toString(),
