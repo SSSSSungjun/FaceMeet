@@ -11,6 +11,7 @@ import com.ssafy.facemeet.core.navigation.Routes
 import com.ssafy.facemeet.ui.LoginScreen
 
 private const val TAG = "MainNavHost"
+
 @Composable
 fun MainNavHost(
     navController: NavHostController,

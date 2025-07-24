@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.constant
+package com.ssafy.facemeet.core.util.constant
 
 import androidx.compose.ui.graphics.Color
 

@@ -9,6 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 
 private const val TAG = "KaKaoLoginWebView"
+private const val REDIRECT_DOMAIN = "http://i13d201.p.ssafy.io/"
 
 fun WebView.configureKakaoWebView(
     onTokenExtracted: (accessToken: String, refreshToken: String) -> Unit,
@@ -39,22 +40,17 @@ fun WebView.configureKakaoWebView(
             Log.d(TAG, "Page finished: $url")
 
             if (url == null) return
-
-            //리다이렉트 도메인 도달 시 닫기
-            if (url=="http://i13d201.p.ssafy.io/") {
+            if (url==REDIRECT_DOMAIN) {
                 onDismiss()
                 return
             }
-
-            //취소 URL 감지
             if (isCancelUrl(url)) {
-                Log.d(TAG, "사용자가 취소 → WebView 닫기")
+                Log.d(TAG, " WebView close")
                 onCancel()
                 onDismiss()
                 return
             }
 
-            //토큰 추출 시도
             if (url.contains("success") || url.contains("callback") || url.contains("login")) {
                 evaluateJavascript(
                     """
@@ -72,12 +68,12 @@ fun WebView.configureKakaoWebView(
                                 onTokenExtracted(tokens.first, tokens.second)
                                 onDismiss()
                             } else {
-                                onError("토큰 추출 실패")
+
                             }
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "토큰 파싱 예외", e)
-                        onError("토큰 파싱 예외: ${e.message}")
+                        Log.e(TAG, "token error", e)
+                        onError("token exception: ${e.message}")
                     }
                 }
             }
@@ -89,8 +85,13 @@ fun WebView.configureKakaoWebView(
             error: WebResourceError?
         ) {
             super.onReceivedError(view, request, error)
-            Log.e(TAG, "웹뷰 에러: ${error?.description}")
-            onError("웹뷰 에러: ${error?.description}")
+            Log.e(TAG, "error: ${error?.description}")
+
+            if (error?.errorCode == ERROR_HOST_LOOKUP ||
+                error?.errorCode == ERROR_CONNECT ||
+                error?.errorCode == ERROR_TIMEOUT) {
+                onError("ERROR : ${error.description}")
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
-package com.ssafy.facemeet.core.network.dto.request
+package com.ssafy.facemeet.core.data.remote.dto.request
 
-data class SignUpRequest(
+data class OnboardingRequest(
     val nickname : String?,
     val address : String?,
     val latitude : Float,

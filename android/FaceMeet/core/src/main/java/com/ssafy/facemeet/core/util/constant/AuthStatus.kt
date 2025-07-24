@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.constant
+package com.ssafy.facemeet.core.util.constant
 
 enum class AuthStatus {
     LOGGED_IN,      // 토큰 유효

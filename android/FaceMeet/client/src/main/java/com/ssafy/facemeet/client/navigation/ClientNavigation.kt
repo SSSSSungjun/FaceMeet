@@ -11,7 +11,6 @@ fun NavGraphBuilder.clientNavigation(parentNavController: NavHostController) { /
     composable(Routes.Setting.route) {
         Log.d(TAG, "clientNavigation: 진입 성공")
         ClientNavHost(
-            
             onNavigateBack = {
                 parentNavController.popBackStack() // 필요시 App 레벨로 돌아가기
             }

@@ -1,7 +1,5 @@
 package com.ssafy.facemeet.util
 
-import android.util.Log
-
 private const val TAG = "KaKaoLoginWebView"
 
 fun parseTokensFromText(text: String): Pair<String, String>? {
@@ -16,7 +14,6 @@ fun parseTokensFromText(text: String): Pair<String, String>? {
             accessToken to refreshToken
         } else null
     } catch (e: Exception) {
-        Log.e(TAG, "토큰 파싱 에러", e)
         null
     }
 }

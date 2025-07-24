@@ -1,6 +1,7 @@
 package com.ssafy.facemeet
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
             val isLoggedIn by mainViewModel.isLoggedIn.collectAsStateWithLifecycle()
             val navController = rememberNavController()
             FacemeetTheme {
+                Log.d(TAG, "onCreate: ${isLoggedIn}")
                 when (isLoggedIn) {
                     true -> MainNavHost(navController, Routes.ClientMain.route)
                     false -> MainNavHost(navController, Routes.Login.route)

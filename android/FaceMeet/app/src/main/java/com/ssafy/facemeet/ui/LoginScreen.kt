@@ -34,8 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ssafy.facemeet.R
-import com.ssafy.facemeet.core.constant.CommonColor
+import com.ssafy.facemeet.core.util.constant.CommonColor
 import com.ssafy.facemeet.util.configureKakaoWebView
+
+const val BASE_KAKAO_URL = "http://i13d201.p.ssafy.io/oauth2/authorization/kakao"
 
 @Composable
 fun LoginScreen(
@@ -45,7 +47,7 @@ fun LoginScreen(
     var showWebView by rememberSaveable { mutableStateOf(false) }
     var showFakeScreen by rememberSaveable { mutableStateOf(false) }
 
-
+    //val mainViewModel: MainViewModel =viewModel ()
     when {
         showFakeScreen -> {
             Fscreen()
@@ -58,6 +60,7 @@ fun LoginScreen(
                         configureKakaoWebView(
                             onTokenExtracted = { accessToken, refreshToken ->
                                 Log.d("Login", "로그인 성공")
+                                //mainViewModel.saveTokensFromWebView(accessToken, refreshToken)
                                 showFakeScreen = true
                                 onNavigateToClient()
                             },
@@ -74,7 +77,7 @@ fun LoginScreen(
                                 showWebView = false
                             }
                         )
-                        loadUrl("http://i13d201.p.ssafy.io/oauth2/authorization/kakao")
+                        loadUrl(BASE_KAKAO_URL)
 
                     }
                 },
@@ -194,27 +197,21 @@ fun LoginScreen(
                     }
                 }
 
-                Button(
-                    onClick = {
-                        onNavigateToClient()
-                    },
-                ) {
-                    Text("임시방편")
-                }
             }
         }
     }
 }
-    @Composable
-    fun Fscreen() {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-        }
-    } // 여기 뭐 애니메이트 넣던지 프로그래스 바 넣던지 하면 됨 그냥.
 
-    @Preview(showBackground = true)
-    @Composable
-    fun LoginScreenPreview() {
-        LoginScreen({}, {})
+@Composable
+fun Fscreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+    ) {
     }
+} // 여기 뭐 애니메이트 넣던지 프로그래스 바 넣던지 하면 됨 그냥.
+
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    LoginScreen({}, {})
+}
