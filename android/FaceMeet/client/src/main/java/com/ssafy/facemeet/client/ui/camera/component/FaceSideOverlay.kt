@@ -75,7 +75,7 @@ fun FaceSideOverlay(
             drawPath(
                 path = path,
                 color = Color.White,
-                style = Stroke(width = 2.dp.toPx())
+                style = Stroke(width = 4.dp.toPx())
             )
         }
 
@@ -90,7 +90,7 @@ fun FaceSideOverlay(
             color = Color.White
         )
 
-        
+
         countDown?.let {
             Text(
                 text = it.toString(),
