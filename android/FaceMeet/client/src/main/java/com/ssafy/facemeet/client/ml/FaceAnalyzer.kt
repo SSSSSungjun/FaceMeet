@@ -1,13 +1,11 @@
-@file:OptIn(
-    androidx.camera.core.ExperimentalGetImage::class
-)
+@file:OptIn(androidx.camera.core.ExperimentalGetImage::class)
 
 package com.ssafy.facemeet.client.ml
 
 import android.content.Context
 import android.graphics.RectF
+import android.util.Log
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageProxy
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.State
@@ -16,21 +14,47 @@ import androidx.core.graphics.toRectF
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.ssafy.facemeet.client.ui.camera.CaptureMode
 import kotlin.math.ceil
 import kotlin.math.pow
 
-// 완화된 기준들
+/* ===========================
+ *  CONFIG / CONSTANTS
+ * =========================== */
+
+private const val TAG = "FaceAnalyzer"
+
+// 홀드 시간 (ms)
 private const val HOLD_MS = 1_500L
+
+// 얼굴 높이(화면 대비) 허용 범위
 private const val MIN_FACE_H_RATIO = 0.18f
 private const val MAX_FACE_H_RATIO = 0.60f
-private const val OK_STREAK_NEED = 3        // 3프레임만 연속 OK면 됨
-private const val OVAL_PADDING = 0.12f      // 타원 여유 12%
+
+// 연속 OK 프레임 수
+private const val OK_STREAK_NEED = 3
+
+// 타원 여유 %
+private const val OVAL_PADDING = 0.12f
+
+// 정면 포즈 허용 (yaw, roll 기준)
+private const val FRONT_YAW_MAX = 12f
+private const val FRONT_ROLL_MAX = 15f
+
+// 옆면 포즈 허용 범위 (절대값)
+private const val SIDE_MIN_YAW = 30f   // 최소 30도 정도는 돌아가야
+private const val SIDE_MAX_YAW = 55f   // 55도 넘게 돌아가면 "너무 옆"으로 간주
+
+/* ===========================
+ *  MAIN CLASS
+ * =========================== */
 
 class FaceAnalyzer(
     private val context: Context,
     private val controller: LifecycleCameraController,
     private val previewViewState: State<PreviewView?>,
     private val ovalSpec: FaceOvalSpec,
+    private val mode: CaptureMode,
     private val onHoldDone: () -> Unit,
     private val onProgress: (Int) -> Unit,
     private val onStateChanged: (FaceState) -> Unit
@@ -58,41 +82,52 @@ class FaceAnalyzer(
             if (fired) {
                 imageProxy.close(); return@setImageAnalysisAnalyzer
             }
+
             @Suppress("UnsafeOptInUsageError")
             val mediaImage = imageProxy.image ?: run {
                 imageProxy.close(); return@setImageAnalysisAnalyzer
             }
 
             val input = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
-            val preview = previewViewState.value
-            if (preview == null) {
+            val preview = previewViewState.value ?: run {
                 imageProxy.close(); return@setImageAnalysisAnalyzer
             }
 
-            // 수동 매핑 셋업
             val imgW = imageProxy.width.toFloat()
             val imgH = imageProxy.height.toFloat()
             val viewW = preview.width.toFloat().coerceAtLeast(1f)
             val viewH = preview.height.toFloat().coerceAtLeast(1f)
             val mirror = controller.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
-
             val sd = calcFillCenter(imgW, imgH, viewW, viewH, mirror)
 
             detector.process(input)
                 .addOnSuccessListener { faces ->
-                    var ok = false
                     var state = FaceState.OUTSIDE
+                    var ok = false
+
+                    if (faces.isEmpty()) {
+                        Log.d(TAG, "No face detected")
+                    }
 
                     faces.forEach { face ->
-                        if (!face.isFront()) return@forEach
+                        val yaw = face.headEulerAngleY
+                        val roll = face.headEulerAngleZ
 
-                        val rectF = face.boundingBox.toRectF()  // image 좌표
-                        rectF.mapToPreview(sd, viewW)           // preview 좌표
+                        val posePass = when (mode) {
+                            CaptureMode.FRONT -> face.isFrontPose(yaw, roll)
+                            CaptureMode.SIDE -> face.isSidePose(yaw)
+                        }
+                        if (!posePass) {
+                            Log.v(TAG, "Pose fail -> mode=$mode, yaw=$yaw, roll=$roll")
+                            return@forEach
+                        }
 
-                        val cx = rectF.centerX() / viewW
-                        val cy = rectF.centerY() / viewH
-                        val hRatio = rectF.height() / viewH
+                        val rect = face.boundingBox.toRectF()
+                        rect.mapToPreview(sd, viewW)
+
+                        val cx = rect.centerX() / viewW
+                        val cy = rect.centerY() / viewH
+                        val hRatio = rect.height() / viewH
 
                         state = when {
                             hRatio < MIN_FACE_H_RATIO -> FaceState.TOO_FAR
@@ -105,6 +140,11 @@ class FaceAnalyzer(
                                 if (inside) FaceState.OK else FaceState.OUTSIDE
                             }
                         }
+
+                        Log.v(
+                            TAG,
+                            "mode=$mode, yaw=$yaw, roll=$roll, hRatio=$hRatio, state=$state"
+                        )
 
                         if (state == FaceState.OK) {
                             ok = true
@@ -132,6 +172,7 @@ class FaceAnalyzer(
                             }
                             if (!fired && elapsed >= HOLD_MS) {
                                 fired = true
+                                Log.d(TAG, "HOLD done -> fire capture callback")
                                 onHoldDone()
                             }
                         }
@@ -140,6 +181,9 @@ class FaceAnalyzer(
                         startAt = null
                         lastReported = -1
                     }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "MLKit process error: ${e.message}", e)
                 }
                 .addOnCompleteListener { imageProxy.close() }
         }
@@ -151,7 +195,22 @@ class FaceAnalyzer(
     }
 }
 
-/* ======= 좌표 변환 유틸 ======= */
+/* ===========================
+ *  Pose Helpers
+ * =========================== */
+
+private fun com.google.mlkit.vision.face.Face.isFrontPose(yaw: Float, roll: Float): Boolean {
+    return (yaw in -FRONT_YAW_MAX..FRONT_YAW_MAX) && (roll in -FRONT_ROLL_MAX..FRONT_ROLL_MAX)
+}
+
+private fun com.google.mlkit.vision.face.Face.isSidePose(yaw: Float): Boolean {
+    val absYaw = kotlin.math.abs(yaw)
+    return absYaw in SIDE_MIN_YAW..SIDE_MAX_YAW
+}
+
+/* ===========================
+ *  Transform utils
+ * =========================== */
 
 data class ScaleData(
     val scale: Float,
@@ -187,14 +246,4 @@ fun RectF.mapToPreview(sd: ScaleData, viewW: Float) {
         left = newLeft
         right = newRight
     }
-}
-
-/* ======= Face 확장 ======= */
-
-fun ImageProxy.toRectF(): RectF = RectF(0f, 0f, width.toFloat(), height.toFloat())
-
-fun com.google.mlkit.vision.face.Face.isFront(): Boolean {
-    // MLKit은 정확한 방향 정보가 제한적, trackingId 등으로 필터링해도 됨
-    // 일단 true 반환 (원한다면 Euler angle등 활용)
-    return true
 }
