@@ -46,7 +46,12 @@ dependencies {
     implementation(libs.androidx.camera.view)          // PreviewView
     implementation(libs.androidx.camera.mlkit.vision)   // MLKit integration helper
     implementation(libs.face.detection)
+    implementation(libs.coil.compose)
 
-// 권한 처리용 (선택)
+    // 권한 처리용 (선택)
     implementation(libs.accompanist.permissions)
+
+    //
+    implementation(libs.androidx.material.icons.extended)
+
 }

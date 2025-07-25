@@ -82,8 +82,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose) // 네비게이션
     implementation("androidx.core:core-splashscreen:1.0.1")
 
-    implementation ("com.kakao.sdk:v2-user:2.21.5")
-    implementation ("com.kakao.sdk:v2-common:2.21.5")
+    implementation("com.kakao.sdk:v2-user:2.21.5")
+    implementation("com.kakao.sdk:v2-common:2.21.5")
 
     implementation ("androidx.webkit:webkit:1.14.0")
     implementation ("com.google.code.gson:gson:2.11.0")
