@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.implementation
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -55,6 +53,7 @@ dependencies {
     api(libs.androidx.ui.tooling.preview)
     api(libs.androidx.material3)
     api(libs.androidx.navigation.compose)
+    api("androidx.hilt:hilt-navigation-compose:1.1.0")
 
 
     implementation(libs.hilt.android)

@@ -8,11 +8,14 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-val localProperties = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties()
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
 }
-val kakaoNativeAppKey = localProperties["kakao_native_app_key"] as String
 
+val kakaoNativeKey = localProperties.getProperty("kakao_native_app_key") ?: error("kakao_native_app_key not found in local.properties")
+val kakaoScheme = "kakao$kakaoNativeKey"
 
 android {
     namespace = "com.ssafy.facemeet"
@@ -26,8 +29,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["kakaoScheme"] = "kakao$kakaoNativeAppKey"
-        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+        manifestPlaceholders["kakaoScheme"] = kakaoScheme
+
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
+
+//        resValue("string", "kakao_app_key", kakaoNativeKey)
+//        resValue("string", "kakao_scheme", kakaoScheme)
     }
 
 
@@ -77,6 +84,10 @@ dependencies {
 
     implementation("com.kakao.sdk:v2-user:2.21.5")
     implementation("com.kakao.sdk:v2-common:2.21.5")
+
+    implementation ("androidx.webkit:webkit:1.14.0")
+    implementation ("com.google.code.gson:gson:2.11.0")
+
 
 
 }

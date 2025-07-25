@@ -4,20 +4,44 @@ import android.app.Application
 import android.util.Log
 import com.kakao.sdk.common.KakaoSdk
 import com.kakao.sdk.common.util.Utility
+import com.ssafy.facemeet.core.data.datastore.TokenManager
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "FaceMeetApplication"
 
 @HiltAndroidApp
-class FaceMeetApplication : Application(){
+class FaceMeetApplication : Application() {
+
+    @Inject
+    lateinit var tokenManager: TokenManager
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
 
+        applicationScope.launch  {
+            try {
+                val accessToken = tokenManager.getAccessToken()
+                val refreshToken = tokenManager.getRefreshToken()
+
+                if (!accessToken.isNullOrEmpty()) {
+                    tokenManager.saveTokensSync(accessToken, refreshToken)
+                }
+            } catch (e: Exception) {
+                Log.e("MyApplication", "토큰 캐시 초기화 실패: ${e.message}")
+            }
+        }
+
         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
 
-        // 로그 확인용 (디버그 빌드에서만)
-        if (BuildConfig.DEBUG) {
-            Log.d(TAG, "KeyHash: ${Utility.getKeyHash(this)}")
-        }
+        var keyHash = Utility.getKeyHash(this)
+        Log.d(TAG, "onCreate: ${keyHash}")
+
+
     }
 }

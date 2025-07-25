@@ -1,8 +1,7 @@
 package com.ssafy.facemeet.core.di
 
-import com.ssafy.facemeet.core.network.ApiService
-import com.ssafy.facemeet.core.network.PersistentCookieJar
-import com.ssafy.facemeet.core.network.interceptor.AuthErrorInterceptor
+import com.ssafy.facemeet.core.data.datastore.TokenManager
+import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -12,47 +11,32 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    private const val BASE_URL = "http://i13d201.p.ssafy.io/"
+
     @Provides
     @Singleton
-    fun providePersistentCookieJar(): PersistentCookieJar {
-        return PersistentCookieJar()
+    fun provideAuthInterceptor(
+        tokenManager: TokenManager
+    ): AuthInterceptor {
+        return AuthInterceptor(tokenManager)
     }
 
     @Provides
     @Singleton
-    fun provideHttpLoggingInterceptor(
-        @Named("isDebug") isDebug: Boolean
-    ): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().apply {
-            level = if (isDebug) {
-                HttpLoggingInterceptor.Level.BODY
-            } else {
-                HttpLoggingInterceptor.Level.NONE
-            }
-        }
-    }
-
-    @Provides
-    @Singleton
-    fun provideOkHttpClient(
-        authErrorInterceptor: AuthErrorInterceptor,
-        loggingInterceptor: HttpLoggingInterceptor,
-        cookieJar: PersistentCookieJar
-    ): OkHttpClient {
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(authErrorInterceptor)
-            .addInterceptor(loggingInterceptor)
-            .cookieJar(cookieJar)
+            .addInterceptor(authInterceptor)
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
@@ -60,15 +44,9 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://your-api-server.com/")
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
     }
 }
