@@ -36,7 +36,12 @@ fun WebLoginScreen(
                 AndroidView(
                     factory = {
                         WebView(context).apply {
-                            Log.d(TAG, "WebLoginScreen: 호출성공")
+
+                            layoutParams = android.view.ViewGroup.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+
                             configureKakaoWebView(
                                 onTokenExtracted = { accessToken, refreshToken ->
                                     Log.d(TAG, "로그인 성공")

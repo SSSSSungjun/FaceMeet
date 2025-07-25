@@ -20,6 +20,7 @@ fun WebView.configureKakaoWebView(
     onDismiss: () -> Unit,
     context : Context
 ) {
+
     settings.apply {
         javaScriptEnabled = true
         domStorageEnabled = true
@@ -27,8 +28,8 @@ fun WebView.configureKakaoWebView(
         useWideViewPort = true
         builtInZoomControls = false
         displayZoomControls = false
-        cacheMode = WebSettings.LOAD_NO_CACHE
         javaScriptCanOpenWindowsAutomatically = false
+        cacheMode = WebSettings.LOAD_NO_CACHE
         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         userAgentString = WebSettings.getDefaultUserAgent(context)
         setSupportMultipleWindows(true)
@@ -48,6 +49,7 @@ fun WebView.configureKakaoWebView(
             Log.d(TAG, "shouldOverrideUrlLoading: $url")
             return false
         }
+
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
