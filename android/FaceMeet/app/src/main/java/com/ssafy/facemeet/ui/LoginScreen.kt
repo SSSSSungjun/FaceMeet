@@ -163,8 +163,14 @@ fun LoginScreen(
             }
 
         }
+        Button(
+            onClick = {
+                onNavigateToClient()
+            },
+        ) {
+            Text("임시방편")
+        }
     }
-
 }
 
 

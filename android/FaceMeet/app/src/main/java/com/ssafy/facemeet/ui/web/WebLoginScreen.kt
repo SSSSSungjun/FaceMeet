@@ -32,10 +32,17 @@ fun WebLoginScreen(
 
     when (type) {
         SocialLoginProvider.KAKAO -> {
-            Box(modifier=Modifier.fillMaxSize().systemBarsPadding()){
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()) {
                 AndroidView(
                     factory = {
                         WebView(context).apply {
+                            layoutParams = android.view.ViewGroup.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+
                             Log.d(TAG, "WebLoginScreen: 호출성공")
                             configureKakaoWebView(
                                 onTokenExtracted = { accessToken, refreshToken ->
@@ -54,7 +61,7 @@ fun WebLoginScreen(
                                 onDismiss = {
                                     onBack()
                                 },
-                                context=context
+                                context = context
                             )
 
                             loadUrl(BASE_KAKAO_URL)
@@ -83,6 +90,7 @@ fun WebLoginScreen(
         SocialLoginProvider.NONE -> {
             onBack()
         }
+
 
     }
 }
