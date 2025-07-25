@@ -1,13 +1,14 @@
 package com.ssafy.facemeet.util
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.util.Log
 
 private const val TAG = "KaKaoLoginWebView"
 internal const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
@@ -16,7 +17,8 @@ fun WebView.configureKakaoWebView(
     onTokenExtracted: (accessToken: String, refreshToken: String) -> Unit,
     onError: (String) -> Unit,
     onCancel: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    context : Context
 ) {
     settings.apply {
         javaScriptEnabled = true
@@ -26,10 +28,10 @@ fun WebView.configureKakaoWebView(
         builtInZoomControls = false
         displayZoomControls = false
         cacheMode = WebSettings.LOAD_NO_CACHE
-        setSupportMultipleWindows(false)
         javaScriptCanOpenWindowsAutomatically = false
         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-        userAgentString =  WebSettings.getDefaultUserAgent(context)
+        userAgentString = WebSettings.getDefaultUserAgent(context)
+        setSupportMultipleWindows(true)
     }
 
     setInitialScale(1)
@@ -38,7 +40,10 @@ fun WebView.configureKakaoWebView(
     setBackgroundColor(Color.WHITE)
 
     webViewClient = object : WebViewClient() {
-        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+        override fun shouldOverrideUrlLoading(
+            view: WebView?,
+            request: WebResourceRequest?
+        ): Boolean {
             val url = request?.url?.toString() ?: return false
             Log.d(TAG, "shouldOverrideUrlLoading: $url")
             return false
@@ -53,10 +58,22 @@ fun WebView.configureKakaoWebView(
             super.onPageFinished(view, url)
             Log.d(TAG, "Page finished: $url")
 
+            val script = """
+        javascript:(function() {
+            var inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], textarea');
+            inputs.forEach(function(input) {
+                input.style.direction = 'ltr';
+                input.style.textAlign = 'left';
+                input.setAttribute('dir', 'ltr');
+            });
+        })()
+    """
+            view?.loadUrl(script)
+
             url?.let { currentUrl ->
                 if (currentUrl.startsWith(BASE_DOMAIN)) {
                     Log.d(TAG, "베이스 도메인 도달")
-                    checkForTokens(view, currentUrl, onTokenExtracted, onError, onDismiss,onCancel)
+                    checkForTokens(view, currentUrl, onTokenExtracted, onError, onDismiss, onCancel)
                 }
             }
         }

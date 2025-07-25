@@ -2,19 +2,14 @@ package com.ssafy.facemeet.ui.web
 
 import android.util.Log
 import android.webkit.WebView
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -42,7 +37,6 @@ fun WebLoginScreen(
                     factory = {
                         WebView(context).apply {
                             Log.d(TAG, "WebLoginScreen: 호출성공")
-                            setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
                             configureKakaoWebView(
                                 onTokenExtracted = { accessToken, refreshToken ->
                                     Log.d(TAG, "로그인 성공")
@@ -59,7 +53,8 @@ fun WebLoginScreen(
                                 },
                                 onDismiss = {
                                     onBack()
-                                }
+                                },
+                                context=context
                             )
 
                             loadUrl(BASE_KAKAO_URL)
