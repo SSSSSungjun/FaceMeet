@@ -1,6 +1,8 @@
 package com.ssafy.facemeet.core.di
 
+import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.data.datastore.TokenManager
+import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -17,7 +19,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://i13d201.p.ssafy.io/"
+    private const val BASE_URL = BuildConfig.BASE_URL
+
 
     @Provides
     @Singleton
@@ -48,5 +51,12 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideFaceService(retrofit: Retrofit): FaceService {
+        return retrofit.create(FaceService::class.java)
     }
 }

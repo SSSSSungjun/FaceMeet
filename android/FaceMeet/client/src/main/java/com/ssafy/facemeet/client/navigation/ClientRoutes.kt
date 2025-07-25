@@ -11,5 +11,5 @@ sealed class ClientRoutes(val route: String) {
     object SideCamera : ClientRoutes("side_camera")
     object SidePreview : ClientRoutes("side_preview")
     object FaceTestLoading : ClientRoutes("face_test_loading")
-
+    object FaceTestResult : ClientRoutes("face_test_result")
 }
