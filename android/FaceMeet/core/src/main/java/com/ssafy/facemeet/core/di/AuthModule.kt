@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.core.di
 
 import com.ssafy.facemeet.core.data.remote.api.AuthApiService
+import com.ssafy.facemeet.core.data.remote.datasource.AuthRemoteDataSource
 import com.ssafy.facemeet.core.data.repository.AuthRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.AuthRepository
 import dagger.Module
@@ -20,11 +21,20 @@ object AuthModule {
         return retrofit.create(AuthApiService::class.java)
     }
 
+
+    @Provides
+    @Singleton
+    fun provideAuthRemoteDataSource(
+        authApiService: AuthApiService
+    ): AuthRemoteDataSource {
+        return AuthRemoteDataSource(authApiService)
+    }
+
     @Provides
     @Singleton
     fun provideAuthRepository(
-        authApiService: AuthApiService
+        authDataRemoteDataSource: AuthRemoteDataSource
     ): AuthRepository {
-        return AuthRepositoryImpl(authApiService)
+        return AuthRepositoryImpl(authDataRemoteDataSource)
     }
 }

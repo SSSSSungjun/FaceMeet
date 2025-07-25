@@ -1,6 +1,6 @@
 package com.ssafy.facemeet.core.data.repository
 
-import com.ssafy.facemeet.core.data.remote.api.AuthApiService
+import com.ssafy.facemeet.core.data.remote.datasource.AuthRemoteDataSource
 import com.ssafy.facemeet.core.data.remote.dto.request.OnboardingRequest
 import com.ssafy.facemeet.core.data.remote.dto.request.RefreshTokenRequest
 import com.ssafy.facemeet.core.data.remote.mapper.toDomain
@@ -14,12 +14,12 @@ private const val TAG = "AuthRepositoryImpl"
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
-    private val authApiService: AuthApiService
+    private val authDataRemoteDataSource: AuthRemoteDataSource
 ) : AuthRepository {
 
     override suspend fun Onboarding(request: OnboardingRequest): Result<Auth> {
         return runCatching {
-            val response = authApiService.postOnboarding(request)
+            val response = authDataRemoteDataSource.postOnboarding(request)
             if (response.isSuccessful && response.body()?.status == HttpStatus.OK) {
                 val resBody = response.body()?.toDomain()
                     ?: return Result.failure(Exception("Empty response"))
@@ -35,7 +35,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun refreshToken(request: RefreshTokenRequest): Result<Auth> {
         return runCatching {
-            val response = authApiService.postRefreshToken(request)
+            val response = authDataRemoteDataSource.postRefreshToken(request)
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!.toDomain())
             } else {
@@ -49,7 +49,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun logout(): Result<Auth> {
         return runCatching {
-            val response = authApiService.postLogout()
+            val response = authDataRemoteDataSource.postLogout()
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!.toDomain())
             } else {
