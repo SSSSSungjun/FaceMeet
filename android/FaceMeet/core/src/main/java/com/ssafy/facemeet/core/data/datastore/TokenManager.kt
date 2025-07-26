@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -20,45 +22,50 @@ class TokenManager @Inject constructor(
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
-       // private val USER_ID_KEY = stringPreferencesKey("user_id")
     }
+
+    // 메모리 캐시
+    private var cachedAccessToken: String? = null
+    private var cachedRefreshToken: String? = null
+
+    // 토큰 갱신 결과를 알리는 Flow
+    private val _tokenRefreshResult = MutableSharedFlow<TokenRefreshResult>()
+    val tokenRefreshResult: SharedFlow<TokenRefreshResult> = _tokenRefreshResult
 
     suspend fun saveTokens(
         accessToken: String,
-        refreshToken: String? = null,
-        userId: String? = null
+        refreshToken: String? = null
     ) {
         dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
             refreshToken?.let { preferences[REFRESH_TOKEN_KEY] = it }
-            //userId?.let { preferences[USER_ID_KEY] = it }
         }
         cachedAccessToken = accessToken
         refreshToken?.let { cachedRefreshToken = it }
     }
 
     suspend fun getAccessToken(): String? {
-        return dataStore.data.first()[ACCESS_TOKEN_KEY]
+        return cachedAccessToken ?: dataStore.data.first()[ACCESS_TOKEN_KEY]?.also {
+            cachedAccessToken = it
+        }
     }
 
     suspend fun getRefreshToken(): String? {
-        return dataStore.data.first()[REFRESH_TOKEN_KEY]
+        return cachedRefreshToken ?: dataStore.data.first()[REFRESH_TOKEN_KEY]?.also {
+            cachedRefreshToken = it
+        }
     }
-
-//    suspend fun getUserId(): String? {
-//        return dataStore.data.first()[USER_ID_KEY]
-//    }
 
     suspend fun hasToken(): Boolean {
         val accessToken = getAccessToken()
-        return !accessToken.isNullOrEmpty()
+        val refreshToken = getRefreshToken()
+        return !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()
     }
 
     suspend fun clearTokens() {
         dataStore.edit { preferences ->
             preferences.clear()
         }
-
         cachedAccessToken = null
         cachedRefreshToken = null
     }
@@ -70,25 +77,44 @@ class TokenManager @Inject constructor(
         }
     }
 
-    private var cachedAccessToken: String? = null
-    private var cachedRefreshToken: String? = null
+    // ===== Synchronous methods for Authenticator =====
 
     fun getAccessTokenSync(): String? = cachedAccessToken
     fun getRefreshTokenSync(): String? = cachedRefreshToken
 
+    //TokenAuthenticator에서 호출 - 토큰 갱신 성공 시
     fun saveTokensSync(accessToken: String, refreshToken: String?) {
+        val previousAccessToken = cachedAccessToken
+
         cachedAccessToken = accessToken
         cachedRefreshToken = refreshToken
+
         CoroutineScope(Dispatchers.IO).launch {
             saveTokens(accessToken, refreshToken)
+
+            // 토큰이 실제로 변경되었는지 확인 후 성공 알림
+            if (previousAccessToken != accessToken) {
+                _tokenRefreshResult.emit(TokenRefreshResult.Success)
+            }
         }
     }
 
+    //TokenAuthenticator에서 호출 - 토큰 갱신 실패 시
     fun clearTokensSync() {
         cachedAccessToken = null
         cachedRefreshToken = null
+
         CoroutineScope(Dispatchers.IO).launch {
             clearTokens()
+            // 토큰 갱신 실패 알림
+            _tokenRefreshResult.emit(TokenRefreshResult.Failed)
         }
+    }
+
+    //앱 시작 시 캐시 초기화
+    suspend fun initializeCache() {
+        val preferences = dataStore.data.first()
+        cachedAccessToken = preferences[ACCESS_TOKEN_KEY]
+        cachedRefreshToken = preferences[REFRESH_TOKEN_KEY]
     }
 }

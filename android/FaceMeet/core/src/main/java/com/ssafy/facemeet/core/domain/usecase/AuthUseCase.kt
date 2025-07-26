@@ -6,7 +6,7 @@ import com.ssafy.facemeet.core.domain.repository.AuthRepository
 
 class OnboardingUseCase(private val authRepository: AuthRepository) {
     suspend operator fun invoke(request: OnboardingRequest): Result<Auth> {
-        return authRepository.Onboarding(request)
+        return authRepository.onBoarding(request)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.navigation
 
+import android.R.attr.x
 import android.util.Log
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -11,8 +12,7 @@ fun NavGraphBuilder.clientNavigation(parentNavController: NavHostController) { /
     composable(Routes.Setting.route) {
         Log.d(TAG, "clientNavigation: 진입 성공")
         ClientNavHost(
-
-            onNavigateBack = {
+            onNavigateBack = {x
                 parentNavController.popBackStack() // 필요시 App 레벨로 돌아가기
             }
         )

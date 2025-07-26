@@ -28,17 +28,14 @@ class MainActivity : ComponentActivity() {
             val isLoggedIn by mainViewModel.isLoggedIn.collectAsStateWithLifecycle()
             val navController = rememberNavController()
             FacemeetTheme {
-                Log.d(TAG, "onCreate: ${isLoggedIn}")
+                Log.d(TAG, "onCreate: $isLoggedIn")
                 when (isLoggedIn) {
-                    true -> MainNavHost(navController, Routes.ClientMain.route)
+                    true -> MainNavHost(navController, Routes.Setting.route) // 이것도 임시
                     false -> MainNavHost(navController, Routes.Login.route)
-
-                    null -> {
-                        TODO()
-                    }
                 }
             }
         }
+
     }
 }
 

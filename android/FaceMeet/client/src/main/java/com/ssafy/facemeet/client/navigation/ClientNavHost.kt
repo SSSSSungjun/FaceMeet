@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -14,6 +15,7 @@ import com.ssafy.facemeet.client.ui.camera.FaceTestLoadingScreen
 import com.ssafy.facemeet.client.ui.camera.ShotPreviewScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun ClientNavHost(onNavigateBack: () -> Unit) {
     val nav = rememberNavController()
@@ -21,7 +23,7 @@ fun ClientNavHost(onNavigateBack: () -> Unit) {
 
     NavHost(
         navController = nav,
-        startDestination = ClientRoutes.Setting.route
+        startDestination = ClientRoutes.Setting.route // 임시
     ) {
         composable(ClientRoutes.MainMenu.route) {
             MainMenuScreen {
