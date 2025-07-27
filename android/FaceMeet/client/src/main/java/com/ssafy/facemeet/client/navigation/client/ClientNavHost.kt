@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.ui.profile.ProfileScreen
 
+
 fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
 
     composable(ClientRoutes.MainMenu.route) {
@@ -14,7 +15,7 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
         )
     }
 
-    composable(ClientRoutes.Profile.route){
+    composable(ClientRoutes.Profile.route) {
         ProfileScreen()
     }
 }
