@@ -2,9 +2,9 @@ package com.ssafy.facemeet.client.navigation.bottom
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -45,7 +45,7 @@ fun MainScreenWithBottomNav(
         ) {
             composable(BottomNavRoutes.Home.route) {
                 MainMenuScreen(
-                    onNavigateBack = {}
+
                 )
             }
 
@@ -58,7 +58,7 @@ fun MainScreenWithBottomNav(
             }
 
             composable(BottomNavRoutes.ChattingList.route) {
-                ChattingListScreen()
+                ChattingListScreen(){}
             }
 
             composable(BottomNavRoutes.MyPage.route) {
@@ -77,7 +77,7 @@ fun BottomNavigationBar(navController: NavHostController) {
         listOf(
             Triple(BottomNavRoutes.Home.route, Icons.Default.Home, "홈"),
             Triple(BottomNavRoutes.Matching.route, Icons.Default.Favorite, "매칭"),
-            Triple(BottomNavRoutes.ChattingList.route, Icons.Default.List, "채팅"),
+            Triple(BottomNavRoutes.ChattingList.route, Icons.AutoMirrored.Filled.List, "채팅"),
             Triple(BottomNavRoutes.MyPage.route, Icons.Default.Person, "마이페이지")
         )
     }
