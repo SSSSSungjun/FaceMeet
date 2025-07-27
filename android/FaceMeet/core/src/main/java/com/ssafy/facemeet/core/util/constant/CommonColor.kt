@@ -12,4 +12,9 @@ object CommonColor {
     val Pink40 = Color(0xFF7D5260)
 
     val background1 = Color(0xFF2D2323)
+
+    val gray500 = Color(0xFF666666)
+    val gray900 = Color(0xFF333333)
+
+    val beige200 = Color(0xFFCECBBC)
 }

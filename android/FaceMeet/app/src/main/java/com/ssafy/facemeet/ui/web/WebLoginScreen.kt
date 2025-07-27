@@ -67,9 +67,15 @@ fun WebLoginScreen(
                 AndroidView(
                     factory = {
                         WebView(context).apply {
+<<<<<<< Updated upstream
                             layoutParams = ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
+=======
+                            layoutParams = android.view.ViewGroup.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+>>>>>>> Stashed changes
                             )
                             configureKakaoWebView(
                                 onTokenExtracted = { accessToken, refreshToken,isNew ->
