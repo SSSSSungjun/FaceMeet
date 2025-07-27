@@ -19,22 +19,14 @@ class FaceMeetApplication : Application() {
 
     @Inject
     lateinit var tokenManager: TokenManager
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
 
         applicationScope.launch  {
-            try {
-                val accessToken = tokenManager.getAccessToken()
-                val refreshToken = tokenManager.getRefreshToken()
-
-                if (!accessToken.isNullOrEmpty()) {
-                    tokenManager.saveTokensSync(accessToken, refreshToken)
-                }
-            } catch (e: Exception) {
-                Log.e("MyApplication", "토큰 캐시 초기화 실패: ${e.message}")
-            }
+            tokenManager.initializeCache()
         }
 
         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)

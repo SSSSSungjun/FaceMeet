@@ -17,15 +17,16 @@ class AuthRepositoryImpl @Inject constructor(
     private val authDataRemoteDataSource: AuthRemoteDataSource
 ) : AuthRepository {
 
-    override suspend fun Onboarding(request: OnboardingRequest): Result<Auth> {
+    override suspend fun onBoarding(request: OnboardingRequest): Result<Auth> {
         return runCatching {
             val response = authDataRemoteDataSource.postOnboarding(request)
+
             if (response.isSuccessful && response.body()?.status == HttpStatus.OK) {
                 val resBody = response.body()?.toDomain()
                     ?: return Result.failure(Exception("Empty response"))
                 Result.success(resBody)
             } else {
-                Result.failure(Exception("Onboarding failed with status: ${response.code()}"))
+                Result.failure(Exception(response.code().toString()))
             }
         }.getOrElse { throwable ->
             throwable.printStackTrace()
@@ -36,10 +37,13 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun refreshToken(request: RefreshTokenRequest): Result<Auth> {
         return runCatching {
             val response = authDataRemoteDataSource.postRefreshToken(request)
+
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!.toDomain())
+                val resBody = response.body()?.toDomain()
+                    ?: return Result.failure(Exception("Empty response"))
+                Result.success(resBody)
             } else {
-                Result.failure(Exception("Refresh token failed with status ${response.code()}"))
+                Result.failure(Exception(response.code().toString()))
             }
         }.getOrElse { throwable ->
             throwable.printStackTrace()
@@ -51,9 +55,11 @@ class AuthRepositoryImpl @Inject constructor(
         return runCatching {
             val response = authDataRemoteDataSource.postLogout()
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!.toDomain())
+                val resBody = response.body()?.toDomain()
+                    ?: return Result.failure(Exception("Empty response"))
+                Result.success(resBody)
             } else {
-                Result.failure(Exception("Logout failed with status ${response.code()}"))
+                Result.failure(Exception(response.code().toString()))
             }
         }.getOrElse { throwable ->
             throwable.printStackTrace()

@@ -1,6 +1,5 @@
-package com.ssafy.facemeet.util
+package com.ssafy.facemeet.ui.web
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Log
@@ -9,6 +8,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.ssafy.facemeet.util.checkForTokens
 
 private const val TAG = "KaKaoLoginWebView"
 internal const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
@@ -18,7 +18,6 @@ fun WebView.configureKakaoWebView(
     onError: (String) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,
-    context : Context
 ) {
     settings.apply {
         javaScriptEnabled = true
@@ -72,7 +71,7 @@ fun WebView.configureKakaoWebView(
 
             url?.let { currentUrl ->
                 if (currentUrl.startsWith(BASE_DOMAIN)) {
-                    Log.d(TAG, "베이스 도메인 도달")
+                    Log.d(TAG, "베이스 도메인 도달 : $url")
                     checkForTokens(view, currentUrl, onTokenExtracted, onError, onDismiss, onCancel)
                 }
             }

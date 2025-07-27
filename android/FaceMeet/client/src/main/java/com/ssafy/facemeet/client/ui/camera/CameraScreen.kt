@@ -11,8 +11,9 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun CameraScreen(
-    onNavigateBack: () -> Unit,
-    onLaunchCamera: () -> Unit
+    onNavigateBack : () -> Unit = {},
+    onLaunchCamera : () -> Unit = {},
+
 ) {
 
     Box(
