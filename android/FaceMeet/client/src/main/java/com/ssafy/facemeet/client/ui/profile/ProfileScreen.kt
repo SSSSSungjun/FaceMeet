@@ -1,8 +1,12 @@
 package com.ssafy.facemeet.client.ui.profile
 
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,13 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,6 +33,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,51 +47,31 @@ import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
-
 @Composable
 fun ProfileScreen(
-    viewModel: FaceAnalyzeViewModel = hiltViewModel()
+    viewModel: FaceAnalyzeViewModel = hiltViewModel(),
+    onHome: () -> Unit,
+    onMatching: () -> Unit
 ) {
     val result by viewModel.result.collectAsState()
-
-    // 실제 분석 결과(result)를 넘기고 싶다면 ProfileScreenContent(result) 로 넘기기
-    ProfileScreenContent()
+    ProfileScreenContent(onHome = onHome, onMatching = onMatching)
 }
 
 @Composable
-fun ProfileScreenContent() {
+fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFAF9F4))
             .padding(24.dp)
-            .verticalScroll(rememberScrollState()) // 스크롤 가능하게!
+            .verticalScroll(rememberScrollState())
     ) {
+        TopBarSection(onHome = onHome)
 
-        Row {
-            Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = "Home",
-                tint = Color(0xFF6B4C27),
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .padding(bottom = 12.dp)
-            )
-
-            Text(
-                text = "관상 분석 결과",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFF4A3C2F),
-                modifier = Modifier
-                    .padding(bottom = 16.dp)
-                    .align(Alignment.CenterVertically)
-            )
-        }
-
+        Spacer(modifier = Modifier.height(30.dp))
 
         Card(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
@@ -99,9 +79,8 @@ fun ProfileScreenContent() {
                     .fillMaxWidth()
                     .background(Color.White)
                     .padding(40.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 이미지 자리 (리소스가 없을 땐 Box로 대체)
                 Image(
                     painter = painterResource(id = R.drawable.temp_face),
                     contentDescription = "분석 결과 이미지",
@@ -118,8 +97,6 @@ fun ProfileScreenContent() {
                     textAlign = TextAlign.Center,
                     lineHeight = 19.sp
                 )
-
-
             }
         }
 
@@ -130,88 +107,191 @@ fun ProfileScreenContent() {
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
-            color = CommonColor.gray500
+            color = CommonColor.Gray500
         )
 
         HorizontalDivider(
-            color = CommonColor.beige200,
+            color = CommonColor.BeigeDark,
             thickness = 1.dp,
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .width(23.dp)
-                .align(alignment = Alignment.CenterHorizontally),
-
-
-            )
+                .align(Alignment.CenterHorizontally)
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        DetailItem("얼굴형", "온화하고 지혜로운 눈매")
-        DetailItem("눈", "온화하고 지혜로운 눈매")
-        DetailItem("👆눈썹", "의지가 강한 형태")
-        DetailItem("👃코", "의지가 강한 형태")
-        DetailItem("👄입", "따뜻한 성격을 나타내는 입술")
+        DetailItem("얼굴형", "온화하고 지혜로운 눈매", R.drawable.nose)
+        DetailItem("눈", "온화하고 지혜로운 눈매", R.drawable.nose)
+        DetailItem("눈썹", "의지가 강한 형태", R.drawable.nose)
+        DetailItem("코", "의지가 강한 형태", R.drawable.nose)
+        DetailItem("턱", "따뜻한 성격을 나타내는 입술", R.drawable.nose)
+        DetailItem("입", "따뜻한 성격을 나타내는 입술", R.drawable.nose)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(2.dp, color = CommonColor.Beige)
+        ) {
+            Surface(
+
+                color = Color(0xFFFDFDFD),
+
+                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    PersonalityDetail("✨ 성격", "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.")
+                    Spacer(modifier = Modifier.height(20.dp))
+                    PersonalityDetail(
+                        "✨ 직업특성",
+                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다."
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    PersonalityDetail(
+                        "✨ 대인관계",
+                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다."
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    PersonalityDetail(
+                        "✨ 삶의방향",
+                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다."
+                    )
+                }
+            }
+        }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFFFF5DC),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(2.dp, Color(0xFFE3D3C0)),
+            color = Color.Transparent, // 중요! Surface 배경색 없애기
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("✨ 총 해석", fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    "배려심이 깊고 인간관계를 중시하는 성향입니다.\n안정적이고 신뢰할 수 있는 파트너를 원합니다.",
-                    fontSize = 13.sp
-                )
+            Box(
+                modifier = Modifier
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFFFFFCEE), Color(0xFFF4E5C9))
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Text(
+                        "종합 해석",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        lineHeight = 19.sp,
+                        color = Color(0xFF8B5A2B),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.",
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp,
+                        color = Color(0xFF8B5A2B)
+                    )
+                }
             }
         }
 
+        Spacer(modifier = Modifier.height(60.dp))
+        Text(
+            "관상 다시보기", fontSize = 13.sp, color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             "관상 프로필을 SNS에 공유해보세요!",
             color = Color(0xFFDC6E2F),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Row(
+            modifier = Modifier
+                .padding(vertical = 8.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            listOf(
+                R.drawable.ic_share_kakao to "Kakao",
+                R.drawable.ic_share_instagram to "Instagram",
+                R.drawable.ic_share_download to "Download"
+            ).forEach { (iconResId, desc) ->
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .size(70.dp)
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = iconResId),
+                        contentDescription = desc,
+                        tint = Color.Unspecified,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+        }
+
+
+        Spacer(modifier = Modifier.height(80.dp))
+        Text(
+            "나와 잘 맞는 사람은 누구일까?", fontSize = 13.sp, color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Row(
-            modifier = Modifier.padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.Chat, contentDescription = "Kakao")
-            }
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.Share, contentDescription = "Instagram")
-            }
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.Download, contentDescription = "Download")
-            }
-        }
-
         Spacer(modifier = Modifier.height(8.dp))
-        Text("나와 잘 맞는 사람은 누구일까?", fontSize = 13.sp, color = Color.Gray)
+        MatchingStartButton(onMatching = onMatching)
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = { },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE97E3A)),
-            shape = RoundedCornerShape(24.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-        ) {
-            Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text("매칭 시작하기", color = Color.White)
-        }
+
     }
 }
 
 @Composable
-fun DetailItem(title: String, desc: String) {
+fun TopBarSection(onHome: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Home,
+            contentDescription = "Home",
+            tint = Color(0xFF6B4C27),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .clickable {
+                    onHome()
+                }
+        )
+        Text(
+            text = "관상 분석 결과",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color(0xFF4A3C2F),
+            modifier = Modifier.align(Alignment.Center),
+            fontSize = 24.sp
+        )
+    }
+}
+
+
+@Composable
+fun DetailItem(
+    title: String,
+    desc: String,
+    @DrawableRes iconResId: Int
+) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = Color(0xFFFDFDFD),
@@ -221,23 +301,37 @@ fun DetailItem(title: String, desc: String) {
             .padding(vertical = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
-            Row (){  Image(
-                painter = painterResource(id = R.drawable.nose),
-                contentDescription = null,
-                modifier = Modifier.size(14.dp)
-            )
-
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(id = iconResId),
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = CommonColor.gray900
-                )  }
-
+                    color = CommonColor.Gray900
+                )
+            }
             Spacer(modifier = Modifier.height(1.dp))
-            Text(text = desc, fontSize = 13.sp, color = CommonColor.gray500)
+            Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray500)
         }
+    }
+}
+
+@Composable
+fun PersonalityDetail(title: String, desc: String) {
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Text(
+            text = title,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = CommonColor.RedBrown
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray900)
     }
 }
 
@@ -245,6 +339,51 @@ fun DetailItem(title: String, desc: String) {
 @Composable
 fun ProfileScreenPreview() {
     MaterialTheme {
-        ProfileScreenContent()
+        ProfileScreenContent(onHome = {}, onMatching = {})
+    }
+}
+
+@Composable
+fun MatchingStartButton(onMatching: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 48.dp) // 그림자 영역 확보
+            .shadow(
+                elevation = 24.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = Color(0x66D2691E),
+                spotColor = Color(0x66D2691E)
+            )
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(Color(0xFFD2691E), Color(0xFFE88D4C))
+                ),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .height(64.dp)
+            .clickable {
+                onMatching()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_heart), // 아이콘 리소스 등록 필요
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 8.dp)
+            )
+            Text(
+                text = "매칭 시작하기",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
     }
 }
