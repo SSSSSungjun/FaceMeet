@@ -17,7 +17,7 @@ import com.ssafy.facemeet.ui.web.WebLoginScreen
 private const val TAG = "MainNavHost"
 
 @Composable
-fun AppNavHost(isLoggedIn : Boolean) {
+fun AppNavHost(isLoggedIn: Boolean) {
 
     val navController = rememberNavController()
     val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ModuleEntryRoute.ClientMainMenu.route
@@ -45,12 +45,17 @@ fun AppNavHost(isLoggedIn : Boolean) {
             val providerString = backStackEntry.arguments?.getString("provider")
             val provider = SocialProvider.from(providerString)
 
-            WebLoginScreen(
+            WebLoginScreen(  // 여기서 정보기입해야 saveToken을 해야할수도
                 provider = provider,
-                onLoginSuccess = { // 로그인 성공 시 Register로 이동 (ClientNavigation 진입점)
-                    navController.navigate(ModuleEntryRoute.Register.route) {
-                        popUpTo(AppRoutes.WebLogin.route) { inclusive = true }
-                    }
+                onLoginSuccess = { isNewUser->
+                    if(isNewUser)
+                        navController.navigate(ModuleEntryRoute.Register.route) {
+                            popUpTo(AppRoutes.WebLogin.route) { inclusive = true }
+                        }
+                    else
+                        navController.navigate(ModuleEntryRoute.ClientMainMenu.route){
+                            popUpTo(AppRoutes.WebLogin.route) { inclusive = true }
+                        }
                 },
                 onLoginFailed = {
                     navController.popBackStack(AppRoutes.Start.route, inclusive = false)

@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.ui.web
 
+import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +32,7 @@ private const val TAG = "WebLoginScreen"
 @Composable
 fun WebLoginScreen(
     provider: SocialProvider,
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (isNew : Boolean) -> Unit,
     onLoginFailed: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -66,11 +67,15 @@ fun WebLoginScreen(
                 AndroidView(
                     factory = {
                         WebView(context).apply {
+                            layoutParams = ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT
+                            )
                             configureKakaoWebView(
-                                onTokenExtracted = { accessToken, refreshToken ->
+                                onTokenExtracted = { accessToken, refreshToken,isNew ->
                                     Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
                                     webViewModel.saveTokens(accessToken, refreshToken)
-                                    onLoginSuccess()
+                                    onLoginSuccess(isNew)
                                 },
                                 onError = { error ->
                                     Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)

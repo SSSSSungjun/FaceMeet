@@ -46,7 +46,7 @@ fun NavGraphBuilder.settingNavHost(
     composable(SettingRoutes.Register.route) {
         val source = navController.previousBackStackEntry?.destination?.route
 
-        RegisterScreen(
+        RegisterScreen( // 여기서 정보기입해야 saveToken을 해야할수도
             onNavigateToNext = {
                 if (source == ClientRoutes.Profile.route)
                     navController.navigate(SettingRoutes.CameraStart.route) {

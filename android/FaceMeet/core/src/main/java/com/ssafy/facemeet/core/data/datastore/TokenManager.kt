@@ -73,7 +73,8 @@ class TokenManager @Inject constructor(
     fun isLoggedInFlow(): Flow<Boolean> {
         return dataStore.data.map { preferences ->
             val accessToken = preferences[ACCESS_TOKEN_KEY]
-            !accessToken.isNullOrEmpty()
+            val refreshToken = preferences[REFRESH_TOKEN_KEY]
+            !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()
         }
     }
 

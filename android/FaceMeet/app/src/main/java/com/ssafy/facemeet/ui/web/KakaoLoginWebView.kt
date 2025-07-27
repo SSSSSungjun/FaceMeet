@@ -14,7 +14,7 @@ private const val TAG = "KaKaoLoginWebView"
 internal const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
 
 fun WebView.configureKakaoWebView(
-    onTokenExtracted: (accessToken: String, refreshToken: String) -> Unit,
+    onTokenExtracted: (accessToken: String, refreshToken: String, isNew :Boolean) -> Unit,
     onError: (String) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,

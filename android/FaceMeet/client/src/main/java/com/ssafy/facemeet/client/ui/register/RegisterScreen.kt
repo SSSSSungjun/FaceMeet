@@ -70,7 +70,9 @@ fun RegisterScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(16.dp),
-            onClick = {}
+            onClick = {
+                onNavigateToNext()
+            }
         ) {
             Text("확인")
         }
