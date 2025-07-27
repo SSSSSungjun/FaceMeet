@@ -16,6 +16,15 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
     }
 
     composable(ClientRoutes.Profile.route) {
-        ProfileScreen()
+        ProfileScreen(onHome = {
+            navController.navigate(ClientRoutes.MainMenu.route) {
+                popUpTo(ClientRoutes.MainMenu.route) { inclusive = false }
+                launchSingleTop = true
+            }
+
+        }, onMatching = {
+            navController.navigate(ClientRoutes.MatchingLoading.route) {
+            }
+        })
     }
 }
