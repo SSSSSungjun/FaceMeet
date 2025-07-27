@@ -21,7 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
-import com.ssafy.facemeet.client.ui.chat.ChattingListScreen
+import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
@@ -60,11 +60,17 @@ fun MainScreenWithBottomNav(
             }
 
             composable(BottomNavRoutes.ChattingList.route) {
-                ChattingListScreen(){}
+                ChattingListScreen(
+                    onItemClick = {
+                        mainNavController.navigate(ClientRoutes.Chat.createRoute("abc123"))
+                    } // chatItems의 Id값 정도 인자값으로 넘기면 됨
+                )
             }
 
-            composable(BottomNavRoutes.MyPage.route) {
-                MyPageScreen()
+            composable(BottomNavRoutes.Matching.route) {
+                MyPageScreen(
+
+                )
             }
         }
     }

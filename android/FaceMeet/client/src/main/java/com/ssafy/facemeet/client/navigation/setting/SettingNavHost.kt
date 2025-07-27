@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -25,18 +24,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import toMultipartBodyPart
 
 private const val TAG = "ClientNavigation"
-
-@SuppressLint("UnrememberedGetBackStackEntry")
-@Composable
-fun NavBackStackEntry.getCameraViewModels(navController: NavHostController): Pair<CameraShotViewModel, FaceAnalyzeViewModel> {
-    val rootEntry = remember(navController) {
-        navController.getBackStackEntry(SettingRoutes.CameraStart.route)
-    }
-    return Pair(
-        viewModel(rootEntry),
-        hiltViewModel(rootEntry)
-    )
-}
 
 @SuppressLint("StateFlowValueCalledInComposition")
 fun NavGraphBuilder.settingNavHost(
@@ -130,9 +117,8 @@ fun NavGraphBuilder.settingNavHost(
         )
     }
 
-    composable(SettingRoutes.FaceTestLoading.route) { entry ->
-        val (_, analyzeVM) = entry.getCameraViewModels(navController)
-
+    composable(SettingRoutes.FaceTestLoading.route) {
+        val (_, analyzeVM) = it.getCameraViewModels(navController)
         FaceTestLoadingScreen(
             viewModel = analyzeVM,
             onNavigateToResult = {
@@ -145,3 +131,14 @@ fun NavGraphBuilder.settingNavHost(
 
 
 }
+
+@SuppressLint("UnrememberedGetBackStackEntry")
+@Composable
+fun NavBackStackEntry.getCameraViewModels(navController: NavHostController): Pair<CameraShotViewModel, FaceAnalyzeViewModel> {
+    val rootEntry = remember(navController) {
+        navController.getBackStackEntry(SettingRoutes.CameraStart.route)
+    }
+    val cameraVM: CameraShotViewModel = hiltViewModel(rootEntry)
+    val analyzeVM: FaceAnalyzeViewModel = hiltViewModel(rootEntry)
+    return Pair(cameraVM, analyzeVM)
+} //viewmodel 꺼내야하므로, 근데 hilt쓰는 마당에 이거 생략 해서 어떻게 될거 같다는 생각도  있습니다.

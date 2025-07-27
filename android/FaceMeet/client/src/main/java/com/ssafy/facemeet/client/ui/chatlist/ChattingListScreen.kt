@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.ui.chat
+package com.ssafy.facemeet.client.ui.chatlist
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -40,7 +40,7 @@ data class ChatItem(
 @Composable
 fun ChattingListScreen(
     chatItems: List<ChatItem> = dummyList, //UI보려고
-    onItemClick: (ChatItem) -> Unit
+    onItemClick: (ChatItem) -> Unit = {},
 ) {
     Column(
         modifier=Modifier.fillMaxSize()
