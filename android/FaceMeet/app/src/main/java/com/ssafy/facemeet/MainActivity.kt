@@ -8,9 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
-import com.ssafy.facemeet.core.navigation.Routes
-import com.ssafy.facemeet.navigation.MainNavHost
+import com.ssafy.facemeet.navigation.AppNavHost
 import com.ssafy.facemeet.theme.FacemeetTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,15 +24,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val isLoggedIn by mainViewModel.isLoggedIn.collectAsStateWithLifecycle()
-            val navController = rememberNavController()
+            Log.d(TAG, "onCreate 토큰: ${isLoggedIn}")
             FacemeetTheme {
-                Log.d(TAG, "onCreate: $isLoggedIn")
-                when (isLoggedIn) {
-                    true -> MainNavHost(navController, Routes.Setting.route) // 이것도 임시
-                    false -> MainNavHost(navController, Routes.Login.route)
-                }
+                AppNavHost(isLoggedIn)
             }
         }
+
+
 
     }
 }

@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun CameraScreen(
-    onNavigateBack: () -> Unit,
-    onLaunchCamera: () -> Unit
+    onNavigateToNext : () -> Unit = {},
+    onNavigateToBack : () -> Unit = {}
 ) {
 
     Box(
@@ -20,7 +20,7 @@ fun CameraScreen(
         contentAlignment = Alignment.Center
     ) {
         Column {
-            Button(onClick = onLaunchCamera) {
+            Button(onClick = onNavigateToNext) {
                 Text("click")
             }
 

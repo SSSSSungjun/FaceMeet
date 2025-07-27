@@ -20,9 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -39,8 +39,9 @@ import com.ssafy.facemeet.client.ui.camera.component.FaceGuideOverlay
 fun CameraCaptureScreen(
     mode: CaptureMode,
     vm: CameraShotViewModel = viewModel(),
-    onNavigateBack: () -> Unit,
-    onCaptured: () -> Unit
+    onNavigateToNext : () -> Unit = {},
+    onNavigateToBack : () -> Unit = {}
+
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -89,7 +90,7 @@ fun CameraCaptureScreen(
                             )
 
                             if (mode == CaptureMode.FRONT) vm.setFront(fixed) else vm.setSide(fixed)
-                            onCaptured()
+                            onNavigateToNext()
                         }
 
                         override fun onError(exc: ImageCaptureException) {
