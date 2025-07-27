@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+
 android {
     namespace = "com.ssafy.facemeet.client"
     compileSdk = 35
@@ -51,7 +52,9 @@ dependencies {
     // 권한 처리용 (선택)
     implementation(libs.accompanist.permissions)
 
-    //
+    // icon
     implementation(libs.androidx.material.icons.extended)
 
+    // json
+    implementation(libs.gson)
 }

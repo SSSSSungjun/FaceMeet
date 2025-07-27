@@ -14,8 +14,12 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
-val kakaoNativeKey = localProperties.getProperty("kakao_native_app_key") ?: error("kakao_native_app_key not found in local.properties")
+val kakaoNativeKey = localProperties.getProperty("kakao_native_app_key")
+    ?: error("kakao_native_app_key not found in local.properties")
 val kakaoScheme = "kakao$kakaoNativeKey"
+
+val baseUrl =
+    localProperties.getProperty("BASE_URL") ?: error("BASE_URL not found in local.properties")
 
 android {
     namespace = "com.ssafy.facemeet"
@@ -32,7 +36,7 @@ android {
         manifestPlaceholders["kakaoScheme"] = kakaoScheme
 
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
-
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
 //        resValue("string", "kakao_app_key", kakaoNativeKey)
 //        resValue("string", "kakao_scheme", kakaoScheme)
     }
@@ -85,9 +89,8 @@ dependencies {
     implementation("com.kakao.sdk:v2-user:2.21.5")
     implementation("com.kakao.sdk:v2-common:2.21.5")
 
-    implementation ("androidx.webkit:webkit:1.14.0")
-    implementation ("com.google.code.gson:gson:2.11.0")
-
+    implementation("androidx.webkit:webkit:1.14.0")
+    implementation("com.google.code.gson:gson:2.11.0")
 
 
 }
