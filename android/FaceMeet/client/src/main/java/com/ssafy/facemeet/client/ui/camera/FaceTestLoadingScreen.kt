@@ -17,14 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import com.ssafy.facemeet.client.navigation.ClientRoutes
 
 @Composable
 fun FaceTestLoadingScreen(
-    navController: NavHostController,
-    viewModel: FaceAnalyzeViewModel = hiltViewModel()
+    viewModel: FaceAnalyzeViewModel,
+    onNavigateToResult: () -> Unit
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val result by viewModel.result.collectAsState()
@@ -34,9 +31,7 @@ fun FaceTestLoadingScreen(
     // ✅ 결과 도착 시 → 결과 화면으로 이동
     LaunchedEffect(result) {
         if (result != null) {
-            navController.navigate(ClientRoutes.FaceTestResult.route) {
-                popUpTo(ClientRoutes.Setting.route) { inclusive = false }
-            }
+            onNavigateToResult()
         }
     }
 

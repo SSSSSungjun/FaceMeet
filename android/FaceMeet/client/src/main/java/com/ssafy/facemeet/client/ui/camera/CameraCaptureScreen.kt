@@ -39,7 +39,7 @@ import com.ssafy.facemeet.client.ui.camera.component.FaceGuideOverlay
 fun CameraCaptureScreen(
     mode: CaptureMode,
     vm: CameraShotViewModel = viewModel(),
-    onNavigateToNext : () -> Unit = {},
+    onCaptured : () -> Unit = {},
     onNavigateToBack : () -> Unit = {}
 
 ) {
@@ -90,7 +90,7 @@ fun CameraCaptureScreen(
                             )
 
                             if (mode == CaptureMode.FRONT) vm.setFront(fixed) else vm.setSide(fixed)
-                            onNavigateToNext()
+                            onCaptured()
                         }
 
                         override fun onError(exc: ImageCaptureException) {

@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.client.ui.mainmenu
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,9 @@ private const val TAG = "MainMenuScreen"
 
 
 @Composable
-fun MainMenuScreen() {
+fun MainMenuScreen(
+    onProfile : () -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -101,6 +104,9 @@ fun MainMenuScreen() {
                         fontSize = 14.sp
                     )
                     Text(
+                        modifier=Modifier.clickable {
+                            onProfile()
+                        },
                         text = "내 정보 보기",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,

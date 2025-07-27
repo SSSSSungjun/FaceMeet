@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.ui.camera
+package com.ssafy.facemeet.client.ui.profile
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
+
 
 @Composable
-fun FaceTestResultScreen(
+fun ProfileScreen(
     viewModel: FaceAnalyzeViewModel = hiltViewModel()
 ) {
     val result by viewModel.result.collectAsState()

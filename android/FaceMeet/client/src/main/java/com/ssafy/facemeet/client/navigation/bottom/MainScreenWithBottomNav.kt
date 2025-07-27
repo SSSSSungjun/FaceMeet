@@ -45,7 +45,9 @@ fun MainScreenWithBottomNav(
         ) {
             composable(BottomNavRoutes.Home.route) {
                 MainMenuScreen(
-
+                    onProfile = {
+                        mainNavController.navigate(ClientRoutes.Profile.route)
+                    }
                 )
             }
 

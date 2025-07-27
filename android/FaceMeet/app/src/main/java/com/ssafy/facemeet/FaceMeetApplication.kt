@@ -32,7 +32,7 @@ class FaceMeetApplication : Application() {
         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
 
         var keyHash = Utility.getKeyHash(this)
-        Log.d(TAG, "onCreate: ${keyHash}")
+        Log.d(TAG, "onCreate: $keyHash")
 
 
     }
