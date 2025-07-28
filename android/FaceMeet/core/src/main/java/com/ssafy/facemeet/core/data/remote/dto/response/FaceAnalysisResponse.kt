@@ -18,8 +18,6 @@ data class FaceAnalysisResponse(
     val careerTraits: String,
     @SerializedName("life_direction")
     val lifeDirection: String,
-    @SerializedName("physiognomy_keywords")
-    val physiognomyKeywords: List<String>,
     @SerializedName("summary_analysis")
     val summaryAnalysis: String
 )
