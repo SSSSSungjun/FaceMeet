@@ -38,11 +38,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun RegisterScreen(
-    onNavigateToNext : () -> Unit = {},
-    onNavigateToBack : () -> Unit = {}
+    onNavigateToNext: () -> Unit = {},
+    onNavigateToBack: () -> Unit = {}
 ) {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomEnd
     ) {
         // 중앙 컨텐츠
         Column(
@@ -58,24 +59,17 @@ fun RegisterScreen(
                 fontSize = 18.sp
             )
 
-            Spacer(modifier=Modifier.padding(40.dp))
+            Spacer(modifier = Modifier.padding(40.dp))
             InputNickName()
-            Spacer(modifier=Modifier.padding(30.dp))
+            Spacer(modifier = Modifier.padding(30.dp))
             InputAddress()
         }
 
-        // 하단 버튼
-        Button(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
-            onClick = {
-                onNavigateToNext()
-            }
-        ) {
-            Text("확인")
-        }
+        InputBtns({
+
+        }, {
+
+        })
     }
 }
 
@@ -90,8 +84,8 @@ fun InputNickName() {
         var searchText by rememberSaveable { mutableStateOf("") }
 
         Text(
-            text="닉네임",
-            modifier=Modifier.padding(bottom = 5.dp)
+            text = "닉네임",
+            modifier = Modifier.padding(bottom = 5.dp)
         )
         OutlinedTextField(
             value = searchText,
@@ -254,6 +248,39 @@ fun DropdownButton(
             }
         }
     }
+}
+
+@Composable
+fun InputBtns(
+    onNavigateToNext: () -> Unit = {},
+    onNavigateToBack: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Button(
+            modifier = Modifier
+                .weight(1f)
+                .padding(16.dp),
+            onClick = {
+                onNavigateToNext()
+            }
+        ) {
+            Text("확인")
+        }
+
+        Button(
+            modifier = Modifier
+                .weight(1f)
+                .padding(16.dp),
+            onClick = {
+                onNavigateToNext()
+            }
+        ) {
+            Text("확인")
+        }
+    }
+
 }
 
 @Preview(showBackground = true)

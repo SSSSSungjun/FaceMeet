@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
+import com.ssafy.facemeet.client.ui.chat.ChattingScreen
 import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.profile.ProfileScreen
 
