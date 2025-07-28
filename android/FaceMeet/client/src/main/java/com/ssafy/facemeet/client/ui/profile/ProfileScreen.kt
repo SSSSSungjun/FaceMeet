@@ -1,5 +1,12 @@
 package com.ssafy.facemeet.client.ui.profile
 
+import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -36,6 +43,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +55,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.core.util.constant.CommonColor
+import java.io.File
+import java.io.FileOutputStream
 
 @Composable
 fun ProfileScreen(
@@ -221,33 +232,8 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            modifier = Modifier
-                .padding(vertical = 8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            listOf(
-                R.drawable.ic_share_kakao to "Kakao",
-                R.drawable.ic_share_instagram to "Instagram",
-                R.drawable.ic_share_download to "Download"
-            ).forEach { (iconResId, desc) ->
-                IconButton(
-                    onClick = {},
-                    modifier = Modifier
-                        .size(70.dp)
-                        .padding(horizontal = 8.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = iconResId),
-                        contentDescription = desc,
-                        tint = Color.Unspecified,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-        }
 
+        shareRow()
 
         Spacer(modifier = Modifier.height(80.dp))
         Text(
@@ -340,6 +326,81 @@ fun PersonalityDetail(title: String, desc: String) {
     }
 }
 
+@Composable
+fun shareRow() {
+    val context = LocalContext.current
+    val shareOptions = listOf(
+        ShareOption(R.drawable.ic_share_kakao, "Kakao") {
+            Log.d("SHARE", "Kakao 클릭됨")
+        },
+        ShareOption(R.drawable.ic_share_instagram, "Instagram") {
+            Log.d("SHARE", "Instagram 클릭됨")
+            val file = createImageFile(context)
+            if (file != null) {
+                captureComposableOffscreen(context as Activity, content = {
+                    FaceResultCard(
+                        title = "알 수 없상",
+                        description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+                        faceImage = painterResource(id = R.drawable.temp_face)
+                    )
+                }) { bitmap ->
+                    val file = saveBitmapToCacheFile(context, bitmap)
+                    shareToInstagramStory(context, file)
+                }
+
+
+            } else {
+                Toast.makeText(context, "이미지 생성 실패", Toast.LENGTH_SHORT).show()
+            }
+        },
+        ShareOption(R.drawable.ic_share_download, "Download") {
+            val activity = context as Activity
+
+            captureComposableOffscreen(activity, content = {
+                FaceResultCard(
+                    title = "알 수 없상",
+                    description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+                    faceImage = painterResource(id = R.drawable.temp_face)
+                )
+            }) { bitmap ->
+                val success = saveBitmapToGallery(context, bitmap)
+                Toast.makeText(
+                    context,
+                    if (success) "갤러리에 저장되었습니다!" else "저장에 실패했습니다.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+    )
+
+    Row(
+        modifier = Modifier
+            .padding(vertical = 8.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        shareOptions.forEach { option ->
+            IconButton(
+                onClick = option.onClick,
+                modifier = Modifier
+                    .size(70.dp)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = option.iconResId),
+                    contentDescription = option.description,
+                    tint = Color.Unspecified,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+    }
+
+
+}
+
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProfileScreenPreview() {
@@ -390,5 +451,41 @@ fun MatchingStartButton(onMatching: () -> Unit) {
                 color = Color.White
             )
         }
+    }
+}
+
+
+data class ShareOption(
+    val iconResId: Int,
+    val description: String,
+    val onClick: () -> Unit
+)
+
+fun createImageFile(context: Context): File? {
+    val fileName = "shared_image_${System.currentTimeMillis()}.png"
+    val file = File(context.cacheDir, fileName)
+
+    return try {
+        // 비트맵 생성 예시: 흰 배경에 텍스트 쓰기
+        val bitmap = Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(CommonColor.Gray500.toArgb())
+        val paint = Paint().apply {
+            color = CommonColor.BeigeDark.toArgb()
+            textSize = 40f
+            isAntiAlias = true
+        }
+        canvas.drawText("FaceMeet 인스타 공유", 50f, 250f, paint)
+
+        // 파일로 저장
+        val fos = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+        fos.flush()
+        fos.close()
+
+        file
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }

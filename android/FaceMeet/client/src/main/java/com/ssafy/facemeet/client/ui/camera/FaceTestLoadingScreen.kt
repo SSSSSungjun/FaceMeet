@@ -42,12 +42,24 @@ fun FaceTestLoadingScreen(
         }
     }
 
-    // ✅ 로딩 화면 UI
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
-            Spacer(Modifier.height(16.dp))
-            Text("관상 분석 중입니다...", fontSize = 18.sp)
+    // ✅ 상태에 따라 다른 UI 보여주기
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when {
+            isLoading -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
+                    Text("관상 분석 중입니다...", fontSize = 18.sp)
+                }
+            }
+
+            error != null -> {
+                Text("에러가 발생했습니다.", fontSize = 16.sp)
+            }
+
+            else -> {
+                // 아무것도 안 보여줌 (혹시 result 도착 전 잠깐 비는 상태 방지용)
+            }
         }
     }
 }
