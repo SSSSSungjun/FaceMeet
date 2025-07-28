@@ -10,7 +10,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.ui.camera.CameraCaptureScreen
 import com.ssafy.facemeet.client.ui.camera.CameraScreen
@@ -19,40 +21,56 @@ import com.ssafy.facemeet.client.ui.camera.CaptureMode
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.client.ui.camera.FaceTestLoadingScreen
 import com.ssafy.facemeet.client.ui.camera.ShotPreviewScreen
+import com.ssafy.facemeet.client.ui.map.MapScreen
 import com.ssafy.facemeet.client.ui.register.RegisterScreen
 import toMultipartBodyPart
 
-private const val TAG = "ClientNavigation"
+private const val TAG = "SettingNavHost"
 
 @SuppressLint("StateFlowValueCalledInComposition")
 fun NavGraphBuilder.settingNavHost(
     navController: NavHostController,
 ) {
-    // 정보 기입 화면
-    composable(SettingRoutes.Register.route) {
-        val source = navController.previousBackStackEntry?.destination?.route
+        composable(
+            route = SettingRoutes.Register.route,
+            arguments = listOf(
+                navArgument("source") {
+                    type = NavType.StringType
+                    defaultValue = "direct"
+                }
+            )
+        ) { backStackEntry ->
+            val source = backStackEntry.arguments?.getString("source") ?: "direct"
+            Log.d(TAG, "Register 진입 - source: $source")
 
-        RegisterScreen( // 여기서 정보기입해야 saveToken을 해야할수도
-            onNavigateToNext = {
-                if (source == ClientRoutes.Profile.route)
-                    navController.navigate(SettingRoutes.CameraStart.route) {
-                        popUpTo(SettingRoutes.Register.route) { inclusive = true }
-                    }
-                else
-                    navController.navigate(SettingRoutes.CameraStart.route)
-            },
-            onNavigateToBack = {
+            RegisterScreen(
+                onNavigateToNext = {
+                    if (source == ClientRoutes.MyPage.route) // "profile" 문자열로 비교
+                        navController.navigate(ClientRoutes.MyPage.route)
+                    else
+                        navController.navigate(SettingRoutes.CameraStart.route)
+                },
+                onNavigateToBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) }
+            )
+        }
+
+    composable(SettingRoutes.Map.route) {
+        MapScreen(
+            toBack={
                 navController.popBackStack()
-            }
+            },
+            toAccept={
+                navController.popBackStack()
+            },
         )
     }
-
     composable(SettingRoutes.CameraStart.route) {
         CameraScreen(
-            onLaunchCamera =
-                {
-                    navController.navigate(SettingRoutes.FrontCamera.route)
-                })
+            onLaunchCamera = { navController.navigate(SettingRoutes.FrontCamera.route) }
+        )
     }
 
     composable(SettingRoutes.FrontCamera.route) {

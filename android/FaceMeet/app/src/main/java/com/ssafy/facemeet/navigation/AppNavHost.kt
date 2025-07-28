@@ -45,17 +45,19 @@ fun AppNavHost(isLoggedIn: Boolean) {
             val providerString = backStackEntry.arguments?.getString("provider")
             val provider = SocialProvider.from(providerString)
 
-            WebLoginScreen(  // 여기서 정보기입해야 saveToken을 해야할수도
-                provider = provider,
-                onLoginSuccess = { isNewUser->
-                    if(isNewUser)
-                        navController.navigate(ModuleEntryRoute.Register.route) {
-                            popUpTo(AppRoutes.WebLogin.route) { inclusive = true }
+                WebLoginScreen(
+                    provider = provider,
+                    onLoginSuccess = { isNewUser ->
+                        if (!isNewUser) {
+                            navController.navigate(ModuleEntryRoute.Register.route) {
+                                popUpTo(AppRoutes.Start.route) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        } else {
+                        navController.navigate(ModuleEntryRoute.ClientMainMenu.route) {
+                            popUpTo(AppRoutes.Start.route) { inclusive = true }
                         }
-                    else
-                        navController.navigate(ModuleEntryRoute.ClientMainMenu.route){
-                            popUpTo(AppRoutes.WebLogin.route) { inclusive = true }
-                        }
+                    }
                 },
                 onLoginFailed = {
                     navController.popBackStack(AppRoutes.Start.route, inclusive = false)
