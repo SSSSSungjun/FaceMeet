@@ -21,6 +21,8 @@ val kakaoScheme = "kakao$kakaoNativeKey"
 val baseUrl =
     localProperties.getProperty("BASE_URL") ?: error("BASE_URL not found in local.properties")
 
+val googleMapAppKey = localProperties.getProperty("google_map_app_key") ?:error("googleMapAppKey Unknown Error")
+
 android {
     namespace = "com.ssafy.facemeet"
     compileSdk = 35
@@ -34,6 +36,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["kakaoScheme"] = kakaoScheme
+        manifestPlaceholders["googleMapApiKey"] = googleMapAppKey
 
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
@@ -91,6 +94,11 @@ dependencies {
 
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("com.google.code.gson:gson:2.11.0")
+
+    // 구글 맵
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
 
 
 }

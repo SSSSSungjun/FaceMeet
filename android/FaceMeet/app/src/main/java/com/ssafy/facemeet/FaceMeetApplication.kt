@@ -33,7 +33,6 @@ class FaceMeetApplication : Application() {
 
         var keyHash = Utility.getKeyHash(this)
         Log.d(TAG, "onCreate: $keyHash")
-
-
     }
 }
+
