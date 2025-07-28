@@ -1,6 +1,5 @@
 package com.ssafy.facemeet.client.ui.register
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,48 +17,28 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-private const val TAG = "RegisterScreen"
-
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun RegisterScreen(
-    onNavigateToNext: () -> Unit = {},
-    onNavigateToBack: () -> Unit = {},
-    onNavigateToMap: () -> Unit = {},
-    viewModel: RegisterViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
-
-    LaunchedEffect(navigationEvent) {
-        when (navigationEvent) {
-            RegisterNaviEvent.ToCamera -> {
-                onNavigateToNext()
-            }
-            RegisterNaviEvent.ToMap -> {
-                onNavigateToMap()
-            }
-            RegisterNaviEvent.ToBack -> {
-                onNavigateToBack()
-            }
-            null -> {
-                Log.d(TAG, "NavigationEvent is null - staying on screen")
-            }
-        }
-    }
+fun RegisterScreenPreview() {
+    var nickname by remember { mutableStateOf("") }
+    var selectedAddress by remember { mutableStateOf("") }
+    var hasLocation by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -81,28 +60,60 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.padding(40.dp))
 
-            InputNickName(
-                nickname = uiState.nickname,
-                onNicknameChange = viewModel::updateNickname
+            PreviewInputNickName(
+                nickname = nickname,
+                onNicknameChange = { nickname = it }
             )
 
             Spacer(modifier = Modifier.padding(30.dp))
 
-            InputAddress(
-                selectedAddress = uiState.selectedAddress,
-                hasLocation = uiState.hasLocation,
+            PreviewInputAddress(
+                selectedAddress = selectedAddress,
+                hasLocation = hasLocation,
+                onLocationClick = {
+                    hasLocation = !hasLocation
+                    selectedAddress = if (hasLocation) "서울시 강남구 테헤란로 123" else ""
+                }
             )
 
+            val ageRange: IntRange = 20..30
+            RangeSlider(
+                value = ageRange.first.toFloat()..ageRange.last.toFloat(),
+                onValueChange = { },
+                valueRange = 18f..65f,
+                steps = 46 // 18~65 사이 각 나이별 스텝
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "${ageRange.start.toInt()}세",
+                    color = Color(0xFF2196F3),
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "${ageRange.endInclusive.toInt()}세",
+                    color = Color(0xFF2196F3),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
         }
-        InputBtns(
-            uiState.isValid()
+
+        PreviewInputBtns(
+            isEnabled = nickname.isNotBlank() && selectedAddress.isNotBlank(),
+            onConfirm = { /* 확인 버튼 클릭 */ },
+            onCancel = { /* 취소 버튼 클릭 */ }
         )
     }
-
 }
 
 @Composable
-fun InputNickName(
+fun PreviewInputNickName(
     nickname: String,
     onNicknameChange: (String) -> Unit
 ) {
@@ -139,17 +150,23 @@ fun InputNickName(
 }
 
 @Composable
-fun InputAddress(
+fun PreviewInputAddress(
     selectedAddress: String,
     hasLocation: Boolean,
-    viewModel: RegisterViewModel =hiltViewModel()
+    onLocationClick: () -> Unit
 ) {
-
-    Column {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+    ) {
+        Text(
+            text = "주소",
+            modifier = Modifier.padding(bottom = 5.dp)
+        )
         OutlinedTextField(
             value = selectedAddress,
-            onValueChange = {
-            }, // 읽기 전용
+            onValueChange = { }, // 읽기 전용
             readOnly = true,
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
@@ -163,9 +180,7 @@ fun InputAddress(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = "Location",
                     tint = if (hasLocation) Color.Green else Color.Gray,
-                    modifier = Modifier.clickable {
-                        viewModel.navigateToCamera()
-                    }
+                    modifier = Modifier.clickable { onLocationClick() }
                 )
             },
             colors = TextFieldDefaults.colors(
@@ -181,9 +196,10 @@ fun InputAddress(
 }
 
 @Composable
-fun InputBtns(
+fun PreviewInputBtns(
     isEnabled: Boolean,
-    viewModel: RegisterViewModel =hiltViewModel()
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -192,10 +208,7 @@ fun InputBtns(
             modifier = Modifier
                 .weight(1f)
                 .padding(16.dp),
-            onClick = {
-                viewModel.navigateToCamera()
-                viewModel.submitRegistration()
-            },
+            onClick = onConfirm,
             enabled = isEnabled
         ) {
             Text("확인")
@@ -205,9 +218,7 @@ fun InputBtns(
             modifier = Modifier
                 .weight(1f)
                 .padding(16.dp),
-            onClick = {
-                viewModel.navigateToBack()
-            }
+            onClick = onCancel
         ) {
             Text("취소")
         }

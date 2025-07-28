@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.client.ui.map.MapDataStore
 import com.ssafy.facemeet.core.data.datastore.TokenManager
+import com.ssafy.facemeet.core.data.remote.dto.request.OnboardingRequest
 import com.ssafy.facemeet.core.domain.usecase.OnboardingUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -67,19 +68,24 @@ class RegisterViewModel @Inject constructor(
             Log.d("RegisterViewModel", "등록: 닉네임=${state.nickname}, 위도=${mapDataStore.latitude}, 경도=${mapDataStore.longitude}")
             viewModelScope.launch {
                 tokenManager.completeRegistration(true)
+                onBoarding()
             }
             mapDataStore.clear()
         }
     }
 
-//    fun onBoarding(){
-//        val request = OnboardingRequest(
-//            nickname = _uiState.value.nickname,
-//            latitude = mapDataStore.latitude!!,
-//            longitude = mapDataStore.longitude!!,
-//            address = mapDataStore.address!!
-//        )
-//        onboardingUseCase.invoke()
-//    }
+    suspend fun onBoarding(){
+        val request = OnboardingRequest(
+            nickname = _uiState.value.nickname,
+            address = mapDataStore.address,
+            latitude = mapDataStore.latitude,
+            longitude = mapDataStore.longitude,
+            preferAgeLower = TODO(),
+            preferAgeUpper = TODO()
+        )
+
+        onboardingUseCase.invoke(request)
+
+    }
 
 }
