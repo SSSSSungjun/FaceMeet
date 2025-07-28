@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,8 +27,7 @@ class FaceAnalyzeViewModel @Inject constructor(
 
     fun analyzeFace(
         frontImage: MultipartBody.Part,
-        sideImage: MultipartBody.Part,
-        userId: RequestBody?
+        sideImage: MultipartBody.Part
     ) {
         viewModelScope.launch {
             try {
@@ -37,7 +35,7 @@ class FaceAnalyzeViewModel @Inject constructor(
                 _isLoading.value = true
                 _error.value = null
 
-                val result = analyzeFaceUseCase(frontImage, sideImage, userId)
+                val result = analyzeFaceUseCase(frontImage, sideImage)
 
                 Log.d("FlowCheck", "✅ UseCase 실행 완료")
 

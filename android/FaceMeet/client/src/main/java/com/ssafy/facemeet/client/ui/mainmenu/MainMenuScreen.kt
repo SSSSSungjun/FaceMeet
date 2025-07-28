@@ -35,7 +35,7 @@ private const val TAG = "MainMenuScreen"
 
 @Composable
 fun MainMenuScreen(
-    onProfile : () -> Unit = {},
+    onProfile: () -> Unit = {}, onMyPage: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -59,34 +59,44 @@ fun MainMenuScreen(
                 .padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF0E3C3)),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ){
+        ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-
-                Box(
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .size(180.dp)
-                        .background(Color.White, shape = CircleShape),
-                    contentAlignment = Alignment.Center
+                        .clickable {
+                            onProfile()
+                        }
+                        .fillMaxWidth()
+                        .padding(12.dp)
                 ) {
-                    Text("얼굴 이미지", color = Color.Gray)
+                    Box(
+                        modifier = Modifier
+                            .size(180.dp)
+                            .background(Color.White, shape = CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("얼굴 이미지", color = Color.Gray)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "김철수님",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+
+                    Text(
+                        text = "알 수 없음",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "김철수님",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-
-                Text(
-                    text = "알 수 없음",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -104,8 +114,8 @@ fun MainMenuScreen(
                         fontSize = 14.sp
                     )
                     Text(
-                        modifier=Modifier.clickable {
-                            onProfile()
+                        modifier = Modifier.clickable {
+                            onMyPage()
                         },
                         text = "내 정보 보기",
                         fontWeight = FontWeight.Bold,
@@ -162,6 +172,6 @@ fun MainMenuScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun MainMenuScreenPreview(){
+fun MainMenuScreenPreview() {
     MainMenuScreen()
 }

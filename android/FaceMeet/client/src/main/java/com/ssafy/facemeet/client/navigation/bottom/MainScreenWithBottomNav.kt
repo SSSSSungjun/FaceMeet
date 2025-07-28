@@ -30,7 +30,7 @@ import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
 fun MainScreenWithBottomNav(
     mainNavController: NavHostController,
     initialTab: String = BottomNavRoutes.Home.route
-){
+) {
     val bottomNavController = rememberNavController()
 
     Scaffold(
@@ -47,6 +47,9 @@ fun MainScreenWithBottomNav(
                 MainMenuScreen(
                     onProfile = {
                         mainNavController.navigate(ClientRoutes.Profile.route)
+                    },
+                    onMyPage = {
+                        bottomNavController.navigate(BottomNavRoutes.MyPage.route)
                     }
                 )
             }
@@ -67,7 +70,7 @@ fun MainScreenWithBottomNav(
                 )
             }
 
-            composable(BottomNavRoutes.Matching.route) {
+            composable(BottomNavRoutes.MyPage.route) {
                 MyPageScreen(
 
                 )

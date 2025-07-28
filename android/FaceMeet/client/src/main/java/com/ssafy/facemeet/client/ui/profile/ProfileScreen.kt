@@ -51,14 +51,15 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 fun ProfileScreen(
     viewModel: FaceAnalyzeViewModel = hiltViewModel(),
     onHome: () -> Unit,
-    onMatching: () -> Unit
+    onMatching: () -> Unit,
+    onRetry: () -> Unit
 ) {
     val result by viewModel.result.collectAsState()
-    ProfileScreenContent(onHome = onHome, onMatching = onMatching)
+    ProfileScreenContent(onHome, onMatching, onRetry)
 }
 
 @Composable
-fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit) {
+fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -204,7 +205,11 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit) {
         Text(
             "관상 다시보기", fontSize = 13.sp, color = Color.Gray,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    onRetry()
+                }
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
@@ -339,7 +344,7 @@ fun PersonalityDetail(title: String, desc: String) {
 @Composable
 fun ProfileScreenPreview() {
     MaterialTheme {
-        ProfileScreenContent(onHome = {}, onMatching = {})
+        ProfileScreenContent({}, {}, {})
     }
 }
 

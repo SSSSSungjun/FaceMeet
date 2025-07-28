@@ -13,14 +13,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.ui.camera.CameraCaptureScreen
+import com.ssafy.facemeet.client.ui.camera.CameraScreen
 import com.ssafy.facemeet.client.ui.camera.CameraShotViewModel
 import com.ssafy.facemeet.client.ui.camera.CaptureMode
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.client.ui.camera.FaceTestLoadingScreen
 import com.ssafy.facemeet.client.ui.camera.ShotPreviewScreen
 import com.ssafy.facemeet.client.ui.register.RegisterScreen
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
 import toMultipartBodyPart
 
 private const val TAG = "ClientNavigation"
@@ -48,6 +47,14 @@ fun NavGraphBuilder.settingNavHost(
         )
     }
 
+    composable(SettingRoutes.CameraStart.route) {
+        CameraScreen(
+            onLaunchCamera =
+                {
+                    navController.navigate(SettingRoutes.FrontCamera.route)
+                })
+    }
+
     composable(SettingRoutes.FrontCamera.route) {
         val (cameraVM, _) = it.getCameraViewModels(navController)
         CameraCaptureScreen(
@@ -56,7 +63,7 @@ fun NavGraphBuilder.settingNavHost(
             onCaptured = { navController.navigate(SettingRoutes.FrontPreview.route) },
             onNavigateToBack = { navController.popBackStack() },
 
-        )
+            )
     }
 
     composable(SettingRoutes.FrontPreview.route) {
@@ -92,11 +99,10 @@ fun NavGraphBuilder.settingNavHost(
 
                     val frontPart = front.toMultipartBodyPart("image1")
                     val sidePart = side.toMultipartBodyPart("side_image1")
-                    val userId = "user123".toRequestBody("text/plain".toMediaTypeOrNull())
 
                     Log.d("FlowCheck", "✅ Multipart 생성 완료")
 
-                    analyzeVM.analyzeFace(frontPart, sidePart, userId)
+                    analyzeVM.analyzeFace(frontPart, sidePart)
 
                     navController.navigate(SettingRoutes.FaceTestLoading.route) {
                         popUpTo(SettingRoutes.Register.route) { inclusive = false }

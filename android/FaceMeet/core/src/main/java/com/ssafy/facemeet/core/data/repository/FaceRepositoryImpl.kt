@@ -1,25 +1,23 @@
 package com.ssafy.facemeet.core.data.repository
 
 import android.util.Log
-import com.google.gson.JsonObject
 import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.domain.repository.FaceRepository
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import javax.inject.Inject
 
 class FaceRepositoryImpl @Inject constructor(
     private val faceService: FaceService
 ) : FaceRepository {
     override suspend fun analyzeFace(
-        image1: MultipartBody.Part,
-        sideImage1: MultipartBody.Part,
-        userId: RequestBody?
-    ): Result<JsonObject> {
+        frontImage: MultipartBody.Part,
+        sideImage: MultipartBody.Part
+    ): Result<ResponseBody> {
         return try {
             Log.d("FlowCheck", "🟡 analyzeFace() 호출됨")
 
-            val response = faceService.postAnalyze(image1, sideImage1, userId)
+            val response = faceService.postAnalyze(frontImage, sideImage)
 
             Log.d("FlowCheck", "🟢 응답 수신. code=${response.code()}, success=${response.isSuccessful}")
 
