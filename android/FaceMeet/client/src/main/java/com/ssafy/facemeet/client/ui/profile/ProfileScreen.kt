@@ -7,6 +7,8 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -54,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
+import com.ssafy.facemeet.client.util.hasWritePermission
 import com.ssafy.facemeet.core.util.constant.CommonColor
 import java.io.File
 import java.io.FileOutputStream
@@ -329,33 +333,10 @@ fun PersonalityDetail(title: String, desc: String) {
 @Composable
 fun shareRow() {
     val context = LocalContext.current
-    val shareOptions = listOf(
-        ShareOption(R.drawable.ic_share_kakao, "Kakao") {
-            Log.d("SHARE", "Kakao 클릭됨")
-        },
-        ShareOption(R.drawable.ic_share_instagram, "Instagram") {
-            Log.d("SHARE", "Instagram 클릭됨")
-            val file = createImageFile(context)
-            if (file != null) {
-                captureComposableOffscreen(context as Activity, content = {
-                    FaceResultCard(
-                        title = "알 수 없상",
-                        description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
-                        faceImage = painterResource(id = R.drawable.temp_face)
-                    )
-                }) { bitmap ->
-                    val file = saveBitmapToCacheFile(context, bitmap)
-                    shareToInstagramStory(context, file)
-                }
+    val activity = context as Activity
 
-
-            } else {
-                Toast.makeText(context, "이미지 생성 실패", Toast.LENGTH_SHORT).show()
-            }
-        },
-        ShareOption(R.drawable.ic_share_download, "Download") {
-            val activity = context as Activity
-
+    val saveToGallery = remember {
+        {
             captureComposableOffscreen(activity, content = {
                 FaceResultCard(
                     title = "알 수 없상",
@@ -371,7 +352,42 @@ fun shareRow() {
                 ).show()
             }
         }
+    }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            saveToGallery()
+        } else {
+            Toast.makeText(context, "저장 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val shareOptions = listOf(
+        ShareOption(R.drawable.ic_share_kakao, "Kakao") {
+            Log.d("SHARE", "Kakao 클릭됨")
+        },
+        ShareOption(R.drawable.ic_share_instagram, "Instagram") {
+            Log.d("SHARE", "Instagram 클릭됨")
+            captureComposableOffscreen(activity, content = {
+                FaceResultCard(
+                    title = "알 수 없상",
+                    description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+                    faceImage = painterResource(id = R.drawable.temp_face)
+                )
+            }) { bitmap ->
+                val file = saveBitmapToCacheFile(context, bitmap)
+                shareToInstagramStory(context, file)
+            }
+        },
+        ShareOption(R.drawable.ic_share_download, "Download") {
+            if (hasWritePermission(context)) {
+                saveToGallery()
+            } else {
+                permissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
     )
 
     Row(
@@ -395,10 +411,7 @@ fun shareRow() {
                 )
             }
         }
-
     }
-
-
 }
 
 @Preview(showBackground = true, showSystemUi = true)
