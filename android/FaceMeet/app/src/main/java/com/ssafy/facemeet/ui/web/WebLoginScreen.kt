@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 
 const val BASE_KAKAO_URL = "http://i13d201.p.ssafy.io/oauth2/authorization/kakao"
 const val BASE_NAVER_URL = "http://i13d201.p.ssafy.io/oauth2/authorization/naver"
@@ -31,11 +32,13 @@ private const val TAG = "WebLoginScreen"
 @Composable
 fun WebLoginScreen(
     provider: SocialProvider,
-    onLoginSuccess: (isNew : Boolean) -> Unit,
+    onLoginSuccess: (isNew: Boolean) -> Unit,
     onLoginFailed: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    viewModel: WebLoginViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+
 
     Scaffold(
         topBar = {
@@ -70,9 +73,11 @@ fun WebLoginScreen(
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
                             configureKakaoWebView(
-                                onTokenExtracted = { accessToken, refreshToken,isNew ->
+                                onTokenExtracted = { accessToken, refreshToken, isNew ->
                                     Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
                                     onLoginSuccess(isNew)
+                                    viewModel.saveToken(refreshToken, accessToken,false)
+                                    //viewModel.saveToken(refreshToken, accessToken,!isNew)
                                 },
                                 onError = { error ->
                                     Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)

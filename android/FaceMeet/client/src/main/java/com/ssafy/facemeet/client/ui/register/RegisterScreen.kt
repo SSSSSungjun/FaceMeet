@@ -25,9 +25,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,30 +45,36 @@ fun RegisterScreen(
     onNavigateToNext: () -> Unit = {},
     onNavigateToBack: () -> Unit = {},
     onNavigateToMap: () -> Unit = {},
-    viewModel: RegisterViewModel = hiltViewModel()
+    viewModel: RegisterViewModel = hiltViewModel(),
 ) {
-    CompositionLocalProvider(LocalRegisterViewModel provides viewModel) {
-        val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
 
-        LaunchedEffect(navigationEvent) {
-            when (navigationEvent) {
-                RegisterNaviEvent.ToCamera -> {
-                    onNavigateToNext()
-                }
-                RegisterNaviEvent.ToMap -> {
-                    onNavigateToMap()
-                }
-                RegisterNaviEvent.ToBack -> {
-                    onNavigateToBack()
-                }
-                null -> {
-                    Log.d(TAG, "NavigationEvent is null - staying on screen")
-                }
+    LaunchedEffect(navigationEvent) {
+        when (navigationEvent) {
+            RegisterNaviEvent.ToCamera -> {
+                onNavigateToNext()
+            }
+
+            RegisterNaviEvent.ToMap -> {
+                onNavigateToMap()
+            }
+
+            RegisterNaviEvent.ToBack -> {
+                onNavigateToBack()
+            }
+
+            null -> {
+                Log.d(TAG, "NavigationEvent is null - staying on screen")
             }
         }
+    }
 
+    CompositionLocalProvider(LocalRegisterViewModel provides viewModel) {
         Box(
-            modifier = Modifier.fillMaxSize().systemBarsPadding(),
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding(),
             contentAlignment = Alignment.BottomEnd
         ) {
             Column(
@@ -81,41 +84,62 @@ fun RegisterScreen(
                     .align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val textState = rememberSaveable { mutableStateOf("") }
                 Text(
                     text = "환영합니다",
                     fontSize = 18.sp
                 )
 
                 Spacer(modifier = Modifier.padding(40.dp))
-                InputNickName()
+
+                InputNickName(
+                    nickname = uiState.nickname,
+                    onNicknameChange = viewModel::updateNickname
+                )
+
                 Spacer(modifier = Modifier.padding(30.dp))
-                InputAddress()
+
+                InputAddress(
+                    selectedAddress = uiState.selectedAddress,
+                    hasLocation = uiState.hasLocation,
+                    onNavigateToMap = viewModel::navigateToMap
+                )
+
+                // 디버깅용 위치 정보 표시
+                if (uiState.hasLocation) {
+                    Text(
+                        text = "✅ 위치 선택 완료",
+                        fontSize = 12.sp,
+                        color = Color.Green,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
 
-            InputBtns()
+            InputBtns(
+                uiState.isValid()
+            )
         }
     }
 }
 
-
 @Composable
-fun InputNickName() {
+fun InputNickName(
+    nickname: String,
+    onNicknameChange: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        var searchText by rememberSaveable { mutableStateOf("") }
-
         Text(
             text = "닉네임",
             modifier = Modifier.padding(bottom = 5.dp)
         )
         OutlinedTextField(
-            value = searchText,
-            onValueChange = { searchText = it },
+            value = nickname,
+            onValueChange = onNicknameChange,
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(
@@ -123,7 +147,6 @@ fun InputNickName() {
                     color = Color.Gray
                 )
             },
-
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color(0xFF2196F3),
                 unfocusedIndicatorColor = Color(0xFFE0E0E0),
@@ -138,44 +161,49 @@ fun InputNickName() {
 
 @Composable
 fun InputAddress(
-    searchText: String = " ",
-    onSearchTextChange: (String) -> Unit = {},
+    selectedAddress: String,
+    hasLocation: Boolean,
+    onNavigateToMap: () -> Unit
 ) {
-    val viewModel = LocalRegisterViewModel.current
-    OutlinedTextField(
-        value = searchText,
-        onValueChange = onSearchTextChange,
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = {
-            Text(
-                text = "경상북도 진평동",
-                color = Color.Gray
-            )
-        },
-        trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = "Location",
-                tint = Color.Gray,
-                modifier = Modifier.clickable {
-                    viewModel.navigateToMap()
-                }
-
-            )
-        },
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color(0xFF2196F3),
-            unfocusedIndicatorColor = Color(0xFFE0E0E0),
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White
-        ),
-        shape = RoundedCornerShape(8.dp),
-        singleLine = true
-    )
+    Column {
+        OutlinedTextField(
+            value = selectedAddress,
+            onValueChange = {
+            }, // 읽기 전용
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text(
+                    text = "주소를 선택하세요",
+                    color = Color.Gray
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Location",
+                    tint = if (hasLocation) Color.Green else Color.Gray,
+                    modifier = Modifier.clickable {
+                        onNavigateToMap()
+                    }
+                )
+            },
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color(0xFF2196F3),
+                unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
+    }
 }
 
 @Composable
-fun InputBtns() {
+fun InputBtns(
+    isEnabled: Boolean
+) {
     val viewModel = LocalRegisterViewModel.current
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -186,7 +214,9 @@ fun InputBtns() {
                 .padding(16.dp),
             onClick = {
                 viewModel.navigateToCamera()
-            }
+                viewModel.submitRegistration()
+            },
+            enabled = isEnabled
         ) {
             Text("확인")
         }
@@ -202,7 +232,6 @@ fun InputBtns() {
             Text("취소")
         }
     }
-
 }
 
 @Preview(showBackground = true)

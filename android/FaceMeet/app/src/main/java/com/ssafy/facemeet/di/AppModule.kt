@@ -11,8 +11,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
     @Provides
     @Singleton
     @Named("isDebug")
     fun provideIsDebug(): Boolean = BuildConfig.DEBUG
-} //삭제해도 될듯
+
+    @Provides
+    @Singleton
+    @Named("googleMapsApiKey")
+    fun provideGoogleMapsApiKey(): String = BuildConfig.MAPS_API_KEY
+}

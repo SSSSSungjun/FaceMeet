@@ -53,7 +53,7 @@ fun NavGraphBuilder.settingNavHost(
                 onNavigateToBack = {
                     navController.popBackStack()
                 },
-                onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) }
+                onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) },
             )
         }
 

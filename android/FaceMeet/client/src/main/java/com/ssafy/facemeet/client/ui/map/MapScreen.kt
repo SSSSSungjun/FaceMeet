@@ -1,7 +1,10 @@
 package com.ssafy.facemeet.client.ui.map
 
 import android.Manifest
+import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +32,10 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
@@ -36,14 +43,15 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 private const val TAG = "MapScreen"
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
     toBack: () -> Unit = {},
     toAccept: () -> Unit = {},
-    viewModel: MapViewModel= hiltViewModel()
+    viewModel: MapViewModel = hiltViewModel(),
 ) {
-
+    val mapData = viewModel.mapDataStore
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
 
     LaunchedEffect(navigationEvent) {
@@ -52,7 +60,7 @@ fun MapScreen(
                 Log.d(TAG, "MapScreen: toBack")
                 toBack()
             }
-            MapNaviEvent.ToAccept->{
+            MapNaviEvent.ToAccept -> {
                 Log.d(TAG, "MapScreen: toAccept")
                 toAccept()
             }
@@ -61,6 +69,12 @@ fun MapScreen(
     }
 
     val context = LocalContext.current
+    val mapKey = viewModel.apiKey
+    LaunchedEffect(Unit) {
+        if (!Places.isInitialized()) {
+            Places.initialize(context.applicationContext, mapKey)
+        }
+    }
 
     val permissionState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -80,7 +94,7 @@ fun MapScreen(
         return
     }
 
-    // 권한 승인됨 → 위치 가져오기 및 지도 표시
+    // 권한 승인됨
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
@@ -100,11 +114,44 @@ fun MapScreen(
             }
         }
     }
+
+    val placePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val intent = result.data
+            intent?.let {
+                val place = Autocomplete.getPlaceFromIntent(intent)
+                val latLng = place.location
+                val address = place.formattedAddress
+                if (latLng != null && address != null) {
+                    cameraPositionState.position = CameraPosition.fromLatLngZoom(latLng, 15f)
+
+                    mapData.setLocation(
+                        lat = latLng.latitude,
+                        lng = latLng.longitude,
+                        addr = address
+                    )
+
+                }
+            }
+        }
+    }
+
+
+    // 검색 버튼 클릭 시 실행 함수
+    fun openPlaceSearch() {
+        val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
+        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+            .build(context)
+        placePickerLauncher.launch(intent)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-    ){
+    ) {
         GoogleMap(
             modifier = Modifier
                 .fillMaxWidth()
@@ -120,42 +167,46 @@ fun MapScreen(
         }
 
         Row(
-            modifier= Modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight(Alignment.CenterVertically)
-        ){
+        ) {
             Button(
-                modifier=Modifier
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp),
+                onClick = { openPlaceSearch() }
+            ) {
+                Text("검색")
+            }
+
+            Button(
+                modifier = Modifier
                     .weight(1f)
                     .padding(16.dp),
                 onClick = {
                     viewModel.navigateToAccept()
                 }
-            ){
+            ) {
                 Text("확인")
             }
 
             Button(
-                modifier=Modifier
+                modifier = Modifier
                     .weight(1f)
                     .padding(16.dp),
                 onClick = {
                     viewModel.navigateToBack()
                 }
-            ){
+            ) {
                 Text("취소")
             }
         }
     }
-
-
 }
-
-
-
 
 @Preview(showBackground = true)
 @Composable
-fun MapScreenPreview(){
+fun MapScreenPreview() {
     MapScreen()
 }

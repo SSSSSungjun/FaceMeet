@@ -8,9 +8,13 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Named
 
 @HiltViewModel
-class MapViewModel @Inject constructor() : ViewModel() {
+class MapViewModel @Inject constructor(
+    @Named("googleMapsApiKey") val apiKey: String,
+    val mapDataStore: MapDataStore
+) : ViewModel() {
 
     private val _naviEvent = MutableSharedFlow<MapNaviEvent?>()
     val naviEvent: SharedFlow<MapNaviEvent?> = _naviEvent.asSharedFlow()

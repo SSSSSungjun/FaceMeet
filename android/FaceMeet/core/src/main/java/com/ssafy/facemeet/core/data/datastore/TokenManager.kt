@@ -1,7 +1,9 @@
 package com.ssafy.facemeet.core.data.datastore
 
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +24,7 @@ class TokenManager @Inject constructor(
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
+        private val REGISTRATION_COMPLETE = booleanPreferencesKey("registration_complete")
     }
 
     // 메모리 캐시
@@ -34,14 +37,23 @@ class TokenManager @Inject constructor(
 
     suspend fun saveTokens(
         accessToken: String,
-        refreshToken: String? = null
+        refreshToken: String? = null,
+        isRegistration : Boolean = false
     ) {
         dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
             refreshToken?.let { preferences[REFRESH_TOKEN_KEY] = it }
+            preferences[REGISTRATION_COMPLETE] = isRegistration
         }
         cachedAccessToken = accessToken
         refreshToken?.let { cachedRefreshToken = it }
+    }
+
+    suspend fun completeRegistration(isRegistration: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[REGISTRATION_COMPLETE] = true // 등록 완료 표시
+        }
+        Log.d("TokenDataStore", "등록 완료 정보 저장")
     }
 
     suspend fun getAccessToken(): String? {
@@ -56,12 +68,6 @@ class TokenManager @Inject constructor(
         }
     }
 
-    suspend fun hasToken(): Boolean {
-        val accessToken = getAccessToken()
-        val refreshToken = getRefreshToken()
-        return !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()
-    }
-
     suspend fun clearTokens() {
         dataStore.edit { preferences ->
             preferences.clear()
@@ -74,7 +80,8 @@ class TokenManager @Inject constructor(
         return dataStore.data.map { preferences ->
             val accessToken = preferences[ACCESS_TOKEN_KEY]
             val refreshToken = preferences[REFRESH_TOKEN_KEY]
-            !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()
+            val isRegistration =preferences[REGISTRATION_COMPLETE]
+            !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty() && isRegistration == true
         }
     }
 

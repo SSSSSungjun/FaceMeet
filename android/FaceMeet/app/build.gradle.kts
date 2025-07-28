@@ -40,6 +40,7 @@ android {
 
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        buildConfigField("String", "MAPS_API_KEY", "\"$googleMapAppKey\"")
 //        resValue("string", "kakao_app_key", kakaoNativeKey)
 //        resValue("string", "kakao_scheme", kakaoScheme)
     }

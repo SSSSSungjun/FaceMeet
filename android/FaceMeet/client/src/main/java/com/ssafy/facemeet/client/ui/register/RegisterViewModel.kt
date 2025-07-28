@@ -1,18 +1,30 @@
 package com.ssafy.facemeet.client.ui.register
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ssafy.facemeet.client.ui.map.MapDataStore
 import com.ssafy.facemeet.core.data.datastore.TokenManager
+import com.ssafy.facemeet.core.domain.usecase.OnboardingUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val mapDataStore: MapDataStore,
+    private val onboardingUseCase: OnboardingUseCase
+
 ) : ViewModel () {
+
+    init {
+        updateAddressFromStore()
+    }
 
     private val _naviEvent = MutableSharedFlow<RegisterNaviEvent?>()
     val naviEvent: SharedFlow<RegisterNaviEvent?> = _naviEvent
@@ -35,17 +47,39 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
-    fun saveTokens(accessToken: String, refreshToken: String) {
-        viewModelScope.launch {
-            try {
-                tokenManager.saveTokens(
-                    accessToken = accessToken,
-                    refreshToken = refreshToken
-                )
+    private val _uiState = MutableStateFlow(RegUiState())
+    val uiState: StateFlow<RegUiState> = _uiState
 
-            } catch (e: Exception) {
+    fun updateAddressFromStore() {
+        _uiState.value = _uiState.value.copy(
+            selectedAddress = mapDataStore.address.toString(),
+            hasLocation = mapDataStore.hasLocation()
+        )
+    }
+
+    fun updateNickname(nickname: String) {
+        _uiState.value = _uiState.value.copy(nickname = nickname)
+    }
+
+    fun submitRegistration() {
+        val state = _uiState.value
+        if (state.isValid()) {
+            Log.d("RegisterViewModel", "등록: 닉네임=${state.nickname}, 위도=${mapDataStore.latitude}, 경도=${mapDataStore.longitude}")
+            viewModelScope.launch {
+                tokenManager.completeRegistration(true)
             }
+            mapDataStore.clear()
         }
     }
+
+//    fun onBoarding(){
+//        val request = OnboardingRequest(
+//            nickname = _uiState.value.nickname,
+//            latitude = mapDataStore.latitude!!,
+//            longitude = mapDataStore.longitude!!,
+//            address = mapDataStore.address!!
+//        )
+//        onboardingUseCase.invoke()
+//    }
 
 }
