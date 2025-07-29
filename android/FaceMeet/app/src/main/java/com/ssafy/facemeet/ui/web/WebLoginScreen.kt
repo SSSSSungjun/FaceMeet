@@ -75,9 +75,9 @@ fun WebLoginScreen(
                             configureKakaoWebView(
                                 onTokenExtracted = { accessToken, refreshToken, isNew ->
                                     Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
-                                    onLoginSuccess(isNew)
-                                    //viewModel.saveToken(refreshToken, accessToken)
 
+                                    viewModel.saveToken(refreshToken, accessToken)
+                                    onLoginSuccess(isNew)
                                 },
                                 onError = { error ->
                                     Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)

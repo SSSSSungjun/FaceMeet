@@ -37,19 +37,23 @@ private const val TAG = "MainMenuScreen"
 fun MainMenuScreen(
     onProfile: () -> Unit = {}, onMyPage: () -> Unit = {}
 ) {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F2E9))  // 배경색 비슷하게 조정
             .padding(horizontal = 16.dp, vertical = 20.dp)
     ) {
+        Row {
+            Text(
+                text = "상견례",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            Text(text = "알림")
+        }
 
-        Text(
-            text = "상견례",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
 
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -175,3 +179,5 @@ fun MainMenuScreen(
 fun MainMenuScreenPreview() {
     MainMenuScreen()
 }
+
+
