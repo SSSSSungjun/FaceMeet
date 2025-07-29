@@ -76,8 +76,8 @@ fun WebLoginScreen(
                                 onTokenExtracted = { accessToken, refreshToken, isNew ->
                                     Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
                                     onLoginSuccess(isNew)
-                                    viewModel.saveToken(refreshToken, accessToken,false)
-                                    //viewModel.saveToken(refreshToken, accessToken,!isNew)
+                                    //viewModel.saveToken(refreshToken, accessToken)
+
                                 },
                                 onError = { error ->
                                     Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)

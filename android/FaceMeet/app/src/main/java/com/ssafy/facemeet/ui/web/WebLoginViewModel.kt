@@ -12,9 +12,9 @@ class WebLoginViewModel @Inject constructor(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
-    fun saveToken(refreshToken : String, accessToken: String,isRegistration : Boolean){
+    fun saveToken(refreshToken : String, accessToken: String){
         viewModelScope.launch {
-            tokenManager.saveTokens(accessToken,refreshToken,isRegistration)
+            tokenManager.saveTokens(accessToken,refreshToken)
         }
     }
 }

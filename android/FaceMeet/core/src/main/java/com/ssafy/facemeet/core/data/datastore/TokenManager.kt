@@ -35,7 +35,6 @@ class TokenManager @Inject constructor(
     suspend fun saveTokens(
         accessToken: String,
         refreshToken: String? = null,
-        isRegistration : Boolean = false
     ) {
         dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
