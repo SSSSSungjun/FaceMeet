@@ -20,7 +20,6 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun onBoarding(request: OnboardingRequest): Result<Auth> {
         return runCatching {
             val response = authDataRemoteDataSource.postOnboarding(request)
-
             if (response.isSuccessful && response.body()?.status == HttpStatus.OK) {
                 val resBody = response.body()?.toDomain()
                     ?: return Result.failure(Exception("Empty response"))

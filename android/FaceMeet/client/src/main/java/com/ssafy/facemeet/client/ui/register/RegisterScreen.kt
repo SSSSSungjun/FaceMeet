@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -26,7 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,6 +44,8 @@ fun RegisterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
+
+    LaunchedEffect(Unit) {viewModel.updateAddressFromStore() }
 
     LaunchedEffect(navigationEvent) {
         when (navigationEvent) {
@@ -91,6 +94,13 @@ fun RegisterScreen(
             InputAddress(
                 selectedAddress = uiState.selectedAddress,
                 hasLocation = uiState.hasLocation,
+            )
+
+            Spacer(modifier = Modifier.padding(20.dp))
+
+            InputAgeRange(
+                selectedAgeRange = uiState.selectedAgeRange,
+                onAgeRangeChange = viewModel::updateAgeRange
             )
 
         }
@@ -164,7 +174,7 @@ fun InputAddress(
                     contentDescription = "Location",
                     tint = if (hasLocation) Color.Green else Color.Gray,
                     modifier = Modifier.clickable {
-                        viewModel.navigateToCamera()
+                        viewModel.navigateToMap()
                     }
                 )
             },
@@ -177,6 +187,54 @@ fun InputAddress(
             shape = RoundedCornerShape(8.dp),
             singleLine = true
         )
+    }
+}
+
+@Composable
+fun InputAgeRange(
+    selectedAgeRange: IntRange,
+    onAgeRangeChange: (Int,Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Text(
+            text = "선호 나이 범위",
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        RangeSlider(
+            value = selectedAgeRange.first.toFloat()..selectedAgeRange.last.toFloat(),
+            onValueChange = { floatRange ->
+                onAgeRangeChange(
+                    floatRange.start.toInt(),
+                    floatRange.endInclusive.toInt()
+                )
+            },
+            valueRange = 20f..65f,
+            steps = 44, //
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "${selectedAgeRange.first}세",
+                color = Color(0xFF2196F3),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = "${selectedAgeRange.last}세",
+                color = Color(0xFF2196F3),
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 

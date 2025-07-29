@@ -3,11 +3,8 @@ package com.ssafy.facemeet.client.ui.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
-// 1. 간단한 데이터 저장소
 @Singleton
 class MapDataStore @Inject constructor() {
-
     var address: String? = null
     var latitude: Double? = null
     var longitude: Double? = null

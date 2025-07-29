@@ -9,7 +9,7 @@ import retrofit2.http.POST
 
 interface AuthApiService {
 
-    @POST("api/v1/auth/onboarding")
+    @POST("/api/v1/auth/onboarding")
     suspend fun postOnboarding(@Body request: OnboardingRequest): Response<AuthResponse<Unit>>
 
     @POST("/api/v1/auth/refresh")
