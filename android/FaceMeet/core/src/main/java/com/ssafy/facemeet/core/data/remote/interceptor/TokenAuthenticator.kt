@@ -27,7 +27,7 @@ class TokenAuthenticator @Inject constructor(
 
             Log.d("TokenAuthenticator", "현재 accessToken : $currentAccessToken\n현재 refreshToken : $currentRefreshToken")
 
-            synchronized(this) { // 토큰이 이미 갱신되었는지 확인
+            synchronized(this) {
                 if (currentAccessToken != response.request.header("Authorization")?.removePrefix("Bearer ")) {
                     Log.d("TokenAuthenticator", "토큰이 이미 갱신되었으므로 요청 재시도")
                     return response.request.createRequestWithRenewedToken(currentAccessToken)

@@ -32,12 +32,13 @@ private const val TAG = "WebLoginScreen"
 @Composable
 fun WebLoginScreen(
     provider: SocialProvider,
-    onLoginSuccess: (isNew : Boolean) -> Unit,
+    onLoginSuccess: (isNew: Boolean) -> Unit,
     onLoginFailed: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    viewModel: WebLoginViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val webViewModel: WebViewModel = hiltViewModel()
+
 
     Scaffold(
         topBar = {
@@ -72,10 +73,11 @@ fun WebLoginScreen(
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
                             configureKakaoWebView(
-                                onTokenExtracted = { accessToken, refreshToken,isNew ->
+                                onTokenExtracted = { accessToken, refreshToken, isNew ->
                                     Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
-                                    webViewModel.saveTokens(accessToken, refreshToken)
                                     onLoginSuccess(isNew)
+                                    viewModel.saveToken(refreshToken, accessToken,false)
+                                    //viewModel.saveToken(refreshToken, accessToken,!isNew)
                                 },
                                 onError = { error ->
                                     Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)

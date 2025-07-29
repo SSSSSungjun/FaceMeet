@@ -34,7 +34,8 @@ class TokenManager @Inject constructor(
 
     suspend fun saveTokens(
         accessToken: String,
-        refreshToken: String? = null
+        refreshToken: String? = null,
+        isRegistration : Boolean = false
     ) {
         dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
@@ -54,12 +55,6 @@ class TokenManager @Inject constructor(
         return cachedRefreshToken ?: dataStore.data.first()[REFRESH_TOKEN_KEY]?.also {
             cachedRefreshToken = it
         }
-    }
-
-    suspend fun hasToken(): Boolean {
-        val accessToken = getAccessToken()
-        val refreshToken = getRefreshToken()
-        return !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()
     }
 
     suspend fun clearTokens() {

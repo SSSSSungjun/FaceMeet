@@ -58,4 +58,10 @@ dependencies {
     // json
     implementation(libs.gson)
 
+    implementation("com.google.maps.android:maps-compose:4.3.3") // 구글 맵
+    implementation("com.google.accompanist:accompanist-permissions:0.35.0-alpha")//권한
+
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.libraries.places:places:4.4.1")
 }

@@ -21,7 +21,6 @@ object NetworkModule {
 
     private const val BASE_URL = BuildConfig.BASE_URL
 
-
     @Provides
     @Singleton
     fun provideAuthInterceptor(
