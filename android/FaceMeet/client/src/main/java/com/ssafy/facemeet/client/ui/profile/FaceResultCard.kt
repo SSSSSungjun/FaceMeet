@@ -39,6 +39,7 @@ import java.io.FileOutputStream
 
 @Composable
 fun FaceResultCard(
+    name: String,
     title: String,
     description: String,
     faceImage: Painter
@@ -87,6 +88,11 @@ fun FaceResultCard(
                     contentScale = ContentScale.Fit
                 )
                 Text(
+                        name, fontWeight = FontWeight.Bold, fontSize = 20.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+                )
+                Text(
                     title, fontWeight = FontWeight.Bold, fontSize = 20.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -114,6 +120,7 @@ fun FaceResultCardPreview() {
     val sampleImage = painterResource(id = R.drawable.temp_face) // 🔁 리소스가 없다면 다른 drawable로 바꿔주세요
 
     FaceResultCard(
+        name="김철수",
         title = "알 수 없상",
         description = "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.",
         faceImage = sampleImage

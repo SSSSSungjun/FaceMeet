@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.ui.profile
+package com.ssafy.facemeet.client.ui.profile.ShareUtil
 
 import android.content.ContentValues
 import android.content.Context
