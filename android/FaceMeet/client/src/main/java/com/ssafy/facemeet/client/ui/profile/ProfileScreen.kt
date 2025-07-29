@@ -1,14 +1,7 @@
 package com.ssafy.facemeet.client.ui.profile
 
 import android.app.Activity
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -31,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,13 +34,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,10 +51,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
+import com.ssafy.facemeet.client.ui.profile.ShareUtil.saveBitmapToGallery
+import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareImageWithText
+import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareToInstagramStory
 import com.ssafy.facemeet.client.util.hasWritePermission
+import com.ssafy.facemeet.client.util.rememberPermissionLauncher
 import com.ssafy.facemeet.core.util.constant.CommonColor
-import java.io.File
-import java.io.FileOutputStream
 
 @Composable
 fun ProfileScreen(
@@ -331,61 +327,111 @@ fun PersonalityDetail(title: String, desc: String) {
 }
 
 @Composable
+fun shareResultCardContent(): @Composable () -> Unit {
+    return {
+        FaceResultCard(
+            name = "김철수님",
+            title = "알 수 없상",
+            description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+            faceImage = painterResource(id = R.drawable.temp_face)
+        )
+    }
+}
+
+@Composable
 fun shareRow() {
     val context = LocalContext.current
     val activity = context as Activity
+    val loadingIndex = remember { mutableStateOf<Int?>(null) }
 
-    val saveToGallery = remember {
-        {
-            captureComposableOffscreen(activity, content = {
+    val permissionLauncher = rememberPermissionLauncher {
+        loadingIndex.value = 0
+        captureComposableOffscreen(
+            activity = activity,
+            content = {
                 FaceResultCard(
+                    name = "김철수님",
                     title = "알 수 없상",
                     description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
                     faceImage = painterResource(id = R.drawable.temp_face)
                 )
-            }) { bitmap ->
-                val success = saveBitmapToGallery(context, bitmap)
-                Toast.makeText(
-                    context,
-                    if (success) "갤러리에 저장되었습니다!" else "저장에 실패했습니다.",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
+        ) { bitmap ->
+            loadingIndex.value = null
+            val success = saveBitmapToGallery(context, bitmap)
+            Toast.makeText(
+                context,
+                if (success) "갤러리에 저장되었습니다!" else "저장에 실패했습니다.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            saveToGallery()
-        } else {
-            Toast.makeText(context, "저장 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    val shareOptions = listOf(
-        ShareOption(R.drawable.ic_share_kakao, "Kakao") {
-            Log.d("SHARE", "Kakao 클릭됨")
+    val shareOptions = listOf<ShareOption>(
+        ShareOption(R.drawable.ic_share_download, "Download") {
+            if (hasWritePermission(context)) {
+                loadingIndex.value = 0
+                captureComposableOffscreen(
+                    activity = activity,
+                    content = {
+                        FaceResultCard(
+                            name = "김철수님",
+                            title = "알 수 없상",
+                            description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+                            faceImage = painterResource(id = R.drawable.temp_face)
+                        )
+                    }
+                ) { bitmap ->
+                    loadingIndex.value = null
+                    val success = saveBitmapToGallery(context, bitmap)
+                    Toast.makeText(
+                        context,
+                        if (success) "갤러리에 저장되었습니다!" else "저장에 실패했습니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else {
+                permissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
         },
         ShareOption(R.drawable.ic_share_instagram, "Instagram") {
-            Log.d("SHARE", "Instagram 클릭됨")
-            captureComposableOffscreen(activity, content = {
-                FaceResultCard(
-                    title = "알 수 없상",
-                    description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
-                    faceImage = painterResource(id = R.drawable.temp_face)
-                )
-            }) { bitmap ->
+            loadingIndex.value = 1
+            captureComposableOffscreen(
+                activity = activity,
+                content = {
+                    FaceResultCard(
+                        name = "김철수님",
+                        title = "알 수 없상",
+                        description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+                        faceImage = painterResource(id = R.drawable.temp_face)
+                    )
+                }
+            ) { bitmap ->
+                loadingIndex.value = null
                 val file = saveBitmapToCacheFile(context, bitmap)
                 shareToInstagramStory(context, file)
             }
         },
-        ShareOption(R.drawable.ic_share_download, "Download") {
-            if (hasWritePermission(context)) {
-                saveToGallery()
-            } else {
-                permissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        ShareOption(R.drawable.ic_share_common, "Share") {
+            loadingIndex.value = 2
+            captureComposableOffscreen(
+                activity = activity,
+                content = {
+                    FaceResultCard(
+                        name = "김철수님",
+                        title = "알 수 없상",
+                        description = "배려심이 깊고 인간관계를 중시하는 성향입니다.",
+                        faceImage = painterResource(id = R.drawable.temp_face)
+                    )
+                }
+            ) { bitmap ->
+                loadingIndex.value = null
+                val file = saveBitmapToCacheFile(context, bitmap)
+                shareImageWithText(
+                    context,
+                    file,
+                    "지금 관상 보러가기: https://play.google.com/store/apps/details?id=com.ssafy.facemeet"
+                )
             }
         }
     )
@@ -396,19 +442,29 @@ fun shareRow() {
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
-        shareOptions.forEach { option ->
-            IconButton(
-                onClick = option.onClick,
-                modifier = Modifier
-                    .size(70.dp)
-                    .padding(horizontal = 8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = option.iconResId),
-                    contentDescription = option.description,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.fillMaxSize()
-                )
+        shareOptions.forEachIndexed { index, option ->
+            Box(contentAlignment = Alignment.Center) {
+                if (loadingIndex.value == index) {
+                    CircularProgressIndicator(
+                        color = Color.Gray,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(32.dp)
+                    )
+                } else {
+                    IconButton(
+                        onClick = option.onClick,
+                        modifier = Modifier
+                            .size(70.dp)
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = option.iconResId),
+                            contentDescription = option.description,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
             }
         }
     }
@@ -473,32 +529,3 @@ data class ShareOption(
     val description: String,
     val onClick: () -> Unit
 )
-
-fun createImageFile(context: Context): File? {
-    val fileName = "shared_image_${System.currentTimeMillis()}.png"
-    val file = File(context.cacheDir, fileName)
-
-    return try {
-        // 비트맵 생성 예시: 흰 배경에 텍스트 쓰기
-        val bitmap = Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        canvas.drawColor(CommonColor.Gray500.toArgb())
-        val paint = Paint().apply {
-            color = CommonColor.BeigeDark.toArgb()
-            textSize = 40f
-            isAntiAlias = true
-        }
-        canvas.drawText("FaceMeet 인스타 공유", 50f, 250f, paint)
-
-        // 파일로 저장
-        val fos = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
-        fos.flush()
-        fos.close()
-
-        file
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
