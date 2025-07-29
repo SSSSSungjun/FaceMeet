@@ -4,6 +4,7 @@ import com.ssafy.facemeet.core.data.remote.api.AuthApiService
 import com.ssafy.facemeet.core.data.remote.datasource.AuthRemoteDataSource
 import com.ssafy.facemeet.core.data.repository.AuthRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.AuthRepository
+import com.ssafy.facemeet.core.domain.usecase.OnboardingUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,5 +37,10 @@ object AuthModule {
         authDataRemoteDataSource: AuthRemoteDataSource
     ): AuthRepository {
         return AuthRepositoryImpl(authDataRemoteDataSource)
+    }
+
+    @Provides
+    fun provideOnboardingUseCase(authRepository: AuthRepository): OnboardingUseCase {
+        return OnboardingUseCase(authRepository)
     }
 }

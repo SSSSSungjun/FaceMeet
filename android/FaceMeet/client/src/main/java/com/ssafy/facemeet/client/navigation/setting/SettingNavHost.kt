@@ -48,7 +48,7 @@ fun NavGraphBuilder.settingNavHost(
                     if (source == ClientRoutes.MyPage.route) // "profile" 문자열로 비교
                         navController.navigate(ClientRoutes.MyPage.route)
                     else
-                        navController.navigate(SettingRoutes.CameraStart.route)
+                        navController.navigate(ClientRoutes.MainMenu.route) //임시로.
                 },
                 onNavigateToBack = {
                     navController.popBackStack()

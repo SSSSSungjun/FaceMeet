@@ -19,7 +19,7 @@ private const val TAG = "RegisterViewModel"
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
     private val mapDataStore: MapDataStore,
-    private val onboardingUseCase: OnboardingUseCase
+    private val onboardingUseCase: OnboardingUseCase,
 ) : ViewModel () {
 
     private val _naviEvent = MutableSharedFlow<RegisterNaviEvent?>()
