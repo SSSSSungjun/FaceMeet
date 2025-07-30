@@ -22,7 +22,7 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
     }
 
     composable(ClientRoutes.Notification.route) {
-        NotificationScreen()
+        NotificationScreen(onBackClick = { navController.popBackStack() })
     }
 
     composable(ClientRoutes.Profile.route) {

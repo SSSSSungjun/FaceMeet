@@ -170,7 +170,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             sendNotification(title, body)
 
             saveNotificationToRoom(title, body, System.currentTimeMillis())
-            
+
         } catch (e: Exception) {
             Log.e("FCM", "이벤트 실행 중 오류", e)
             sendNotification("🔥 선착순 이벤트 시작!", "지금 바로 참여하세요!")
@@ -284,7 +284,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val notification = NotificationEntity(
                 title = title,
                 body = body,
-                triggerTime = triggerTime
+                triggerTime = triggerTime,
+                type = "ticket"
             )
             notificationDao.insert(notification)
         }

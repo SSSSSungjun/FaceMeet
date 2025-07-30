@@ -20,15 +20,20 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.core.util.constant.CommonColor
 
 private const val TAG = "MainMenuScreen"
 
@@ -44,19 +49,29 @@ fun MainMenuScreen(
             .background(Color(0xFFF8F2E9))  // 배경색 비슷하게 조정
             .padding(horizontal = 16.dp, vertical = 20.dp)
     ) {
-        Row {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = "상견례",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(bottom = 16.dp)
+                fontSize = 16.sp
             )
-            Text(
-                text = "알림",
-                modifier = Modifier.clickable {
-                    onNotification()
-                }
-            )
+            IconButton(onClick = onNotification) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_notification),
+                    contentDescription = "알림 아이콘",
+                    tint = CommonColor.Brown,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .padding(4.dp)
+                )
+            }
+
+
         }
 
 
