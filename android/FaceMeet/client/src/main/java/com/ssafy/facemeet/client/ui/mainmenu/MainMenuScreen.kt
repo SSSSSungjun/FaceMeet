@@ -33,6 +33,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
+import com.ssafy.facemeet.client.ui.theme.TitleTextStyle
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 private const val TAG = "MainMenuScreen"
@@ -58,7 +60,9 @@ fun MainMenuScreen(
             Text(
                 text = "상견례",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                fontSize = 20.sp,
+                fontFamily = ChosunCentennial,
+                style = TitleTextStyle
             )
             IconButton(onClick = onNotification) {
                 Icon(

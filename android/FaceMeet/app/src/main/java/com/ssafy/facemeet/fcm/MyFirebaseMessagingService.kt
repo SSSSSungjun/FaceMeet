@@ -17,8 +17,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.ssafy.facemeet.MainActivity // 필요시 변경
-import com.ssafy.facemeet.R
+import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.core.data.database.NotificationDao
 import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
 import com.ssafy.facemeet.core.data.remote.api.FcmService
@@ -82,7 +81,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d("FCM", "메시지 수신: $remoteMessage")
+        Log.d("FCM", "메시지 notification: ${remoteMessage.notification}")
+        Log.d("FCM", "메시지 data: ${remoteMessage.data}")
+
+        Log.d("FCM", "onMessageReceived: $remoteMessage")
 
         remoteMessage.notification?.let {
             sendNotification(it.title ?: "알림", it.body ?: "")
@@ -90,6 +92,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         if (remoteMessage.data.isNotEmpty()) {
+            Log.d("FCM", "onMessageReceived: $remoteMessage.data[\"type\"]")
+
             when (remoteMessage.data["type"]) {
                 "SCHEDULED_EVENT" -> handleScheduledEvent(remoteMessage.data)
                 "IMMEDIATE_EVENT" -> handleImmediateEvent(remoteMessage.data)
@@ -127,6 +131,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun handleImmediateEvent(data: Map<String, String>) {
+        Log.d("FCM", "handleImmediateEvent: handleImmediateEvent")
         val title = data["title"] ?: "🔥 선착순 이벤트 시작!"
         val body = data["body"] ?: "지금 바로 참여하세요!"
         sendNotification(title, body)
@@ -180,7 +185,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun sendNotification(title: String, body: String) {
         Log.d("FCM", "알림 전송: $title - $body")
 
-        val channelId = "fcm_default_channel"
+        val channelId = "ticket_channel" // 🔄 알림 유형별로 채널 나눌 수도 있음
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -193,15 +198,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // 🔔 채널 생성 (최초 1회)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId, "FCM Notifications", NotificationManager.IMPORTANCE_HIGH
+                channelId,
+                "이벤트 티켓 알림",
+                NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.logo) // 아이콘 변경
+            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_48) // 알림 아이콘
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
@@ -209,8 +217,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
 
-        notificationManager.notify(0, builder.build())
+        val notificationId = System.currentTimeMillis().toInt() // ✅ 고유 ID
+
+        notificationManager.notify(notificationId, builder.build())
     }
+
 
     private fun parseDateTime(dateTimeStr: String): Date? {
         val formats = listOf(

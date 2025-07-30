@@ -11,5 +11,5 @@ data class NotificationEntity(
     val body: String,
     val triggerTime: Long,
     val receivedTime: Long = System.currentTimeMillis(),
-    val type: String = "default" // 새 필드 추가
+    val type: String// 새 필드 추가
 )
