@@ -11,10 +11,10 @@ import android.webkit.WebViewClient
 import com.ssafy.facemeet.ui.web.KakaoWebViewUtils.checkForTokens
 
 private const val TAG = "KaKaoLoginWebView"
-internal const val BASE_DOMAIN = "http://i13d201.p.ssafy.io/"
+internal const val BASE_DOMAIN = "https://i13d201.p.ssafy.io/"
 
 fun WebView.configureKakaoWebView(
-    onTokenExtracted: (accessToken: String, refreshToken: String, isNew :Boolean) -> Unit,
+    onTokenExtracted: (accessToken: String, refreshToken: String, isNew: Boolean) -> Unit,
     onError: (String) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,

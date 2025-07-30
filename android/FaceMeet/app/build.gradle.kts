@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
 }
 
 val localPropertiesFile = rootProject.file("local.properties")
@@ -21,7 +22,8 @@ val kakaoScheme = "kakao$kakaoNativeKey"
 val baseUrl =
     localProperties.getProperty("BASE_URL") ?: error("BASE_URL not found in local.properties")
 
-val googleMapAppKey = localProperties.getProperty("google_map_app_key") ?:error("googleMapAppKey Unknown Error")
+val googleMapAppKey =
+    localProperties.getProperty("google_map_app_key") ?: error("googleMapAppKey Unknown Error")
 
 android {
     namespace = "com.ssafy.facemeet"
@@ -97,7 +99,15 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
 
 
+    // firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.1")
 
-
+    // room
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 }
