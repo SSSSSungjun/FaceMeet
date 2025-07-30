@@ -1,6 +1,6 @@
 package com.ssafy.facemeet.core.data.remote.dto.response
 
-data class ChatItemResponse(
+data class ChatListItemResponse(
     val userId: Int,
     val nickName: String,
     val lastSeen: String,

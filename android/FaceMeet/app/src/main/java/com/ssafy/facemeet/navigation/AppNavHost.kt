@@ -26,7 +26,7 @@ fun AppNavHost(isLoggedIn: Boolean) {
 
     NavHost(
         navController = navController,
-        startDestination = startDestination, // 이 값 말고는 예외 없음
+        startDestination = startDestination,
     ) {
         Log.d(TAG, "AppNavHost: start")
         // 로그인 화면
