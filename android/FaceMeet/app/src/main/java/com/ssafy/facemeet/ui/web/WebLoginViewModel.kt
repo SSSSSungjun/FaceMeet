@@ -69,4 +69,5 @@ class WebLoginViewModel @Inject constructor(
             Log.e("FCM", "FCM 토큰 가져오기 실패", e)
         }
     }
+
 }

@@ -35,7 +35,7 @@ fun WebLoginScreen(
     onLoginSuccess: (isNew: Boolean) -> Unit,
     onLoginFailed: () -> Unit,
     onCancel: () -> Unit,
-    viewModel: WebLoginViewModel = hiltViewModel()
+    viewModel: WebLoginViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
 

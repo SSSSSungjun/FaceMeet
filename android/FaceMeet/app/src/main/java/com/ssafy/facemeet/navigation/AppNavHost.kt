@@ -20,7 +20,8 @@ private const val TAG = "MainNavHost"
 fun AppNavHost(isLoggedIn: Boolean) {
 
     val navController = rememberNavController()
-    val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ModuleEntryRoute.ClientMainMenu.route
+   // val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ModuleEntryRoute.ClientMainMenu.route
+    val  startDestination = AppRoutes.Start.route
 
     NavHost(
         navController = navController,
@@ -48,7 +49,7 @@ fun AppNavHost(isLoggedIn: Boolean) {
                 WebLoginScreen(
                     provider = provider,
                     onLoginSuccess = { isNewUser ->
-                        if (!isNewUser) {
+                        if (isNewUser) {
                             navController.navigate(ModuleEntryRoute.Register.route) {
                                 popUpTo(AppRoutes.Start.route) { inclusive = false }
                                 launchSingleTop = true
