@@ -24,6 +24,7 @@ class UserRepositoryImpl @Inject constructor(
                 Log.e(TAG, "postOnline error", it)
             }
 
+
     override suspend fun postOffline(): Result<Unit> =
         runCatching { userDataRemoteDataSource.postOffline() }
             .mapCatching { response ->
@@ -32,6 +33,7 @@ class UserRepositoryImpl @Inject constructor(
             }.onFailure {
                 Log.e(TAG, "postOffline error", it)
             }
+
 
     override suspend fun getUserInfo(): Result<UserInfoResponse> =
         runCatching { userDataRemoteDataSource.getUserInfo() }
@@ -43,6 +45,7 @@ class UserRepositoryImpl @Inject constructor(
                 Log.e(TAG, "getUserInfo error", it)
             }
 
+
     override suspend fun deleteUser(): Result<Unit> =
         runCatching { userDataRemoteDataSource.deleteUser() }
             .mapCatching { response ->
@@ -51,6 +54,7 @@ class UserRepositoryImpl @Inject constructor(
             }.onFailure {
                 Log.e(TAG, "deleteUser error", it)
             }
+
 
     override suspend fun patchUserInfo(request: UserInfoModRequest): Result<UserInfoResponse> =
         runCatching { userDataRemoteDataSource.patchUserInfo(request) }

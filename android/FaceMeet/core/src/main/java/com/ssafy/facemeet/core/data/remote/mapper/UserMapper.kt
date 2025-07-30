@@ -12,11 +12,11 @@ fun UserInfoResponse.toDomain(): UserInfo {
     val formatter = DateTimeFormatter.ISO_DATE_TIME
     val parsedBirth = LocalDateTime.parse(birth, formatter)
     return UserInfo(
-        name = this.name,
+        name = this.name ,
         email = this.email,
-        nickname = this.nickname,
+        nickname = this.nickname ?:"",
         gender = this.gender,
-        address = this.address,
+        address = this.address ?:"", //임시로
         birth = parsedBirth.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")),
         preferAgeLower = this.preferAgeLower,
         preferAgeUpper = this.preferAgeUpper

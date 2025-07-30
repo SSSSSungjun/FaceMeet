@@ -7,9 +7,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.ui.camera.CameraCaptureScreen
 import com.ssafy.facemeet.client.ui.camera.CameraScreen
@@ -26,26 +24,15 @@ private const val TAG = "SettingNavHost"
 
 @SuppressLint("StateFlowValueCalledInComposition")
 fun NavGraphBuilder.settingNavHost(
-    navController: NavHostController,
-
+    navController: NavHostController
 ) {
     composable(
-        route = SettingRoutes.Register.route,
-        arguments = listOf(
-            navArgument("fromMyPage") {
-                type = NavType.BoolType
-                defaultValue = false
-            }
-        )
-    ) { backStackEntry ->
-        val fromMyPage = backStackEntry.arguments?.getBoolean("fromMyPage") == true
-
+       SettingRoutes.Register.route,
+    ) {
         RegisterScreen(
             onNavigateToNext = {
-                //val route = if (fromMyPage) BottomNavRoutes.MyPage.route else ClientRoutes.MainMenu.route // 일단 바꿔둔거임
-                val route = ClientRoutes.MainMenu.route
-                navController.navigate(route)
-            },
+                navController.navigate(ClientRoutes.MainMenu.route)
+            }, // 여기서 뒤로가면 등록 못가게 해야할듯.
             onNavigateToBack = { navController.popBackStack() },
             onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) }
         )

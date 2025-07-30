@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,10 +26,9 @@ import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
-import com.ssafy.facemeet.core.util.constant.ModuleEntryRoute
 
 @Composable
-fun NavGraphBuilder.MainScreenWithBottomNav(
+fun MainScreenWithBottomNav(
     mainNavController: NavHostController,
     initialTab: String = BottomNavRoutes.Home.route
 ) {
@@ -76,19 +74,17 @@ fun NavGraphBuilder.MainScreenWithBottomNav(
             composable(BottomNavRoutes.MyPage.route) {
                 MyPageScreen(
                     onLogout = {
-                       mainNavController.navigate(ModuleEntryRoute.Start.route){
-                           popUpTo(mainNavController.graph.startDestinationId) { inclusive = true }
-                           launchSingleTop = true
+                        mainNavController.navigate("start") {
+                            popUpTo(0) { inclusive = false }
                         }
                     },
                     onWithdraw = {
-                        mainNavController.navigate(ModuleEntryRoute.Start.route){
-                            popUpTo(mainNavController.graph.startDestinationId) { inclusive = true }
-                            launchSingleTop = true
+                        mainNavController.navigate("start") {
+                            popUpTo(0) { inclusive = false }
                         }
                     },
                     onModify = {
-                        mainNavController.navigate(SettingRoutes.Register.createRoute(fromMyPage = true))
+                        mainNavController.navigate(SettingRoutes.Register.route)
                     }
                 )
             }

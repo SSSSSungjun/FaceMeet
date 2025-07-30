@@ -1,6 +1,8 @@
 package com.ssafy.facemeet.client.ui.register
 
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,15 +12,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -27,11 +27,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 
 private const val TAG = "RegisterScreen"
@@ -45,8 +47,10 @@ fun RegisterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
-
-    LaunchedEffect(Unit) {viewModel.updateAddressFromStore() }
+    LaunchedEffect(Unit) {
+        Log.d("RegisterScreen", "navigationEvent: $navigationEvent")
+        viewModel.updateAddressFromStore()
+    }
 
     LaunchedEffect(navigationEvent) {
         when (navigationEvent) {
@@ -68,19 +72,22 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(color = Color(0xFFF4F3ED))
             .systemBarsPadding(),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 10.dp)
                 .wrapContentHeight()
-                .align(Alignment.Center),
+                .align(Alignment.Center)
+                .padding(bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "환영합니다",
-                fontSize = 18.sp
+                text = "정보를 입력해주세요",
+                fontSize = 23.sp
             )
 
             Spacer(modifier = Modifier.padding(40.dp))
@@ -90,11 +97,11 @@ fun RegisterScreen(
                 onNicknameChange = viewModel::updateNickname
             )
 
-            Spacer(modifier = Modifier.padding(30.dp))
+            Spacer(modifier = Modifier.padding(20.dp))
 
             InputAddress(
                 selectedAddress = uiState.selectedAddress,
-                hasLocation = uiState.hasLocation,
+                onLocationClick = { viewModel.navigateToMap() }
             )
 
             Spacer(modifier = Modifier.padding(20.dp))
@@ -103,13 +110,19 @@ fun RegisterScreen(
                 selectedAgeRange = uiState.selectedAgeRange,
                 onAgeRangeChange = viewModel::updateAgeRange
             )
-
         }
+
         InputBtns(
-            uiState.isValid()
+            isEnabled = uiState.isValid(),
+            onConfirm = {
+                viewModel.navigateToCamera()
+                viewModel.submitRegistration()
+            },
+            onCancel = {
+                viewModel.navigateToBack()
+            }
         )
     }
-
 }
 
 @Composable
@@ -118,9 +131,7 @@ fun InputNickName(
     onNicknameChange: (String) -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center
     ) {
         Text(
@@ -152,15 +163,18 @@ fun InputNickName(
 @Composable
 fun InputAddress(
     selectedAddress: String,
-    hasLocation: Boolean,
-    viewModel: RegisterViewModel =hiltViewModel()
+    onLocationClick: () -> Unit
 ) {
-
-    Column {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "주소",
+            modifier = Modifier.padding(bottom = 5.dp)
+        )
         OutlinedTextField(
             value = selectedAddress,
-            onValueChange = {
-            }, // 읽기 전용
+            onValueChange = { }, // 읽기 전용
             readOnly = true,
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
@@ -170,13 +184,12 @@ fun InputAddress(
                 )
             },
             trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
+                Image(
+                    painter = painterResource(id = R.drawable.location_icon),
                     contentDescription = "Location",
-                    tint = if (hasLocation) Color.Green else Color.Gray,
-                    modifier = Modifier.clickable {
-                        viewModel.navigateToMap()
-                    }
+                    modifier = Modifier
+                        .clickable { onLocationClick() }
+                        .size(24.dp)
                 )
             },
             colors = TextFieldDefaults.colors(
@@ -194,19 +207,19 @@ fun InputAddress(
 @Composable
 fun InputAgeRange(
     selectedAgeRange: IntRange,
-    onAgeRangeChange: (Int,Int) -> Unit
+    onAgeRangeChange: (Int, Int) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 10.dp)
     ) {
         Text(
-            text = "선호 나이 범위",
-            modifier = Modifier.padding(bottom = 8.dp)
+            text = "희망 매칭 연령대",
+            modifier = Modifier.padding(bottom = 5.dp)
         )
 
-        RangeSlider(
+        CustomRangeSlider(
             value = selectedAgeRange.first.toFloat()..selectedAgeRange.last.toFloat(),
             onValueChange = { floatRange ->
                 onAgeRangeChange(
@@ -215,25 +228,23 @@ fun InputAgeRange(
                 )
             },
             valueRange = 20f..65f,
-            steps = 44, //
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Row(
+            thumbRadius = 6.dp, // 작은 Thumb
+            trackHeight = 6.dp, // 얇은 트랙
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 5.dp)
+        )
+
+        Spacer(modifier = Modifier.padding(vertical = 10.dp))
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "${selectedAgeRange.first}세",
-                color = Color(0xFF2196F3),
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "${selectedAgeRange.last}세",
-                color = Color(0xFF2196F3),
-                fontWeight = FontWeight.Medium
+                text = "${selectedAgeRange.first}세부터 ${selectedAgeRange.last}세까지",
+                fontWeight = FontWeight.Medium,
+                fontSize = 17.sp
             )
         }
     }
@@ -242,34 +253,55 @@ fun InputAgeRange(
 @Composable
 fun InputBtns(
     isEnabled: Boolean,
-    viewModel: RegisterViewModel =hiltViewModel()
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
     ) {
         Button(
             modifier = Modifier
                 .weight(1f)
-                .padding(16.dp),
-            onClick = {
-                viewModel.navigateToCamera()
-                viewModel.submitRegistration()
-            },
-            enabled = isEnabled
+                .padding(vertical = 16.dp),
+            onClick = onConfirm,
+            enabled = isEnabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF5B5141),
+                contentColor = Color.White,
+                disabledContainerColor = Color(0xFFD6D6D6),
+                disabledContentColor = Color(0xFF898989)
+            ),
+            shape = RoundedCornerShape(12.dp),
         ) {
-            Text("확인")
+            Text(
+                text = "확인",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(5.dp)
+            )
         }
+
+        Spacer(modifier = Modifier.padding(10.dp))
 
         Button(
             modifier = Modifier
                 .weight(1f)
-                .padding(16.dp),
-            onClick = {
-                viewModel.navigateToBack()
-            }
+                .padding(vertical = 16.dp),
+            onClick = onCancel,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF5B5141),
+                contentColor = Color.White,
+                disabledContainerColor = Color(0xFFD6D6D6),
+                disabledContentColor = Color(0xFFAAAAAA)
+            ),
+            shape = RoundedCornerShape(12.dp),
         ) {
-            Text("취소")
+            Text(
+                text = "취소",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(5.dp)
+            )
         }
     }
 }
-
