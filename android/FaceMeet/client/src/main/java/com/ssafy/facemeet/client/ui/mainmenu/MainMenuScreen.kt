@@ -35,7 +35,7 @@ private const val TAG = "MainMenuScreen"
 
 @Composable
 fun MainMenuScreen(
-    onProfile: () -> Unit = {}, onMyPage: () -> Unit = {}
+    onProfile: () -> Unit = {}, onMyPage: () -> Unit = {}, onNotification: () -> Unit = {}
 ) {
 
     Column(
@@ -51,7 +51,12 @@ fun MainMenuScreen(
                 fontSize = 16.sp,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            Text(text = "알림")
+            Text(
+                text = "알림",
+                modifier = Modifier.clickable {
+                    onNotification()
+                }
+            )
         }
 
 

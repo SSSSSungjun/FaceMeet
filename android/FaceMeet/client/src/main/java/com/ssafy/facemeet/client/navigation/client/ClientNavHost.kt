@@ -9,6 +9,7 @@ import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingLoadingScreen
+import com.ssafy.facemeet.client.ui.notification.NotificationScreen
 import com.ssafy.facemeet.client.ui.profile.ProfileScreen
 
 
@@ -18,6 +19,10 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
         MainScreenWithBottomNav(
             mainNavController = navController
         )
+    }
+
+    composable(ClientRoutes.Notification.route) {
+        NotificationScreen()
     }
 
     composable(ClientRoutes.Profile.route) {

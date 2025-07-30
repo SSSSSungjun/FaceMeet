@@ -19,10 +19,15 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ssafy.facemeet.MainActivity // 필요시 변경
 import com.ssafy.facemeet.R
+import com.ssafy.facemeet.core.data.database.NotificationDao
+import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
 import com.ssafy.facemeet.core.data.remote.api.FcmService
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.fcm.FcmTokenResponse
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -37,9 +42,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var fcmService: FcmService
 
+    @Inject
+    lateinit var notificationDao: NotificationDao
+
     private val handler = Handler(Looper.getMainLooper())
     private val scheduledEvents = mutableMapOf<String, Runnable>()
     private lateinit var sharedPreferences: SharedPreferences
+
 
     override fun onCreate() {
         super.onCreate()
@@ -121,6 +130,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val title = data["title"] ?: "🔥 선착순 이벤트 시작!"
         val body = data["body"] ?: "지금 바로 참여하세요!"
         sendNotification(title, body)
+
+        saveNotificationToRoom(title, body, System.currentTimeMillis()) // room에 저장
     }
 
     private fun scheduleLocalEvent(settingId: String, triggerTime: Date, eventDataStr: String) {
@@ -158,6 +169,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val body = "${discountRate.toInt()}% 할인 쿠폰 ${couponCount.toInt()}개 선착순!"
             sendNotification(title, body)
 
+            saveNotificationToRoom(title, body, System.currentTimeMillis())
+            
         } catch (e: Exception) {
             Log.e("FCM", "이벤트 실행 중 오류", e)
             sendNotification("🔥 선착순 이벤트 시작!", "지금 바로 참여하세요!")
@@ -265,4 +278,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.e("FCM", "저장된 예약 복원 실패", e)
         }
     }
+
+    private fun saveNotificationToRoom(title: String, body: String, triggerTime: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val notification = NotificationEntity(
+                title = title,
+                body = body,
+                triggerTime = triggerTime
+            )
+            notificationDao.insert(notification)
+        }
+    }
+
+
 }
