@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.ui.register
+package com.ssafy.facemeet.client.ui.register.model
 
 sealed class RegisterNaviEvent() {
     object ToCamera : RegisterNaviEvent()

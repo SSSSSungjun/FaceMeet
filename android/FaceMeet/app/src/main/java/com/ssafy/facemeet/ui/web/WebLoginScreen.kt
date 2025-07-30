@@ -35,7 +35,7 @@ fun WebLoginScreen(
     onLoginSuccess: (isNew: Boolean) -> Unit,
     onLoginFailed: () -> Unit,
     onCancel: () -> Unit,
-    viewModel: WebLoginViewModel = hiltViewModel()
+    viewModel: WebLoginViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
 
@@ -75,6 +75,7 @@ fun WebLoginScreen(
                             configureKakaoWebView(
                                 onTokenExtracted = { accessToken, refreshToken, isNew ->
                                     Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
+                                    viewModel.saveToken(refreshToken,accessToken)
                                     onLoginSuccess(isNew)
                                     //viewModel.saveToken(refreshToken, accessToken)
 

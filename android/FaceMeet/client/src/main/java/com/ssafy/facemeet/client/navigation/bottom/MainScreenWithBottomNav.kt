@@ -15,19 +15,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
+import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
+import com.ssafy.facemeet.core.util.constant.ModuleEntryRoute
 
 @Composable
-fun MainScreenWithBottomNav(
+fun NavGraphBuilder.MainScreenWithBottomNav(
     mainNavController: NavHostController,
     initialTab: String = BottomNavRoutes.Home.route
 ) {
@@ -72,7 +75,21 @@ fun MainScreenWithBottomNav(
 
             composable(BottomNavRoutes.MyPage.route) {
                 MyPageScreen(
-
+                    onLogout = {
+                       mainNavController.navigate(ModuleEntryRoute.Start.route){
+                           popUpTo(mainNavController.graph.startDestinationId) { inclusive = true }
+                           launchSingleTop = true
+                        }
+                    },
+                    onWithdraw = {
+                        mainNavController.navigate(ModuleEntryRoute.Start.route){
+                            popUpTo(mainNavController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onModify = {
+                        mainNavController.navigate(SettingRoutes.Register.createRoute(fromMyPage = true))
+                    }
                 )
             }
         }
