@@ -1,9 +1,9 @@
 package com.ssafy.facemeet.client.navigation.setting
 
 sealed class SettingRoutes(val route: String) {
-    object Register : SettingRoutes("register/{source}") {
-        fun createRoute(source: String): String {
-            return "register/$source"
+    object Register : SettingRoutes("register?fromMyPage={fromMyPage}") {
+        fun createRoute(fromMyPage: Boolean = false): String {
+            return "register?fromMyPage=$fromMyPage"
         }
     }
 

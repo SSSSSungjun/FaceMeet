@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.ui.register
+package com.ssafy.facemeet.client.ui.register.model
 
 
 data class RegUiState(

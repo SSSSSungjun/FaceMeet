@@ -3,11 +3,8 @@ package com.ssafy.facemeet.client.navigation.setting
 
 import android.annotation.SuppressLint
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -30,51 +27,47 @@ private const val TAG = "SettingNavHost"
 @SuppressLint("StateFlowValueCalledInComposition")
 fun NavGraphBuilder.settingNavHost(
     navController: NavHostController,
-) {
-        composable(
-            route = SettingRoutes.Register.route,
-            arguments = listOf(
-                navArgument("source") {
-                    type = NavType.StringType
-                    defaultValue = "direct"
-                }
-            )
-        ) { backStackEntry ->
-            val source = backStackEntry.arguments?.getString("source") ?: "direct"
-            Log.d(TAG, "Register 진입 - source: $source")
 
-            RegisterScreen(
-                onNavigateToNext = {
-                    if (source == ClientRoutes.MyPage.route) // "profile" 문자열로 비교
-                        navController.navigate(ClientRoutes.MyPage.route)
-                    else
-                        navController.navigate(ClientRoutes.MainMenu.route) //임시로.
-                },
-                onNavigateToBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) },
-            )
-        }
+) {
+    composable(
+        route = SettingRoutes.Register.route,
+        arguments = listOf(
+            navArgument("fromMyPage") {
+                type = NavType.BoolType
+                defaultValue = false
+            }
+        )
+    ) { backStackEntry ->
+        val fromMyPage = backStackEntry.arguments?.getBoolean("fromMyPage") == true
+
+        RegisterScreen(
+            onNavigateToNext = {
+                //val route = if (fromMyPage) BottomNavRoutes.MyPage.route else ClientRoutes.MainMenu.route // 일단 바꿔둔거임
+                val route = ClientRoutes.MainMenu.route
+                navController.navigate(route)
+            },
+            onNavigateToBack = { navController.popBackStack() },
+            onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) }
+        )
+    }
 
     composable(SettingRoutes.Map.route) {
         MapScreen(
-            toBack={
+            toBack = {
                 navController.popBackStack()
             },
-            toAccept={
+            toAccept = {
                 navController.popBackStack()
             },
         )
     }
     composable(SettingRoutes.CameraStart.route) {
         CameraScreen(
-            onLaunchCamera = { navController.navigate(SettingRoutes.FrontCamera.route) }
-        )
+            onLaunchCamera = { navController.navigate(SettingRoutes.FrontCamera.route) })
     }
 
     composable(SettingRoutes.FrontCamera.route) {
-        val (cameraVM, _) = it.getCameraViewModels(navController)
+        val cameraVM : CameraShotViewModel = hiltViewModel()
         CameraCaptureScreen(
             mode = CaptureMode.FRONT,
             vm = cameraVM,
@@ -85,7 +78,7 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.FrontPreview.route) {
-        val (cameraVM, _) = it.getCameraViewModels(navController)
+        val cameraVM : CameraShotViewModel = hiltViewModel()
         ShotPreviewScreen(
             image = cameraVM.front.value?.asImageBitmap(),
             title = "전면 사진에 이상 없으면 다음을 눌러주세요.",
@@ -93,12 +86,13 @@ fun NavGraphBuilder.settingNavHost(
                 cameraVM.resetFront()
                 navController.popBackStack(SettingRoutes.FrontCamera.route, false)
             },
-            onConfirm = { navController.navigate(SettingRoutes.SideCamera.route) }
-        )
+            onConfirm = { navController.navigate(SettingRoutes.SideCamera.route) })
     }
 
     composable(SettingRoutes.SidePreview.route) {
-        val (cameraVM, analyzeVM) = it.getCameraViewModels(navController)
+        val cameraVM : CameraShotViewModel = hiltViewModel()
+        val analyzeVM : FaceAnalyzeViewModel = hiltViewModel()
+
         ShotPreviewScreen(
             image = cameraVM.side.value?.asImageBitmap(),
             title = "옆면 사진에 이상 없으면 다음을 눌러주세요.",
@@ -132,37 +126,21 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.SideCamera.route) {
-        val (cameraVM, _) = it.getCameraViewModels(navController)
+        val cameraVM : CameraShotViewModel = hiltViewModel()
         CameraCaptureScreen(
             mode = CaptureMode.SIDE,
             vm = cameraVM,
             onNavigateToBack = { navController.popBackStack() },
-            onCaptured = { navController.navigate(SettingRoutes.SidePreview.route) }
-        )
+            onCaptured = { navController.navigate(SettingRoutes.SidePreview.route) })
     }
 
     composable(SettingRoutes.FaceTestLoading.route) {
-        val (_, analyzeVM) = it.getCameraViewModels(navController)
+        val analyzeVM : FaceAnalyzeViewModel = hiltViewModel()
         FaceTestLoadingScreen(
-            viewModel = analyzeVM,
-            onNavigateToResult = {
+            viewModel = analyzeVM, onNavigateToResult = {
                 navController.navigate(ClientRoutes.Profile.route) {
                     popUpTo(SettingRoutes.Register.route) { inclusive = false }
                 }
-            }
-        )
+            })
     }
-
-
 }
-
-@SuppressLint("UnrememberedGetBackStackEntry")
-@Composable
-fun NavBackStackEntry.getCameraViewModels(navController: NavHostController): Pair<CameraShotViewModel, FaceAnalyzeViewModel> {
-    val rootEntry = remember(navController) {
-        navController.getBackStackEntry(SettingRoutes.CameraStart.route)
-    }
-    val cameraVM: CameraShotViewModel = hiltViewModel(rootEntry)
-    val analyzeVM: FaceAnalyzeViewModel = hiltViewModel(rootEntry)
-    return Pair(cameraVM, analyzeVM)
-} //viewmodel 꺼내야하므로, 근데 hilt쓰는 마당에 이거 생략 해서 어떻게 될거 같다는 생각도  있습니다.
