@@ -168,7 +168,7 @@ fun ChatHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFFF4F3ED))
-                .padding(horizontal = 16.dp, vertical = 5.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -198,7 +198,7 @@ fun ChatHeader(
                     text = userName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF111827)
+                    color = Color(0xFF8B5A2B)
                 )
             }
 
@@ -285,7 +285,7 @@ fun DateSeparator(date: String) {
     ) {
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE5E7EB)
+                containerColor = Color(0xFFE5E4DD)
             ),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
