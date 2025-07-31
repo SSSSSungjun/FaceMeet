@@ -66,8 +66,8 @@ dependencies {
     implementation("com.google.android.libraries.places:places:4.4.1")
 
 
-    // room
-    implementation(libs.androidx.room.runtime)
-    ksp(libs.androidx.room.compiler)
-    implementation(libs.androidx.room.ktx)
+//    // room
+//    implementation(libs.androidx.room.runtime)
+//    ksp(libs.androidx.room.compiler)
+//    implementation(libs.androidx.room.ktx)
 }

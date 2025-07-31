@@ -15,6 +15,4 @@ object UseCaseModule {
     fun provideAnalyzeFaceUseCase(faceRepository: FaceRepository): AnalyzeFaceUseCase {
         return AnalyzeFaceUseCase(faceRepository)
     }
-
-
 }

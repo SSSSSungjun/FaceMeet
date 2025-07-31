@@ -64,7 +64,6 @@ class RegisterViewModel @Inject constructor(
         if (state.isValid()) {
             viewModelScope.launch {
                 onBoarding()
-                mapDataStore.clear()
             }
         }
     }

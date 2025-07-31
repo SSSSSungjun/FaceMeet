@@ -4,10 +4,9 @@ import android.util.Log
 import android.view.View
 import android.webkit.WebView
 
-private const val TAG = "KakaoWebViewUtils"
+private const val TAG = "WebViewUtils"
 
-object KakaoWebViewUtils {
-    private const val TAG = "KakaoWebViewUtils"
+object WebViewUtils {
 
     fun isCancelUrl(url: String): Boolean {
         return url.contains("cancel") || url.contains("error") || url.contains("denied")
@@ -33,8 +32,6 @@ object KakaoWebViewUtils {
 
                     view?.evaluateJavascript("document.body.innerText") { result ->
                         if (result != null && result != "null" && result.contains("accessToken")) {
-
-
 
                             val cleanText = result.replace("\"", "").replace("\\", "")
                             val tokens = parseTokensFromText(cleanText)

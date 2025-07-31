@@ -68,13 +68,16 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         fcmService.registerDevice(request).enqueue(object : Callback<FcmTokenResponse> {
             override fun onResponse(
-                call: Call<FcmTokenResponse>,
-                response: Response<FcmTokenResponse>
+                call: Call<FcmTokenResponse?>,
+                response: Response<FcmTokenResponse?>
             ) {
                 Log.d("FCM", "토큰 등록 성공: ${response.body()}")
             }
 
-            override fun onFailure(call: Call<FcmTokenResponse>, t: Throwable) {
+            override fun onFailure(
+                call: Call<FcmTokenResponse?>,
+                t: Throwable
+            ) {
                 Log.e("FCM", "토큰 등록 실패", t)
             }
         })
