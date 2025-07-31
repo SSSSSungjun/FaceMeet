@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 
 private const val TAG = "RegisterScreen"
 
@@ -49,6 +50,15 @@ fun RegisterScreen(
     LaunchedEffect(Unit) {
         Log.d("RegisterScreen", "navigationEvent: $navigationEvent")
         viewModel.updateAddressFromStore()
+    }
+
+    LaunchedEffect(navigationEvent) {
+        when(navigationEvent){
+            RegisterNaviEvent.ToBack -> onNavigateToBack()
+            RegisterNaviEvent.ToCamera -> onNavigateToNext()
+            RegisterNaviEvent.ToMap -> onNavigateToMap()
+            else -> Log.d(TAG, "RegisterScreen: Unknown")
+        }
     }
 
     Box(
