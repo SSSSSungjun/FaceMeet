@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "990706627288",
+    "project_id": "face-meet-77a06",
+    "storage_bucket": "face-meet-77a06.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:990706627288:android:201ecdab26e4bfd7075dad",
+        "android_client_info": {
+          "package_name": "com.example.fcmtest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv60v2bQctrBrZKVjIfRQc18MQxh7WwNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:990706627288:android:76aaaf4117545e8e075dad",
+        "android_client_info": {
+          "package_name": "com.ssafy.facemeet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv60v2bQctrBrZKVjIfRQc18MQxh7WwNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
