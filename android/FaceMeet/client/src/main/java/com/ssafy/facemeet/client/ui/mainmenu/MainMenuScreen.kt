@@ -62,7 +62,8 @@ fun MainMenuScreen(
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
                 fontFamily = ChosunCentennial,
-                style = TitleTextStyle
+                style = TitleTextStyle,
+                modifier = Modifier.padding(start = 4.dp)
             )
             IconButton(onClick = onNotification) {
                 Icon(
@@ -70,12 +71,9 @@ fun MainMenuScreen(
                     contentDescription = "알림 아이콘",
                     tint = CommonColor.Brown,
                     modifier = Modifier
-                        .size(36.dp)
-                        .padding(4.dp)
+                        .size(28.dp)
                 )
             }
-
-
         }
 
 
