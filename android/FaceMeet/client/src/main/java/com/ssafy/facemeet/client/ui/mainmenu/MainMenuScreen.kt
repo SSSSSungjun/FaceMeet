@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.ui.mainmenu
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,7 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
+import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
 import com.ssafy.facemeet.client.ui.theme.TitleTextStyle
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
@@ -76,81 +79,9 @@ fun MainMenuScreen(
             }
         }
 
+        Spacer(modifier = Modifier.padding(20.dp))
 
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0E3C3)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clickable {
-                            onProfile()
-                        }
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(180.dp)
-                            .background(Color.White, shape = CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("얼굴 이미지", color = Color.Gray)
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "김철수님",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-
-                    Text(
-                        text = "알 수 없음",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Divider(color = Color.Gray.copy(alpha = 0.5f))
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "매칭권 3",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        modifier = Modifier.clickable {
-                            onMyPage()
-                        },
-                        text = "내 정보 보기",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-        }
+        ProfileCardWithBackground(onProfile, onMyPage)
 
         // 하단 버튼 2개
         Row(
@@ -190,6 +121,96 @@ fun MainMenuScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("채팅", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Text("대화 목록", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileCardWithBackground(
+    onProfile: () -> Unit,
+    onMyPage: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(bottom = 16.dp)
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        // 배경 이미지
+        Image(
+            painter = painterResource(id = R.drawable.bg_face), // ← 여기에 직접 넣은 이미지 파일 리소스 사용
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
+        )
+
+        // 카드 내용
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 60.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clickable { onProfile() }
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(260.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.temp_face), // ← 여기에 실제 리소스 ID 입력
+                            contentDescription = "사용자 얼굴",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        "김철수",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 26.sp,
+                        fontFamily = ChosunCentennial,
+                        color = CommonColor.BrownGray900
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        "알 수 없상",
+                        fontSize = 16.sp,
+                        color = CommonColor.BrownGray700,
+                        fontFamily = ChosunSeirf
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Divider(color = Color.Gray.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("매칭권 3", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        "내 정보 보기",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.clickable { onMyPage() }
+                    )
                 }
             }
         }
