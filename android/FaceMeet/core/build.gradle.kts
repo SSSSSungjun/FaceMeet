@@ -67,7 +67,7 @@ dependencies {
     api(libs.androidx.material3)
     api(libs.androidx.navigation.compose)
     api("androidx.hilt:hilt-navigation-compose:1.1.0")
-
+    api("com.google.accompanist:accompanist-navigation-animation:0.32.0")
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
@@ -91,3 +91,5 @@ dependencies {
 
 
 }
+
+
