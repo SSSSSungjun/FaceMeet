@@ -1,10 +1,13 @@
 package com.ssafy.facemeet.core.di
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.data.remote.api.FcmService
 import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
+import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -51,6 +54,14 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+
+    @Provides
+    @Singleton
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun provideChatWebSocketManager(): ChatWebSocketManager {
+        return ChatWebSocketManager()
     }
 
 
