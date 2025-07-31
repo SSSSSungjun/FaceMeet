@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.remote.api.FaceService
+import com.ssafy.facemeet.core.data.remote.api.FcmService
 import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import dagger.Module
@@ -68,5 +69,11 @@ object NetworkModule {
     @Singleton
     fun provideFaceService(retrofit: Retrofit): FaceService {
         return retrofit.create(FaceService::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFcmService(retrofit: Retrofit): FcmService {
+        return retrofit.create(FcmService::class.java)
     }
 }

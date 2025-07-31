@@ -67,4 +67,10 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+//    // room
+//    implementation(libs.androidx.room.runtime)
+//    ksp(libs.androidx.room.compiler)
+//    implementation(libs.androidx.room.ktx)
+
 }
