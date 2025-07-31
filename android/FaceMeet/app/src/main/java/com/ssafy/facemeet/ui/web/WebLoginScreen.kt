@@ -63,7 +63,7 @@ fun WebLoginScreen(
                         },
                         onDismiss = {}
                     )
-                    loadUrl(BASE_KAKAO_URL)
+                    loadUrl(url)
                 }
             },
             modifier = Modifier

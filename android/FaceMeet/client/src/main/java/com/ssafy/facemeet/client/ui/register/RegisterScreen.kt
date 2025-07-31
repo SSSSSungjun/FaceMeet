@@ -37,6 +37,7 @@ import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
 import com.ssafy.facemeet.core.util.constant.CommonColor
+import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 
 private const val TAG = "RegisterScreen"
 
@@ -52,6 +53,15 @@ fun RegisterScreen(
     LaunchedEffect(Unit) {
         Log.d("RegisterScreen", "navigationEvent: $navigationEvent")
         viewModel.updateAddressFromStore()
+    }
+
+    LaunchedEffect(navigationEvent) {
+        when(navigationEvent){
+            RegisterNaviEvent.ToBack -> onNavigateToBack()
+            RegisterNaviEvent.ToCamera -> onNavigateToNext()
+            RegisterNaviEvent.ToMap -> onNavigateToMap()
+            else -> Log.d(TAG, "RegisterScreen: Unknown")
+        }
     }
 
     Box(

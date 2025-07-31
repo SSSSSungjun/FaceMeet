@@ -65,9 +65,12 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.libraries.places:places:4.4.1")
 
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
 //    // room
 //    implementation(libs.androidx.room.runtime)
 //    ksp(libs.androidx.room.compiler)
 //    implementation(libs.androidx.room.ktx)
+
 }
