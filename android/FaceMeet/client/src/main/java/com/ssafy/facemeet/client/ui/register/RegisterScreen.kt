@@ -34,6 +34,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
+import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
+import com.ssafy.facemeet.core.util.constant.CommonColor
 import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 
 private const val TAG = "RegisterScreen"
@@ -65,7 +68,8 @@ fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color(0xFFF4F3ED))
-            .systemBarsPadding(),
+            .systemBarsPadding()
+            .padding(10.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
@@ -79,7 +83,9 @@ fun RegisterScreen(
         ) {
             Text(
                 text = "정보를 입력해주세요",
-                fontSize = 23.sp
+                fontSize = 23.sp,
+                fontFamily = ChosunCentennial,
+                color = CommonColor.DarkBrown
             )
 
             Spacer(modifier = Modifier.padding(40.dp))
@@ -128,27 +134,32 @@ fun InputNickName(
     ) {
         Text(
             text = "닉네임",
-            modifier = Modifier.padding(bottom = 5.dp)
+            modifier = Modifier
+                .padding(bottom = 5.dp),
+            fontFamily = ChosunSeirf
         )
+        Spacer(modifier = Modifier.padding(vertical = 2.dp))
         OutlinedTextField(
             value = nickname,
             onValueChange = onNicknameChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             placeholder = {
                 Text(
                     text = "닉네임을 입력하세요",
-                    color = Color.Gray
+                    color = CommonColor.BeigeGray,
                 )
             },
             colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color(0xFF2196F3),
-                unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                focusedIndicatorColor = CommonColor.Orange,
+                unfocusedIndicatorColor = CommonColor.Brown,
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White
             ),
             shape = RoundedCornerShape(8.dp),
-            singleLine = true
-        )
+            singleLine = true,
+
+            )
     }
 }
 
@@ -158,26 +169,31 @@ fun InputAddress(
     onLocationClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+
     ) {
         Text(
             text = "주소",
-            modifier = Modifier.padding(bottom = 5.dp)
+            modifier = Modifier.padding(bottom = 5.dp),
+            fontFamily = ChosunSeirf
         )
+        Spacer(modifier = Modifier.padding(vertical = 2.dp))
         OutlinedTextField(
             value = selectedAddress,
             onValueChange = { }, // 읽기 전용
             readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             placeholder = {
                 Text(
                     text = "주소를 선택하세요",
-                    color = Color.Gray
+                    color = CommonColor.BeigeGray,
                 )
             },
             trailingIcon = {
                 Image(
-                    painter = painterResource(id = R.drawable.location_icon),
+                    painter = painterResource(id = R.drawable.ic_location),
                     contentDescription = "Location",
                     modifier = Modifier
                         .clickable { onLocationClick() }
@@ -185,14 +201,15 @@ fun InputAddress(
                 )
             },
             colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color(0xFF2196F3),
-                unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                focusedIndicatorColor = CommonColor.Orange,
+                unfocusedIndicatorColor = CommonColor.Brown,
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White
             ),
             shape = RoundedCornerShape(8.dp),
-            singleLine = true
-        )
+            singleLine = true,
+
+            )
     }
 }
 
@@ -204,13 +221,13 @@ fun InputAgeRange(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp)
     ) {
         Text(
             text = "희망 매칭 연령대",
-            modifier = Modifier.padding(bottom = 5.dp)
+            modifier = Modifier.padding(bottom = 5.dp),
+            fontFamily = ChosunSeirf
         )
-
+        Spacer(modifier = Modifier.padding(vertical = 2.dp))
         CustomRangeSlider(
             value = selectedAgeRange.first.toFloat()..selectedAgeRange.last.toFloat(),
             onValueChange = { floatRange ->
@@ -220,11 +237,12 @@ fun InputAgeRange(
                 )
             },
             valueRange = 20f..65f,
-            thumbRadius = 6.dp, // 작은 Thumb
-            trackHeight = 6.dp, // 얇은 트랙
+            thumbRadius = 11.dp,
+            trackHeight = 7.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 5.dp)
+                .padding(8.dp)
         )
 
         Spacer(modifier = Modifier.padding(vertical = 10.dp))
@@ -236,7 +254,9 @@ fun InputAgeRange(
             Text(
                 text = "${selectedAgeRange.first}세부터 ${selectedAgeRange.last}세까지",
                 fontWeight = FontWeight.Medium,
-                fontSize = 17.sp
+                fontSize = 16.sp,
+                fontFamily = ChosunSeirf,
+                color = CommonColor.Gray500
             )
         }
     }
