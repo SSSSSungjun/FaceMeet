@@ -187,7 +187,7 @@ fun MapScreen(
                     mapData.setLocation(
                         lat = latLng.latitude,
                         lng = latLng.longitude,
-                        addr = address
+                        addr = "$address ($placeName)"
                     )
 
                     Log.d(TAG, "장소 즉시 저장됨: $placeName, $address")
@@ -225,24 +225,24 @@ fun MapScreen(
                 isLocationSelected = true
 
                 scope.launch {
-                    val longClickAddress = getAddressFromLatLng(latLng)
+                    val clickAddress = getAddressFromLatLng(latLng)
 
-                    markerSnippet = longClickAddress
-                    currentSelectedAddress = longClickAddress
+                    markerSnippet = clickAddress
+                    currentSelectedAddress = clickAddress
 
                     mapData.setLocation(
                         lat = latLng.latitude,
                         lng = latLng.longitude,
-                        addr = longClickAddress
+                        addr = clickAddress
                     )
-                    Log.d(TAG, "길게 누르기 즉시 저장됨: $longClickAddress")
+                    Log.d(TAG, "누르기 즉시 저장됨: $clickAddress ")
                 }
             }
         ) {
             Marker(
                 state = MarkerState(position = markerPosition),
                 title = markerTitle,
-                snippet = markerSnippet
+                snippet = markerSnippet,
             )
         }
 

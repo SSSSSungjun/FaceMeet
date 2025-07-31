@@ -1,28 +1,37 @@
 package com.ssafy.facemeet.core.data.remote.api
 
-import com.ssafy.facemeet.core.data.remote.dto.request.OnboardingRequest
-import com.ssafy.facemeet.core.data.remote.dto.response.AuthResponse
-import com.ssafy.facemeet.core.data.remote.dto.response.ChatItemResponse
+import com.ssafy.facemeet.core.data.remote.dto.request.MatchingUserRequest
+import com.ssafy.facemeet.core.data.remote.dto.response.ChatElementResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.ChatListItemResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.MatchingResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ChatApiService {
 
     @GET("/api/v1/chatrooms")
-    suspend fun getChattingList(@Body request: OnboardingRequest): Response<List<ChatItemResponse>>
+    suspend fun getChattingList(): Response<MutableList<ChatListItemResponse>>
 
     @POST("/api/v1/chatrooms")
-    suspend fun postChattingList(@Body request: OnboardingRequest): Response<Unit>
+    suspend fun postChattingList(@Body request: MatchingUserRequest): Response<MatchingResponse>
 
     @POST("/api/v1/chatrooms/{roomId}")
-    suspend fun postChattingLike(@Body request: OnboardingRequest): Response<AuthResponse<Unit>>
+    suspend fun postChattingLike(
+        @Path("roomId") roomId: Int,
+        @Query("selected") selected: Boolean
+    ): Response<Unit>
 
     @POST("/api/v1/chatrooms/{roomId}/leave")
-    suspend fun postChattingLeave(@Body request: OnboardingRequest): Response<AuthResponse<Unit>>
+    suspend fun postChattingLeave(@Path("roomId") roomId: Int): Response<Unit>
 
     @GET("/api/v1/chatrooms/{roomId}/messages")
-    suspend fun getChattingMessages(@Body request: OnboardingRequest): Response<AuthResponse<Unit>>
+    suspend fun getChattingMessages(
+        @Path("roomId") roomId: Int,
+        @Query("limit") limit: Int = 20
+    ): Response<MutableList<ChatElementResponse>>
 
 }
