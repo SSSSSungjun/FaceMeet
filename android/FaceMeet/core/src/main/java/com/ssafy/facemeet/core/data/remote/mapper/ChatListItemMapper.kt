@@ -6,12 +6,12 @@ import com.ssafy.facemeet.core.domain.model.ChatListItem
 fun ChatListItemResponse.toDomain() : ChatListItem{
     return ChatListItem(
         userId = this.userId,
-        nickName = this.nickName,
-        lastSeen = this.lastSeen,
+        nickName = this.nickName.toString(),
+        lastSeen = this.lastSeen.toString(),
         isOnline = this.isOnline,
         chatRoomId = this.chatRoomId,
-        chatRoomStringId = this.chatRoomStringId,
-        lastMessage = this.lastMessage,
+        chatRoomStringId = this.chatRoomStringId.toString(),
+        lastMessage = this.lastMessage ?:"",
         nonReadCnt = this.nonReadCnt,
         blocked = this.blocked
     )

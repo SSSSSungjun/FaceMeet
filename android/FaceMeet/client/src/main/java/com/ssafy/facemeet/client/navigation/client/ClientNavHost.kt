@@ -2,9 +2,7 @@ package com.ssafy.facemeet.client.navigation.client
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
@@ -42,14 +40,8 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
         MatchingLoadingScreen()
     }
 
-    composable(
-        route = ClientRoutes.Chat.route,
-        arguments = listOf(navArgument("matchingId") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val matchingId = backStackEntry.arguments?.getString("matchingId")
-        ChattingScreen(
-            matchingId = matchingId.toString()//임시
-        )
+    composable(ClientRoutes.Chat.route,) {
+        ChattingScreen()
     }
 
 }

@@ -27,14 +27,14 @@ fun NavGraphBuilder.settingNavHost(
     navController: NavHostController
 ) {
     composable(
-       SettingRoutes.Register.route,
+        SettingRoutes.Register.route,
     ) {
         RegisterScreen(
-            onNavigateToNext = {
+            toNext = {
                 navController.navigate(ClientRoutes.MainMenu.route)
             }, // 여기서 뒤로가면 등록 못가게 해야할듯.
-            onNavigateToBack = { navController.popBackStack() },
-            onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) }
+            toBack = { navController.popBackStack() },
+            toMap = { navController.navigate(SettingRoutes.Map.route) }
         )
     }
 
@@ -54,7 +54,7 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.FrontCamera.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
+        val cameraVM: CameraShotViewModel = hiltViewModel()
         CameraCaptureScreen(
             mode = CaptureMode.FRONT,
             vm = cameraVM,
@@ -65,7 +65,7 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.FrontPreview.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
+        val cameraVM: CameraShotViewModel = hiltViewModel()
         ShotPreviewScreen(
             image = cameraVM.front.value?.asImageBitmap(),
             title = "전면 사진에 이상 없으면 다음을 눌러주세요.",
@@ -77,8 +77,8 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.SidePreview.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
-        val analyzeVM : FaceAnalyzeViewModel = hiltViewModel()
+        val cameraVM: CameraShotViewModel = hiltViewModel()
+        val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
         ShotPreviewScreen(
             image = cameraVM.side.value?.asImageBitmap(),
@@ -113,7 +113,7 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.SideCamera.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
+        val cameraVM: CameraShotViewModel = hiltViewModel()
         CameraCaptureScreen(
             mode = CaptureMode.SIDE,
             vm = cameraVM,
@@ -122,7 +122,7 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.FaceTestLoading.route) {
-        val analyzeVM : FaceAnalyzeViewModel = hiltViewModel()
+        val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
         FaceTestLoadingScreen(
             viewModel = analyzeVM, onNavigateToResult = {
                 navController.navigate(ClientRoutes.Profile.route) {

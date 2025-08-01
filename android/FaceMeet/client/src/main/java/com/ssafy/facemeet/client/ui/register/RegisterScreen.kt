@@ -40,9 +40,9 @@ private const val TAG = "RegisterScreen"
 
 @Composable
 fun RegisterScreen(
-    onNavigateToNext: () -> Unit = {},
-    onNavigateToBack: () -> Unit = {},
-    onNavigateToMap: () -> Unit = {},
+    toNext: () -> Unit = {},
+    toBack: () -> Unit = {},
+    toMap: () -> Unit = {},
     viewModel: RegisterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -54,9 +54,9 @@ fun RegisterScreen(
 
     LaunchedEffect(navigationEvent) {
         when(navigationEvent){
-            RegisterNaviEvent.ToBack -> onNavigateToBack()
-            RegisterNaviEvent.ToCamera -> onNavigateToNext()
-            RegisterNaviEvent.ToMap -> onNavigateToMap()
+            RegisterNaviEvent.ToBack -> toBack()
+            RegisterNaviEvent.ToCamera -> toNext()
+            RegisterNaviEvent.ToMap -> toMap()
             else -> Log.d(TAG, "RegisterScreen: Unknown")
         }
     }

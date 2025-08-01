@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.core.data.remote.datasource
 
+import android.util.Log
 import com.ssafy.facemeet.core.data.remote.api.ChatApiService
 import com.ssafy.facemeet.core.data.remote.dto.request.MatchingUserRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.ChatElementResponse
@@ -8,11 +9,13 @@ import com.ssafy.facemeet.core.data.remote.dto.response.MatchingResponse
 import retrofit2.Response
 import javax.inject.Inject
 
+private const val TAG = "ChatRemoteDataSource"
 class ChatRemoteDataSource @Inject constructor(
     private val chatApiService: ChatApiService
 )  {
 
      suspend fun getChattingList(): Response<MutableList<ChatListItemResponse>> {
+         Log.d(TAG, "getChattingList: remote")
         return chatApiService.getChattingList()
     }
 

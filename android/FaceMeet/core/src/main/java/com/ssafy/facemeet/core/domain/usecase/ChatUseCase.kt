@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.core.domain.usecase
 
+import android.util.Log
 import com.ssafy.facemeet.core.data.remote.dto.request.MatchingUserRequest
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.domain.model.ChatListItem
@@ -7,10 +8,20 @@ import com.ssafy.facemeet.core.domain.model.Matching
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
 import javax.inject.Inject
 
+private const val TAG = "ChatUseCase"
+
 class GetChattingListUseCase @Inject constructor(
     private val repository: ChatRepository
 ) {
     suspend operator fun invoke(): Result<List<ChatListItem>> {
+//        return repository.getChattingList().map { list ->
+//            list
+//                .filter { !it.blocked } // 차단된 채팅 제외
+//                .sortedWith(
+//                    compareByDescending<ChatListItem> { it.lastSeen }
+//                )
+//        }
+        Log.d(TAG, "invoke: 채팅리스트")
         return repository.getChattingList()
     }
 }

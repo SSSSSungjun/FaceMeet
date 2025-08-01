@@ -7,8 +7,6 @@ sealed class ClientRoutes(val route: String) {
     object MatchingLoading : ClientRoutes("matching_loading")
     object Profile : ClientRoutes("profile") //얘는 얼굴 고치는
     object MyPage : ClientRoutes("my_page")
-    object Chat : ClientRoutes("chat/{matchingId}") {
-        fun createRoute(matchingId: String) = "chat/$matchingId"
-    }
+    object Chat : ClientRoutes("chat")
 }
 

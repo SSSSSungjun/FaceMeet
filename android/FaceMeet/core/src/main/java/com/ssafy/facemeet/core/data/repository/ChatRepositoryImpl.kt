@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.core.data.repository
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.ssafy.facemeet.core.data.remote.datasource.ChatRemoteDataSource
 import com.ssafy.facemeet.core.data.remote.dto.request.MatchingUserRequest
@@ -11,6 +12,8 @@ import com.ssafy.facemeet.core.domain.model.Matching
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
 import javax.inject.Inject
 
+private const val TAG = "ChatRepositoryImpl"
+
 @RequiresApi(Build.VERSION_CODES.O)
 class ChatRepositoryImpl @Inject constructor(
     private val remoteDataSource: ChatRemoteDataSource
@@ -19,6 +22,7 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun getChattingList(): Result<List<ChatListItem>> = runCatching {
         val response = remoteDataSource.getChattingList()
         if (response.isSuccessful) {
+            Log.d(TAG, "getChattingList: ${response.body()}")
             (response.body() ?: emptyList()).map { it.toDomain() }
         } else {
             throw Exception("Failed to fetch chat list: ${response.message()}")

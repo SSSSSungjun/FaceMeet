@@ -85,6 +85,8 @@ dependencies {
     api("com.squareup.retrofit2:converter-gson:2.9.0")
     api("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
+    api ("androidx.compose.runtime:runtime-livedata")
+
     //dataStore (preference랑 용도 같음)
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.datastore:datastore-core:1.1.7")
