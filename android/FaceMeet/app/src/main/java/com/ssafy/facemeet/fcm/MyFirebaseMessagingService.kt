@@ -48,7 +48,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private val scheduledEvents = mutableMapOf<String, Runnable>()
     private lateinit var sharedPreferences: SharedPreferences
 
-
     override fun onCreate() {
         super.onCreate()
         sharedPreferences = getSharedPreferences("scheduled_events", Context.MODE_PRIVATE)
@@ -60,13 +59,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "onNewToken: $token")
 
         val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        val request = FcmTokenRequest(
-            deviceToken = token,
-            deviceType = "android",
-            deviceId = deviceId
-        )
+        val request = FcmTokenRequest(token, "android", deviceId)
 
-        fcmService.registerDevice(request).enqueue(object : Callback<FcmTokenResponse> {
+        fcmService.registerDevice(request).enqueue(object : Callback<FcmTokenResponse?> {
             override fun onResponse(
                 call: Call<FcmTokenResponse?>,
                 response: Response<FcmTokenResponse?>
@@ -74,10 +69,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 Log.d("FCM", "토큰 등록 성공: ${response.body()}")
             }
 
-            override fun onFailure(
-                call: Call<FcmTokenResponse?>,
-                t: Throwable
-            ) {
+            override fun onFailure(call: Call<FcmTokenResponse?>, t: Throwable) {
                 Log.e("FCM", "토큰 등록 실패", t)
             }
         })
@@ -87,29 +79,35 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "메시지 notification: ${remoteMessage.notification}")
         Log.d("FCM", "메시지 data: ${remoteMessage.data}")
 
-        Log.d("FCM", "onMessageReceived: $remoteMessage")
-
-        remoteMessage.notification?.let {
-            sendNotification(it.title ?: "알림", it.body ?: "")
-            return
-        }
-
         if (remoteMessage.data.isNotEmpty()) {
-            Log.d("FCM", "onMessageReceived: $remoteMessage.data[\"type\"]")
-
             when (remoteMessage.data["type"]) {
-                "SCHEDULED_EVENT" -> handleScheduledEvent(remoteMessage.data)
-                "IMMEDIATE_EVENT" -> handleImmediateEvent(remoteMessage.data)
+                "SCHEDULED_EVENT" -> handleScheduledEvent(
+                    remoteMessage.notification,
+                    remoteMessage.data
+                )
+
+                "IMMEDIATE_EVENT" -> handleImmediateEvent(
+                    remoteMessage.notification,
+                    remoteMessage.data
+                )
+
                 else -> {
                     val title = remoteMessage.data["title"] ?: "알림"
                     val body = remoteMessage.data["body"] ?: ""
                     sendNotification(title, body)
                 }
             }
+        } else {
+            remoteMessage.notification?.let {
+                sendNotification(it.title ?: "알림", it.body ?: "")
+            }
         }
     }
 
-    private fun handleScheduledEvent(data: Map<String, String>) {
+    private fun handleScheduledEvent(
+        notification: RemoteMessage.Notification?,
+        data: Map<String, String>
+    ) {
         try {
             val settingId = data["settingId"] ?: return
             val triggerTimeStr = data["triggerTime"] ?: return
@@ -123,72 +121,114 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 return
             }
 
-            if (triggerTime.time <= now.time) {
-                triggerEvent(settingId, eventDataStr)
+            // 디버깅을 위한 로그 추가
+            Log.d(
+                "FCM",
+                "현재 시간: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(now)}"
+            )
+            Log.d(
+                "FCM",
+                "트리거 시간: ${
+                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(triggerTime)
+                }"
+            )
+            Log.d("FCM", "시간 차이 (분): ${(triggerTime.time - now.time) / (1000 * 60)}")
+
+            // 1분 이상의 여유를 두고 판단 (네트워크 지연 등을 고려)
+            val bufferTime = 60 * 1000L // 1분
+            if (triggerTime.time < (now.time + bufferTime)) {
+                Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
+                triggerEvent(settingId, eventDataStr, notification?.title, notification?.body)
             } else {
-                scheduleLocalEvent(settingId, triggerTime, eventDataStr)
+                Log.d("FCM", "예약 실행: 트리거 시간까지 대기")
+                scheduleLocalEvent(
+                    settingId,
+                    triggerTime,
+                    eventDataStr,
+                    notification?.title,
+                    notification?.body
+                )
             }
         } catch (e: Exception) {
             Log.e("FCM", "예약 이벤트 처리 오류", e)
         }
     }
 
-    private fun handleImmediateEvent(data: Map<String, String>) {
-        Log.d("FCM", "handleImmediateEvent: handleImmediateEvent")
-        val title = data["title"] ?: "🔥 선착순 이벤트 시작!"
-        val body = data["body"] ?: "지금 바로 참여하세요!"
+    private fun handleImmediateEvent(
+        notification: RemoteMessage.Notification?,
+        data: Map<String, String>
+    ) {
+        val title = data["title"] ?: notification?.title ?: "없음"
+        val body = data["body"] ?: notification?.body ?: "없음"
         sendNotification(title, body)
-
-        saveNotificationToRoom(title, body, System.currentTimeMillis()) // room에 저장
+        saveNotificationToRoom(title, body, System.currentTimeMillis())
     }
 
-    private fun scheduleLocalEvent(settingId: String, triggerTime: Date, eventDataStr: String) {
+    private fun scheduleLocalEvent(
+        settingId: String,
+        triggerTime: Date,
+        eventDataStr: String,
+        title: String?,
+        body: String?
+    ) {
         val delay = triggerTime.time - System.currentTimeMillis()
 
+        Log.d("FCM", "예약 설정 - ID: $settingId, 지연시간: ${delay}ms (${delay / 1000 / 60}분)")
+
         if (delay <= 0) {
-            triggerEvent(settingId, eventDataStr)
+            Log.w("FCM", "지연시간이 0 이하입니다. 즉시 실행")
+            triggerEvent(settingId, eventDataStr, title, body)
             return
         }
 
-        scheduledEvents[settingId]?.let { handler.removeCallbacks(it) }
+        // 기존 예약이 있다면 취소
+        scheduledEvents[settingId]?.let {
+            handler.removeCallbacks(it)
+            Log.d("FCM", "기존 예약 취소: $settingId")
+        }
 
         val runnable = Runnable {
-            triggerEvent(settingId, eventDataStr)
+            Log.d("FCM", "예약된 이벤트 실행: $settingId")
+            triggerEvent(settingId, eventDataStr, title, body)
             scheduledEvents.remove(settingId)
             removeStoredEvent(settingId)
         }
 
         handler.postDelayed(runnable, delay)
         scheduledEvents[settingId] = runnable
-        storeEvent(settingId, triggerTime, eventDataStr)
+        storeEvent(settingId, triggerTime, eventDataStr, title, body)
 
-        Log.d("FCM", "예약됨: $settingId at $triggerTime (delay: ${delay}ms)")
+        Log.d(
+            "FCM",
+            "예약 완료: $settingId, 실행 예정 시간: ${
+                SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss",
+                    Locale.getDefault()
+                ).format(triggerTime)
+            }"
+        )
     }
 
-    private fun triggerEvent(settingId: String, eventDataStr: String) {
-        Log.d("FCM", "🔥 이벤트 실행됨: $settingId")
-
+    private fun triggerEvent(
+        settingId: String,
+        eventDataStr: String,
+        title: String?,
+        body: String?
+    ) {
         try {
             val eventData = parseEventData(eventDataStr)
-            val couponCount = eventData["couponCount"] as? Double ?: 0.0
-            val discountRate = eventData["discountRate"] as? Double ?: 0.0
+            val finalTitle = title ?: "없음"
+            val finalBody = body ?: "없음"
 
-            val title = "🔥 선착순 이벤트 시작!"
-            val body = "${discountRate.toInt()}% 할인 쿠폰 ${couponCount.toInt()}개 선착순!"
-            sendNotification(title, body)
-
-            saveNotificationToRoom(title, body, System.currentTimeMillis())
-
+            sendNotification(finalTitle, finalBody)
+            saveNotificationToRoom(finalTitle, finalBody, System.currentTimeMillis())
         } catch (e: Exception) {
             Log.e("FCM", "이벤트 실행 중 오류", e)
-            sendNotification("🔥 선착순 이벤트 시작!", "지금 바로 참여하세요!")
         }
     }
 
     private fun sendNotification(title: String, body: String) {
-        Log.d("FCM", "알림 전송: $title - $body")
-
-        val channelId = "ticket_channel" // 🔄 알림 유형별로 채널 나눌 수도 있음
+        val channelId = "ticket_channel"
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -197,22 +237,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
+            this,
+            0,
+            intent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // 🔔 채널 생성 (최초 1회)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "이벤트 티켓 알림",
-                NotificationManager.IMPORTANCE_HIGH
-            )
+            val channel =
+                NotificationChannel(channelId, "이벤트 티켓 알림", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_48) // 알림 아이콘
+            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
@@ -220,26 +258,39 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
 
-        val notificationId = System.currentTimeMillis().toInt() // ✅ 고유 ID
-
+        val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, builder.build())
     }
 
-
     private fun parseDateTime(dateTimeStr: String): Date? {
+        // ISO 8601 형식과 다양한 형식 지원
         val formats = listOf(
-            "yyyy-MM-dd'T'HH:mm:ss",
-            "yyyy-MM-dd'T'HH:mm",
-            "yyyy-MM-dd HH:mm:ss",
-            "yyyy-MM-dd HH:mm"
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // UTC 시간
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",      // UTC 시간
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // 타임존 포함
+            "yyyy-MM-dd'T'HH:mm:ssXXX",      // 타임존 포함
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",     // 밀리초 포함
+            "yyyy-MM-dd'T'HH:mm:ss",         // 기본 ISO
+            "yyyy-MM-dd'T'HH:mm",            // 분까지만
+            "yyyy-MM-dd HH:mm:ss",           // 공백으로 구분
+            "yyyy-MM-dd HH:mm"               // 공백으로 구분, 분까지만
         )
+
         for (formatStr in formats) {
             try {
-                return SimpleDateFormat(formatStr, Locale.getDefault()).parse(dateTimeStr)
-            } catch (_: Exception) {
+                val sdf = SimpleDateFormat(formatStr, Locale.getDefault())
+                // UTC 시간인 경우 타임존 설정
+                if (formatStr.contains("'Z'")) {
+                    sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                }
+                val parsedDate = sdf.parse(dateTimeStr)
+                Log.d("FCM", "시간 파싱 성공: $dateTimeStr -> $parsedDate (format: $formatStr)")
+                return parsedDate
+            } catch (e: Exception) {
+                Log.v("FCM", "시간 파싱 시도 실패: $formatStr")
             }
         }
-        Log.e("FCM", "시간 파싱 실패: $dateTimeStr")
+        Log.e("FCM", "모든 형식으로 시간 파싱 실패: $dateTimeStr")
         return null
     }
 
@@ -252,11 +303,19 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    private fun storeEvent(settingId: String, triggerTime: Date, eventDataStr: String) {
+    private fun storeEvent(
+        settingId: String,
+        triggerTime: Date,
+        eventDataStr: String,
+        title: String?,
+        body: String?
+    ) {
         val eventInfo = mapOf(
             "settingId" to settingId,
             "triggerTime" to triggerTime.time.toString(),
-            "eventData" to eventDataStr
+            "eventData" to eventDataStr,
+            "title" to title.orEmpty(),
+            "body" to body.orEmpty()
         )
         val json = Gson().toJson(eventInfo)
         sharedPreferences.edit().putString("event_$settingId", json).apply()
@@ -269,21 +328,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun restoreScheduledEvents() {
         try {
             val keys = sharedPreferences.all.keys.filter { it.startsWith("event_") }
-
             for (key in keys) {
                 val json = sharedPreferences.getString(key, null) ?: continue
                 val eventInfo = Gson().fromJson<Map<String, String>>(
                     json,
                     object : TypeToken<Map<String, String>>() {}.type
                 )
-
                 val settingId = eventInfo["settingId"] ?: continue
                 val triggerTime =
                     eventInfo["triggerTime"]?.toLongOrNull()?.let { Date(it) } ?: continue
                 val eventDataStr = eventInfo["eventData"] ?: continue
+                val title = eventInfo["title"]
+                val body = eventInfo["body"]
 
                 if (triggerTime.time > System.currentTimeMillis()) {
-                    scheduleLocalEvent(settingId, triggerTime, eventDataStr)
+                    scheduleLocalEvent(settingId, triggerTime, eventDataStr, title, body)
                 } else {
                     removeStoredEvent(settingId)
                 }
@@ -304,6 +363,4 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationDao.insert(notification)
         }
     }
-
-
 }

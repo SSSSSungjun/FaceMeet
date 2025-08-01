@@ -6,13 +6,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -63,7 +66,7 @@ fun MainMenuScreen(
             Text(
                 text = "상견례",
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
+                fontSize = 22.sp,
                 fontFamily = ChosunCentennial,
                 style = TitleTextStyle,
                 modifier = Modifier.padding(start = 4.dp)
@@ -79,10 +82,11 @@ fun MainMenuScreen(
             }
         }
 
-        Spacer(modifier = Modifier.padding(20.dp))
+        Spacer(modifier = Modifier.padding(10.dp))
 
         ProfileCardWithBackground(onProfile, onMyPage)
 
+        Spacer(modifier = Modifier.padding(10.dp))
         // 하단 버튼 2개
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -136,7 +140,6 @@ fun ProfileCardWithBackground(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(bottom = 16.dp)
             .clip(RoundedCornerShape(16.dp))
     ) {
         // 배경 이미지
@@ -153,16 +156,16 @@ fun ProfileCardWithBackground(
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(vertical = 10.dp)
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 60.dp),
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .clickable { onProfile() }
-                        .fillMaxWidth()
                         .padding(12.dp)
                 ) {
                     Box(
@@ -182,7 +185,7 @@ fun ProfileCardWithBackground(
                     Text(
                         "김철수",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp,
+                        fontSize = 28.sp,
                         fontFamily = ChosunCentennial,
                         color = CommonColor.BrownGray900
                     )
@@ -190,28 +193,77 @@ fun ProfileCardWithBackground(
                     Text(
                         "알 수 없상",
                         fontSize = 16.sp,
-                        color = CommonColor.BrownGray700,
+                        color = CommonColor.BrownGray600,
                         fontFamily = ChosunSeirf
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-                Divider(color = Color.Gray.copy(alpha = 0.5f))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(30.dp))
+                Divider(
+                    color = CommonColor.Gray100
+                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
+                        .padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("매칭권 3", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(
-                        "내 정보 보기",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.clickable { onMyPage() }
+                    // 매칭권 3 영역 (weight 1f)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable {},
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "매칭권 ",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = CommonColor.BrownGray600
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "3",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = CommonColor.BrownGray600
+                            )
+                        }
+                    }
+
+                    // 세로선
+                    Divider(
+                        color = CommonColor.Gray100,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp)
                     )
+
+                    // 내 정보 보기 영역 (weight 1f)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable { onMyPage() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "내 정보 보기",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = CommonColor.BrownGray600
+                        )
+                    }
                 }
+
+
             }
         }
     }
