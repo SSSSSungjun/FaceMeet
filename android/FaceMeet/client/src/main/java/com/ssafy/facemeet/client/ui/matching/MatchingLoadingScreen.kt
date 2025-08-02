@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,14 +35,31 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun MatchingLoadingScreen(
     onMatchFound: (String) -> Unit = {},
-    onCancel: () -> Unit = {}
+    onCancel: () -> Unit = {},
+    viewModel: MatchingViewModel = hiltViewModel(),
+    navController: NavController,
 ) {
+    val result by viewModel.matchingResult.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.startMatching()
+    }
+
+    LaunchedEffect(result) {
+        if (result != null) {
+            navController.navigate("chat/${result}")
+            viewModel.resetMatchingResult() // 재방문 시 중복 이동 방지
+        }
+    }
+
     // 배경 그라데이션
     Box(
         modifier = Modifier
