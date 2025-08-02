@@ -59,12 +59,12 @@ fun MainMenuScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .background(Color(0xFFF8F2E9))  // 배경색 비슷하게 조정
-            .padding(horizontal = 16.dp)
+            .padding(start = 16.dp, end = 16.dp, bottom = 40.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 40.dp),
+                .padding(top = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -74,7 +74,7 @@ fun MainMenuScreen(
                 fontSize = 22.sp,
                 fontFamily = ChosunCentennial,
                 style = TitleTextStyle,
-                modifier = Modifier.padding(start = 4.dp)
+                modifier = Modifier.padding(start = 6.dp)
             )
             IconButton(onClick = onNotification) {
                 Icon(
@@ -87,8 +87,10 @@ fun MainMenuScreen(
             }
         }
 
+        Spacer(modifier = Modifier.padding(4.dp))
 
         ProfileCardWithBackground(onProfile)
+        Spacer(modifier = Modifier.padding(10.dp))
 
         // 하단 버튼 2개
         Row(
@@ -193,7 +195,6 @@ fun ProfileCardWithBackground(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 20.dp)
             .wrapContentHeight()
             .clip(RoundedCornerShape(16.dp))
     ) {
@@ -259,7 +260,8 @@ fun ProfileCardWithBackground(
 
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth().height(IntrinsicSize.Min),
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // 매칭권 3 영역 (weight 1f)

@@ -24,6 +24,7 @@ object CommonColor {
     val RedBrown = Color(0xFF8B5A2B)
 
     val Beige = Color(0xFFE3D3C0)
+    val Beige200 = Color(0xFFEAE3D8)
 
     val BeigeDark = Color(0xFFCECBBC)
 
@@ -33,4 +34,6 @@ object CommonColor {
     val BrownGray600 = Color(0xFF8F6D32)
 
     val Orange = Color(0xFFD2691E)
+
+    val Yellow = Color(0xFFDAA520)
 }
