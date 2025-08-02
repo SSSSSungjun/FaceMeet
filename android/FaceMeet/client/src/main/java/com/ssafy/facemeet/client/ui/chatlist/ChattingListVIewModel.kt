@@ -33,7 +33,7 @@ class ChattingListViewModel @Inject constructor(
                     isLoading = false
                 )
             }.onFailure {
-                Log.d(TAG, "${it.message}")
+                Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")
             }
         }
     }

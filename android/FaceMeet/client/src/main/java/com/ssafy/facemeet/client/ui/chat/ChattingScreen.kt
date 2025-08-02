@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -91,7 +92,7 @@ fun ChattingScreen(
 
     }
     LaunchedEffect(userId, roomId, receiverId) {
-        viewModel.connectToChat(userId, roomId, receiverId)
+        viewModel.connectToChat(roomId, receiverId)
     }
     LaunchedEffect(connectionState) {
         viewModel.updateConnectionState(connectionState)
@@ -140,7 +141,7 @@ fun ChattingScreen(
             items(
                 items = messages,
                 key = { item ->
-                    "${item.chatElement.roomID}-${item.chatElement.createdAt}-${item.chatElement.senderID}"
+                    "${item.chatElement.roomID}-${item.chatElement.readAt}-${item.chatElement.senderID}"
                 }
             ) { messageItem ->
                 when (messageItem.messageType) {
@@ -152,7 +153,7 @@ fun ChattingScreen(
                     }
 
                     MessageType.SYSTEM_DATE -> {
-                        DateSeparator(date = messageItem.chatElement.content)
+                        DateSeparator(date = messageItem.chatElement.content.toString())
                     }
 
                     MessageType.CHAT_END -> {
@@ -289,7 +290,7 @@ fun ChatMessageBubble(
                 modifier = Modifier.padding(12.dp)
             ) {
                 Text(
-                    text = message.content,
+                    text = message.content.toString(),
                     color = if (isMyMessage)
                         MaterialTheme.colorScheme.onPrimary
                     else
@@ -304,7 +305,7 @@ fun ChatMessageBubble(
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
-                        text = message.createdAt.formatSmartDate(),
+                        text = message.readAt?.formatSmartDate() ?: "",
                         fontSize = 10.sp,
                         color = if (isMyMessage)
                             MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
@@ -315,9 +316,9 @@ fun ChatMessageBubble(
                     if (isMyMessage) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (message.isRead) "읽음" else "1",
+                            text = if (message.isRead == true) "읽음" else "1",
                             fontSize = 10.sp,
-                            color = if (message.isRead)
+                            color = if (message.isRead == true)
                                 MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                             else
                                 MaterialTheme.colorScheme.secondary
@@ -447,8 +448,13 @@ fun MessageInput(
 }
 
 
-//@Preview
-//@Composable
-//fun ChattingScreenPreview() {
-//    ChattingScreen()
-//}
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview
+@Composable
+fun ChattingScreenPreview() {
+    ChatMessageBubble(
+        ChatElementResponse("응 아니아", 1L, 2L, 0, "", false, ""),
+        isMyMessage = true
+    )
+
+}

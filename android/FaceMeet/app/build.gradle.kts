@@ -100,7 +100,7 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.1")
-
+    implementation ("androidx.lifecycle:lifecycle-process:2.9.2")
 //    // room
 //    implementation(libs.androidx.room.runtime)
 //    ksp(libs.androidx.room.compiler)

@@ -1,22 +1,20 @@
 package com.ssafy.facemeet.core.data.remote.dto.response
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.google.gson.annotations.SerializedName
 
-@Serializable
-data class ChatElementResponse(
-    val content: String,
-
-    @SerialName("senderId")
-    val senderID: Long,
-
-    @SerialName("receiverId")
-    val receiverID: Long,
-
-    @SerialName("roomId")
-    val roomID: String,
-
-    val createdAt: String,
-    val isRead: Boolean,
-    val readAt: String
+data class  ChatElementResponse(
+    @SerializedName("content")
+    val content: String?,
+    @SerializedName("senderId")
+    val senderID: Long?,
+    @SerializedName("receiverId")
+    val receiverID: Long?,
+    @SerializedName("roomId")
+    val roomID: Long?,
+    @SerializedName("sendAt")
+    val createdAt: String?,
+    @SerializedName("isRead")
+    val isRead: Boolean?,
+    @SerializedName("readAt")
+    val readAt: String?
 )

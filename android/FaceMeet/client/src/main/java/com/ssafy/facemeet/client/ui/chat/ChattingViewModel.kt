@@ -41,8 +41,9 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    fun connectToChat(userId: Long, roomId: Int, receiverId: Long) {
+    fun connectToChat(roomId: Int, receiverId: Long) {
         viewModelScope.launch {
+            val userId= tokenManager.getUserPK()?.toLong() ?: 0L
             try {
                 _uiState.value = _uiState.value.copy(
                     currentUserId = userId,

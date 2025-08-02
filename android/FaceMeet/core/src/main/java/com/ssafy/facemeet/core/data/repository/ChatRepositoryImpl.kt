@@ -25,6 +25,7 @@ class ChatRepositoryImpl @Inject constructor(
             Log.d(TAG, "getChattingList: ${response.body()}")
             (response.body() ?: emptyList()).map { it.toDomain() }
         } else {
+            Log.d(TAG, "getChattingList: ${response.body()}")
             throw Exception("Failed to fetch chat list: ${response.message()}")
         }
     }
