@@ -243,7 +243,7 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
-        MatchingStartButton(onMatching = onMatching)
+        MatchingStartButton(onMatching = onMatching, buttonText = "매칭 시작하기")
 
 
     }
@@ -479,7 +479,7 @@ fun ProfileScreenPreview() {
 }
 
 @Composable
-fun MatchingStartButton(onMatching: () -> Unit) {
+fun MatchingStartButton(onMatching: () -> Unit, buttonText: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -514,7 +514,7 @@ fun MatchingStartButton(onMatching: () -> Unit) {
                     .padding(end = 8.dp)
             )
             Text(
-                text = "매칭 시작하기",
+                text = buttonText,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
