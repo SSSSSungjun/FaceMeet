@@ -39,7 +39,7 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
     }
 
     composable(ClientRoutes.MatchingLoading.route) {
-        MatchingLoadingScreen()
+        MatchingLoadingScreen(onCancel = { navController.popBackStack() })
     }
 
     composable(
