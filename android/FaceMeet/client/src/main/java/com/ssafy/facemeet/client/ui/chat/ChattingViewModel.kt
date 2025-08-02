@@ -10,8 +10,11 @@ import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,9 +28,18 @@ class ChattingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState
 
+    private val _naviEvent = MutableSharedFlow<ChatNaviEvent?>()
+    val naviEvent: SharedFlow<ChatNaviEvent?> = _naviEvent.asSharedFlow()
+
     // WebSocket 메시지와 연결 상태 관찰
     val messages: LiveData<List<ChatMessageItem>> = webSocketManager.messages
     val connectionState: LiveData<ConnectionState> = webSocketManager.connectionState
+
+    fun navigateToBack() {
+        viewModelScope.launch {
+            _naviEvent.emit(ChatNaviEvent.ToBack)
+        }
+    }
 
     fun connectToChat(userId: Long, roomId: Int, receiverId: Long) {
         viewModelScope.launch {
@@ -40,8 +52,8 @@ class ChattingViewModel @Inject constructor(
                 )
 
                 val token = tokenManager.getAccessToken()
-                // WebSocket 연결
-                if(token!=null)
+
+                if(token!=null)  // WebSocket 연결
                     webSocketManager.connect(userId, token)
                 _uiState.value = _uiState.value.copy(isLoading = false)
 
@@ -62,18 +74,23 @@ class ChattingViewModel @Inject constructor(
     }
 
 
-    fun sendMessage(content: String) {
+    fun sendMessage() {
         val state = _uiState.value
-        if (content.isBlank() || state.currentUserId == 0L) return
+        if (!state.canSendMessage || state.currentUserId == 0L) return
 
         viewModelScope.launch {
             try {
                 webSocketManager.sendMessage(
-                    content = content.trim(),
+                    content = state.messageText.trim(),
                     roomId = state.roomId,
                     senderId = state.currentUserId,
                     receiverId = state.receiverId
                 )
+                _uiState.value = _uiState.value.copy(
+                    messageText = "",
+                    canSendMessage = false
+                )
+
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
@@ -83,7 +100,11 @@ class ChattingViewModel @Inject constructor(
     fun markAsRead() {
         val state = _uiState.value
         if (state.currentUserId != 0L && state.roomId != 0) {
-            webSocketManager.markAsRead(state.roomId.toString(), state.currentUserId)
+            webSocketManager.markAsRead(
+                roomId = state.roomId.toString(),
+                userId = state.currentUserId,
+                senderId = state.receiverId // 상대방이 보낸 메시지를 읽음 처리
+            )
         }
     }
 

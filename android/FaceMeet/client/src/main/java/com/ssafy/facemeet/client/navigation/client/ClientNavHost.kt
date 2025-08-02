@@ -1,5 +1,7 @@
 package com.ssafy.facemeet.client.navigation.client
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -11,6 +13,7 @@ import com.ssafy.facemeet.client.ui.notification.NotificationScreen
 import com.ssafy.facemeet.client.ui.profile.ProfileScreen
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
 
     composable(ClientRoutes.MainMenu.route) {
@@ -41,7 +44,12 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
     }
 
     composable(ClientRoutes.Chat.route,) {
-        ChattingScreen()
+        ChattingScreen(
+            userId = 95,
+            roomId = 7,
+            receiverId = 97,
+            onBackClick = {}
+        )
     }
 
 }

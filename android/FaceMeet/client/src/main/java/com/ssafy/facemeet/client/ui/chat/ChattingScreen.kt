@@ -3,7 +3,6 @@ package com.ssafy.facemeet.client.ui.chat
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,9 +45,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -58,10 +56,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.core.data.remote.dto.response.ChatElementResponse
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
-import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
+import com.ssafy.facemeet.core.util.format.ParsingTimeData.formatSmartDate
 
 private const val TAG = "ChattingScreen"
 
@@ -74,32 +74,40 @@ fun ChattingScreen(
     onBackClick: () -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
-
     val uiState by viewModel.uiState.collectAsState()
+    val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
+
     val messages by viewModel.messages.observeAsState(emptyList())
     val connectionState by viewModel.connectionState.observeAsState(
         ConnectionState.DISCONNECTED
     )
-    var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    LaunchedEffect(navigationEvent) {
+        when (navigationEvent) {
+            ChatNaviEvent.ToBack -> onBackClick()
+            else -> {}
+        }
+
+    }
     LaunchedEffect(userId, roomId, receiverId) {
         viewModel.connectToChat(userId, roomId, receiverId)
     }
-
+    LaunchedEffect(connectionState) {
+        viewModel.updateConnectionState(connectionState)
+    }
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
     }
-
     LaunchedEffect(Unit) {
         viewModel.markAsRead()
     }
 
     uiState.error?.let { error ->
         LaunchedEffect(error) {
-            Log.d(TAG, "ChattingScreen: Error occur") // 스낵바나 토스트로 에러 표시
+            Log.d(TAG, "ChattingScreen: Error occur")
             viewModel.clearError()
         }
     }
@@ -117,7 +125,8 @@ fun ChattingScreen(
     ) {
         ChatHeader(
             userName = "닉네임",
-            compatibilityScore = 87
+            compatibilityScore = 87,
+            onBack = viewModel::navigateToBack
         )
 
         LazyColumn(
@@ -136,28 +145,40 @@ fun ChattingScreen(
             ) { messageItem ->
                 when (messageItem.messageType) {
                     MessageType.TEXT -> {
-                        ChatBubble(
-                            text = messageItem.chatElement.content,
-                            time = messageItem.chatElement.createdAt.toHourMinuteString(),
-                            isMyMessage = messageItem.chatElement.senderID == userId,
-                            isRead = messageItem.chatElement.isRead
+                        ChatMessageBubble(
+                            message = messageItem.chatElement,
+                            isMyMessage = messageItem.chatElement.senderID == userId
                         )
                     }
+
                     MessageType.SYSTEM_DATE -> {
-                        //DateSeparator(date = messageItem.chatElement.)
+                        DateSeparator(date = messageItem.chatElement.content)
                     }
+
                     MessageType.CHAT_END -> {
-                        //ChatEndMessage(message = messageItem.chatElement.content)
+                        //ChatEndMessage()
                     }
                 }
             }
         }
 
+
         MessageInput(
-            messageText = messageText,
-            onMessageTextChanged = { messageText = it },
-            onSendClick = { messageText = "" }
+            messageText = uiState.messageText,
+            onMessageChange = { viewModel.updateMessageText(it) },
+            onSendClick = { viewModel.sendMessage() },
+            canSend = uiState.canSendMessage,
+            isConnected = connectionState == ConnectionState.CONNECTED
         )
+
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
 
 }
@@ -165,7 +186,8 @@ fun ChattingScreen(
 @Composable
 fun ChatHeader(
     userName: String,
-    compatibilityScore: Int
+    compatibilityScore: Int,
+    onBack: () -> Unit
 ) {
     Surface {
         Row(
@@ -178,7 +200,7 @@ fun ChatHeader(
         ) {
 
             IconButton(
-                onClick = { },
+                onClick = { onBack() },
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
@@ -216,64 +238,92 @@ fun ChatHeader(
 }
 
 @Composable
-fun SystemMessage(text: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            ),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Text(
-                text = text,
-                modifier = Modifier.padding(horizontal = 30.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = Color.DarkGray
-            )
-        }
+fun ConnectionStatusText(connectionState: ConnectionState) {
+    val (color, text) = when (connectionState) {
+        ConnectionState.CONNECTING ->
+            MaterialTheme.colorScheme.primary to "연결 중..."
+
+        ConnectionState.CONNECTED ->
+            Color.Green to "온라인"
+
+        ConnectionState.DISCONNECTED ->
+            Color.Red to "연결 끊김"
+
+        ConnectionState.ERROR ->
+            MaterialTheme.colorScheme.error to "연결 오류"
     }
+
+    Text(
+        text = text,
+        color = color,
+        fontSize = 12.sp
+    )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ChatBubble(
-    text: String,
-    time: String,
-    isMyMessage: Boolean,
-    isRead: Boolean
+fun ChatMessageBubble(
+    message: ChatElementResponse,
+    isMyMessage: Boolean
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFF4F3ED)), // 채팅 버블 배경도 통일
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start
     ) {
-        Box {
-            Card(
-                modifier = Modifier.widthIn(max = 280.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (!isMyMessage) Color.White else Color(0xFF824946)
-                ),
-                shape = RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = if (isMyMessage) 16.dp else 4.dp,
-                    bottomEnd = if (isMyMessage) 4.dp else 16.dp
-                ),
-                border = if (!isMyMessage) BorderStroke(1.dp, Color(0xFFF3F4F6)) else null
+        Card(
+            modifier = Modifier.widthIn(max = 280.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isMyMessage)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.surfaceVariant
+            ),
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isMyMessage) 16.dp else 4.dp,
+                bottomEnd = if (isMyMessage) 4.dp else 16.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
             ) {
                 Text(
-                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
-                    text = text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isMyMessage) Color.White else Color(0xFF1F2937),
-                    lineHeight = 20.sp
+                    text = message.content,
+                    color = if (isMyMessage)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = message.createdAt.formatSmartDate(),
+                        fontSize = 10.sp,
+                        color = if (isMyMessage)
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+
+                    if (isMyMessage) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (message.isRead) "읽음" else "1",
+                            fontSize = 10.sp,
+                            color = if (message.isRead)
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                            else
+                                MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             }
         }
     }
@@ -308,8 +358,10 @@ fun DateSeparator(date: String) {
 @Composable
 fun MessageInput(
     messageText: String,
-    onMessageTextChanged: (String) -> Unit,
-    onSendClick: () -> Unit
+    onMessageChange: (String) -> Unit,
+    onSendClick: () -> Unit,
+    canSend: Boolean,
+    isConnected: Boolean
 ) {
 
     // 입력창과 버튼을 포함하는 둥근 프레임
@@ -340,7 +392,7 @@ fun MessageInput(
             // 텍스트 입력
             BasicTextField(
                 value = messageText,
-                onValueChange = onMessageTextChanged,
+                onValueChange = {onMessageChange(it)},
                 modifier = Modifier
                     .weight(1f)
                     .padding(vertical = 8.dp, horizontal = 5.dp),
@@ -364,11 +416,12 @@ fun MessageInput(
                         )
                     }
                     innerTextField()
-                }
+                },
+                enabled = isConnected
             )
 
             // 전송 버튼 (메시지가 있을 때만 표시)
-            if (messageText.isNotBlank()) {
+            if (canSend) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
@@ -391,8 +444,8 @@ fun MessageInput(
         }
     }
 
-
 }
+
 
 //@Preview
 //@Composable

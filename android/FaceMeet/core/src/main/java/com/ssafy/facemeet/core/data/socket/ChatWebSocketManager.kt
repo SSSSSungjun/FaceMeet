@@ -10,7 +10,6 @@ import com.ssafy.facemeet.core.data.remote.dto.response.ChatElementResponse
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
-import com.ssafy.facemeet.core.data.socket.model.WebSocketSendMessage
 import com.ssafy.facemeet.core.util.format.ParsingTimeData.toFullDateString
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -19,16 +18,18 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @RequiresApi(Build.VERSION_CODES.O)
 class ChatWebSocketManager @Inject constructor() {
 
     private var webSocket: WebSocket? = null
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
     private val gson = Gson()
-    private val messageCounter = AtomicLong(0)
 
     private val _messages = MutableLiveData<List<ChatMessageItem>>()
     val messages: LiveData<List<ChatMessageItem>> = _messages
@@ -38,150 +39,202 @@ class ChatWebSocketManager @Inject constructor() {
 
     private val messageList = mutableListOf<ChatMessageItem>()
     private var currentUserId: Long = 0
-
+    private var isStompConnected = false
 
     fun connect(userId: Long, token: String) {
         currentUserId = userId
+        Log.d("WebSocket", "순수 WebSocket + STOMP 연결 시도 - UserId: $userId")
+        Log.d("WebSocket", "사용할 토큰: $token")
 
-        val request = Request.Builder()
-            .url("wss://i13d201.p.ssafy.io/api/v1/ws?token=$token")
-            .addHeader("Sec-WebSocket-Protocol", "v10.stomp, v11.stomp, v12.stomp")
-            .build()
+        // 토큰 만료 시간 확인
+        checkTokenExpiry(token)
 
         _connectionState.value = ConnectionState.CONNECTING
 
+        // JwtHandshakeInterceptor가 쿼리 파라미터에서 토큰을 추출하므로 쿼리 파라미터로만 시도
+        connectWithQueryParam(token)
+    }
+
+    private fun checkTokenExpiry(token: String) {
+        try {
+            val parts = token.split(".")
+            if (parts.size == 3) {
+                val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.DEFAULT))
+                Log.d("WebSocket", "토큰 payload: $payload")
+
+                // exp 추출 (간단한 방법)
+                val expMatch = Regex("\"exp\":(\\d+)").find(payload)
+                if (expMatch != null) {
+                    val expTime = expMatch.groupValues[1].toLong()
+                    val currentTime = System.currentTimeMillis() / 1000
+                    Log.d("WebSocket", "토큰 만료시간: $expTime")
+                    Log.d("WebSocket", "현재 시간: $currentTime")
+                    Log.d("WebSocket", "토큰 유효여부: ${expTime > currentTime}")
+
+                    if (expTime <= currentTime) {
+                        Log.e("WebSocket", "🚨 토큰이 만료되었습니다!")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("WebSocket", "토큰 파싱 오류: ${e.message}")
+        }
+    }
+
+    private fun connectWithQueryParam(token: String) {
+        // URL 인코딩하지 않은 버전과 인코딩한 버전 둘 다 시도
+        Log.d("WebSocket", "원본 토큰으로 시도...")
+        tryConnection(token, "원본")
+    }
+
+    private fun tryConnection(token: String, type: String) {
+        val websocketUrl = "wss://i13d201.p.ssafy.io/api/v1/websocket?token=$token"
+
+        Log.d("WebSocket", "$type 토큰 방식: $websocketUrl")
+
+        val request = Request.Builder()
+            .url(websocketUrl)
+            .addHeader("Origin", "https://i13d201.p.ssafy.io")
+            .build()
+
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d("WebSocket", "연결 성공")
-
-                // STOMP CONNECT 프레임 전송
+                Log.d("WebSocket", "✅ $type 토큰으로 WebSocket 연결 성공!")
+                _connectionState.postValue(ConnectionState.CONNECTED)
                 sendStompConnect()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                Log.d("WebSocket", "수신 메시지: $text")
+                Log.d("WebSocket", "📨 STOMP 메시지: $text")
                 handleStompMessage(text)
             }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                _connectionState.postValue(ConnectionState.DISCONNECTED)
-                Log.d("WebSocket", "연결 종료: $code - $reason")
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                Log.e("WebSocket", "❌ $type 토큰 WebSocket 연결 실패: ${t.message}")
+                Log.e("WebSocket", "응답 코드: ${response?.code}")
+                Log.e("WebSocket", "응답 메시지: ${response?.message}")
+
+                when (response?.code) {
+                    401 -> Log.e("WebSocket", "🔐 토큰 인증 실패")
+                    400 -> Log.e("WebSocket", "📝 잘못된 요청 형식")
+                    404 -> Log.e("WebSocket", "🔍 엔드포인트를 찾을 수 없음")
+                    else -> Log.e("WebSocket", "❓ 알 수 없는 오류")
+                }
+
+                if (type == "원본" && response?.code == 401) {
+                    Log.d("WebSocket", "URL 인코딩된 토큰으로 재시도...")
+                    val encodedToken = java.net.URLEncoder.encode(token, "UTF-8")
+                    tryConnection(encodedToken, "인코딩된")
+                } else {
+                    _connectionState.postValue(ConnectionState.ERROR)
+                }
             }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                _connectionState.postValue(ConnectionState.ERROR)
-                Log.e("WebSocket", "연결 오류: ${t.message}")
+            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                Log.d("WebSocket", "🔌 WebSocket 연결 종료: $code - $reason")
+                _connectionState.postValue(ConnectionState.DISCONNECTED)
+                isStompConnected = false
             }
         })
     }
 
     private fun sendStompConnect() {
-        // STOMP CONNECT 프레임 생성
-        val connectFrame = buildString {
-            appendLine("CONNECT")
-            appendLine("accept-version:1.0,1.1,2.0")
-            appendLine("heart-beat:10000,10000")
-            appendLine()
-            append('\u0000') // NULL 종료 문자
-        }
-
+        val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:10000,10000\n\n\u0000"
         webSocket?.send(connectFrame)
-        Log.d("WebSocket", "STOMP CONNECT 전송: $connectFrame")
+        Log.d("WebSocket", "📤 STOMP CONNECT 전송")
     }
 
     private fun handleStompMessage(message: String) {
-        val lines = message.split("\n")
-        val command = lines.firstOrNull() ?: return
+        when {
+            message.startsWith("CONNECTED") -> {
+                Log.d("WebSocket", "🎉 STOMP 연결 완료!")
+                isStompConnected = true
 
-        when (command) {
-            "CONNECTED" -> {
-                _connectionState.postValue(ConnectionState.CONNECTED)
-                Log.d("WebSocket", "STOMP 연결 완료")
+                // 서버 설정에 따라 /pub/chat.connect로 전송
+                sendStompMessage("/pub/chat.connect", currentUserId.toString())
 
-                // 연결 완료 후 초기 설정
-                sendConnectMessage(currentUserId)
-                subscribeToPrivateChannel(currentUserId)
+                // 개인 메시지 구독 (/sub/private/{userId})
+                subscribeToPrivateChannel("/sub/private/$currentUserId")
             }
-            "MESSAGE" -> {
-                handleStompMessageFrame(lines)
+
+            message.startsWith("MESSAGE") -> {
+                Log.d("WebSocket", "📬 메시지 수신")
+                parseStompMessage(message)
             }
-            "ERROR" -> {
+
+            message.startsWith("ERROR") -> {
+                Log.e("WebSocket", "❌ STOMP 오류: $message")
                 _connectionState.postValue(ConnectionState.ERROR)
-                Log.e("WebSocket", "STOMP 오류: $message")
+            }
+
+            else -> {
+                Log.d("WebSocket", "🔄 기타 STOMP: $message")
             }
         }
-    }
-
-    private fun sendConnectMessage(userId: Long) {
-        sendStompMessage("/pub/chat.connect", userId.toString())
-    }
-
-    private fun subscribeToPrivateChannel(userId: Long) {
-        val subscribeFrame = buildString {
-            appendLine("SUBSCRIBE")
-            appendLine("id:sub-$userId")
-            appendLine("destination:/sub/private/$userId")
-            appendLine()
-            append('\u0000')
-        }
-
-        webSocket?.send(subscribeFrame)
-        Log.d("WebSocket", "구독 요청: /sub/private/$userId")
     }
 
     private fun sendStompMessage(destination: String, body: String) {
-        val messageId = messageCounter.incrementAndGet()
-
-        val sendFrame = buildString {
-            appendLine("SEND")
-            appendLine("destination:$destination")
-            appendLine("content-type:text/plain")
-            appendLine("content-length:${body.toByteArray().size}")
-            appendLine()
-            append(body)
-            append('\u0000')
+        if (!isStompConnected) {
+            Log.w("WebSocket", "STOMP가 연결되지 않은 상태")
+            return
         }
 
-        webSocket?.send(sendFrame)
-        Log.d("WebSocket", "STOMP 메시지 전송: $destination -> $body")
+        val frame = "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        webSocket?.send(frame)
+        Log.d("WebSocket", "📤 STOMP 메시지 전송: $destination -> $body")
     }
 
-    private fun handleStompMessageFrame(lines: List<String>) {
-        // MESSAGE 프레임에서 본문 추출
-        val bodyStartIndex = lines.indexOfFirst { it.isEmpty() } + 1
-        if (bodyStartIndex < lines.size) {
-            val body = lines.subList(bodyStartIndex, lines.size)
+    private fun subscribeToPrivateChannel(destination: String) {
+        val subscribeFrame = "SUBSCRIBE\nid:sub-$currentUserId\ndestination:$destination\n\n\u0000"
+        webSocket?.send(subscribeFrame)
+        Log.d("WebSocket", "📡 구독: $destination")
+    }
+
+    fun sendMessage(content: String, roomId: Int, senderId: Long, receiverId: Long) {
+        val messageRequest = mapOf(
+            "roomId" to roomId,
+            "senderId" to senderId,
+            "receiverId" to receiverId,
+            "content" to content
+        )
+
+        // 서버 설정에 따라 /pub/chat.private로 전송
+        sendStompMessage("/pub/chat.private", gson.toJson(messageRequest))
+        addMyMessageToUI(content, roomId.toString(), senderId, receiverId)
+    }
+
+    fun markAsRead(roomId: String, userId: Long, senderId: Long) {
+        val readRequest = mapOf(
+            "readerId" to userId,
+            "senderId" to senderId,
+            "roomId" to roomId.toInt()
+        )
+
+        sendStompMessage("/pub/chat.read", gson.toJson(readRequest))
+    }
+
+    private fun parseStompMessage(message: String) {
+        val lines = message.split("\n")
+        val bodyStart = lines.indexOfFirst { it.isEmpty() }
+
+        if (bodyStart != -1 && bodyStart + 1 < lines.size) {
+            val body = lines.subList(bodyStart + 1, lines.size)
                 .joinToString("\n")
-                .replace("\u0000", "") // NULL 문자 제거
+                .replace("\u0000", "")
+
+            Log.d("WebSocket", "메시지 본문: $body")
 
             try {
                 if (body.startsWith("{")) {
-                    // JSON 메시지 파싱
-                    val response = gson.fromJson(body, ChatElementResponse::class.java)
-                    handleChatMessage(response)
+                    val messageResponse = gson.fromJson(body, ChatElementResponse::class.java)
+                    handleChatMessage(messageResponse)
                 } else {
-                    // 단순 텍스트 메시지
-                    Log.d("WebSocket", "알림 메시지: $body")
+                    Log.d("WebSocket", "텍스트 메시지: $body")
                 }
             } catch (e: Exception) {
                 Log.e("WebSocket", "메시지 파싱 오류: ${e.message}")
             }
         }
-    }
-
-    fun sendMessage(content: String, roomId: Int, senderId: Long, receiverId: Long) {
-        val messagePayload = WebSocketSendMessage(
-            roomId = roomId.toString(),
-            senderId = senderId,
-            receiverId = receiverId,
-            content = content
-        )
-
-        // JSON으로 직렬화해서 STOMP 메시지로 전송
-        sendStompMessage("/pub/chat.private", gson.toJson(messagePayload))
-
-        // 내가 보낸 메시지는 즉시 UI에 추가
-        addMyMessageToUI(content, roomId.toString(), senderId, receiverId)
     }
 
     private fun addMyMessageToUI(content: String, roomId: String, senderId: Long, receiverId: Long) {
@@ -198,24 +251,22 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     private fun handleChatMessage(response: ChatElementResponse) {
-        when {
-            response.content == "READ_MESSAGE" -> {
-                updateMessagesReadStatus(response.roomID, response.senderID)
-            }
-            response.content == "CHAT_END" -> {
-                addChatEndMessage()
-            }
-            else -> {
-                // 내가 보낸 메시지가 아닌 경우만 추가 (중복 방지)
-                if (response.senderID != currentUserId) {
-                    addMessageToList(response)
-                }
-            }
+        val chatElement = ChatElementResponse(
+            content = response.content ?: "",
+            senderID = response.senderID ?: 0L,
+            receiverID = response.receiverID ?: 0L,
+            roomID = response.roomID?.toString() ?: "",
+            createdAt = response.createdAt ?: ZonedDateTime.now().toString(),
+            isRead = response.isRead ?: false,
+            readAt = response.readAt ?: ""
+        )
+
+        if (chatElement.senderID != currentUserId) {
+            addMessageToList(chatElement)
         }
     }
 
     private fun addMessageToList(response: ChatElementResponse) {
-        // 날짜가 바뀌었는지 확인
         if (shouldAddDateSeparator(response.createdAt)) {
             addDateSeparator(response.createdAt)
         }
@@ -267,7 +318,7 @@ class ChatWebSocketManager @Inject constructor() {
         messageList.add(dateItem)
     }
 
-    private fun addChatEndMessage() {
+    fun endChatRoom() {
         val endResponse = ChatElementResponse(
             content = "채팅방이 종료되었습니다",
             senderID = -1,
@@ -286,54 +337,20 @@ class ChatWebSocketManager @Inject constructor() {
         _messages.postValue(messageList.toList())
     }
 
-    private fun updateMessagesReadStatus(roomId: String, userId: Long) {
-        var updated = false
-        messageList.forEachIndexed { index, item ->
-            if (item.chatElement.senderID == userId &&
-                item.chatElement.roomID == roomId &&
-                !item.chatElement.isRead) {
-
-                val updatedResponse = item.chatElement.copy(
-                    isRead = true,
-                    readAt = ZonedDateTime.now().toString()
-                )
-                messageList[index] = item.copy(chatElement = updatedResponse)
-                updated = true
-            }
-        }
-
-        if (updated) {
-            _messages.postValue(messageList.toList())
-        }
-    }
-
-    fun markAsRead(roomId: String, userId: Long) {
-        // 읽음 처리 메시지 전송 (서버와 협의 필요)
-        val readMessage = mapOf(
-            "type" to "read",
-            "roomId" to roomId,
-            "userId" to userId
-        )
-        sendStompMessage("/pub/chat.read", gson.toJson(readMessage))
-    }
-
-    fun endChatRoom() {
-        addChatEndMessage()
-    }
-
     fun disconnect() {
-        // STOMP DISCONNECT 프레임 전송
-        val disconnectFrame = buildString {
-            appendLine("DISCONNECT")
-            appendLine()
-            append('\u0000')
+        Log.d("WebSocket", "연결 종료")
+
+        if (isStompConnected) {
+            val disconnectFrame = "DISCONNECT\n\n\u0000"
+            webSocket?.send(disconnectFrame)
         }
 
-        webSocket?.send(disconnectFrame)
-
-        // WebSocket 연결 종료
         webSocket?.close(1000, "정상 종료")
         webSocket = null
+        isStompConnected = false
         _connectionState.value = ConnectionState.DISCONNECTED
+
+        messageList.clear()
+        _messages.postValue(emptyList())
     }
 }

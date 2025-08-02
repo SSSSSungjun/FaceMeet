@@ -86,6 +86,7 @@ dependencies {
     api("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     api ("androidx.compose.runtime:runtime-livedata")
+    implementation ("org.java-websocket:Java-WebSocket:1.5.4")
 
     //dataStore (preference랑 용도 같음)
     implementation("androidx.datastore:datastore-preferences:1.1.7")
@@ -95,4 +96,5 @@ dependencies {
     api(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     api(libs.androidx.room.ktx)
+
 }
