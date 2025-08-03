@@ -2,6 +2,9 @@ package com.ssafy.facemeet.client.ui.map
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.Geocoder
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,6 +48,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
@@ -291,6 +296,7 @@ fun MapScreen(
                 state = MarkerState(position = markerPosition),
                 title = markerTitle,
                 snippet = markerSnippet,
+                icon = bitmapDescriptorFromRes(context, R.drawable.ic_locate_marker, 120, 96)
             )
         }
 
@@ -305,6 +311,13 @@ fun MapScreen(
 
 
 }
+
+fun bitmapDescriptorFromRes(context: Context, resId: Int, width: Int, height: Int): BitmapDescriptor {
+    val originalBitmap = BitmapFactory.decodeResource(context.resources, resId)
+    val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, width, height, false)
+    return BitmapDescriptorFactory.fromBitmap(resizedBitmap)
+}
+
 
 @Composable
 fun SelectedAddressSection(
@@ -374,6 +387,6 @@ fun SelectedAddressSection(
 
 @Preview
 @Composable
-fun PreviewSelectedAddressSection(){
+fun PreviewSelectedAddressSection() {
     SelectedAddressSection("도로명", {})
 }
