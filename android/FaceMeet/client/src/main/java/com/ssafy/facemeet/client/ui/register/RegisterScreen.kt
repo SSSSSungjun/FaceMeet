@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
 import com.ssafy.facemeet.core.util.constant.CommonColor
-import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 
 private const val TAG = "RegisterScreen"
 
@@ -56,7 +56,7 @@ fun RegisterScreen(
     }
 
     LaunchedEffect(navigationEvent) {
-        when(navigationEvent){
+        when (navigationEvent) {
             RegisterNaviEvent.ToBack -> onNavigateToBack()
             RegisterNaviEvent.ToCamera -> onNavigateToNext()
             RegisterNaviEvent.ToMap -> onNavigateToMap()
@@ -179,37 +179,41 @@ fun InputAddress(
             fontFamily = ChosunSeirf
         )
         Spacer(modifier = Modifier.padding(vertical = 2.dp))
-        OutlinedTextField(
-            value = selectedAddress,
-            onValueChange = { }, // 읽기 전용
-            readOnly = true,
+        Box(
             modifier = Modifier
-                .fillMaxWidth(),
-            placeholder = {
-                Text(
-                    text = "주소를 선택하세요",
-                    color = CommonColor.BeigeGray,
-                )
-            },
-            trailingIcon = {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_location),
-                    contentDescription = "Location",
-                    modifier = Modifier
-                        .clickable { onLocationClick() }
-                        .size(24.dp)
-                )
-            },
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = CommonColor.Orange,
-                unfocusedIndicatorColor = CommonColor.Brown,
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
-            ),
-            shape = RoundedCornerShape(8.dp),
-            singleLine = true,
-
+                .fillMaxWidth()
+                .clickable { onLocationClick() } // 여기에 클릭 처리
+        ) {
+            OutlinedTextField(
+                value = selectedAddress,
+                onValueChange = {},
+                readOnly = true,
+                enabled = false, // 포커스도 꺼서 키보드가 안뜨게
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        text = "주소를 선택하세요",
+                        color = CommonColor.BeigeGray,
+                    )
+                },
+                trailingIcon = {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_location),
+                        contentDescription = "Location",
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                colors = TextFieldDefaults.colors(
+                    disabledIndicatorColor = CommonColor.Brown,
+                    disabledContainerColor = Color.White,
+                    disabledTextColor = CommonColor.Brown
+                ),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true,
             )
+        }
+
+
     }
 }
 
