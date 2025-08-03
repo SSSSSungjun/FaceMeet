@@ -18,7 +18,6 @@ import com.ssafy.facemeet.client.ui.camera.FaceTestLoadingScreen
 import com.ssafy.facemeet.client.ui.camera.ShotPreviewScreen
 import com.ssafy.facemeet.client.ui.map.MapScreen
 import com.ssafy.facemeet.client.ui.register.RegisterScreen
-import toMultipartBodyPart
 
 private const val TAG = "SettingNavHost"
 
@@ -101,12 +100,12 @@ fun NavGraphBuilder.settingNavHost(
                     val front = cameraVM.front.value!!
                     val side = cameraVM.side.value!!
 
-                    val frontPart = front.toMultipartBodyPart("image1")
-                    val sidePart = side.toMultipartBodyPart("side_image1")
-
-                    Log.d("FlowCheck", "✅ Multipart 생성 완료")
-
-                    analyzeVM.analyzeFace(frontPart, sidePart)
+//                    val frontPart = front.toMultipartBodyPart("image1")
+//                    val sidePart = side.toMultipartBodyPart("side_image1")
+//
+//                    Log.d("FlowCheck", "✅ Multipart 생성 완료")
+//
+//                    analyzeVM.analyzeFace(frontPart, sidePart)
 
                     navController.navigate(SettingRoutes.FaceTestLoading.route) {
                         popUpTo(SettingRoutes.Register.route) { inclusive = false }
