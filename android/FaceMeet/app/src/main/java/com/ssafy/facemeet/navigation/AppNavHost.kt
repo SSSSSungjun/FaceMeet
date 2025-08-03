@@ -8,7 +8,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.client.clientNavHost
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.navigation.setting.settingNavHost
@@ -54,15 +53,18 @@ fun AppNavHost(isLoggedIn: Boolean) {
                 provider = provider,
                 onLoginSuccess = { isNewUser ->
                     Log.d(TAG, "AppNavHost: ${isNewUser}")
-                    if (isNewUser) {
-                        navController.navigate(SettingRoutes.Register.route) {
-                            popUpTo(AppRoutes.Start.route) { inclusive = false }
-                        }
-                    } else {
-                        navController.navigate(ClientRoutes.MainMenu.route) {
-                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-                        }
+                    navController.navigate(SettingRoutes.Register.route) {
+                        popUpTo(AppRoutes.Start.route) { inclusive = false }
                     }
+//                    if (isNewUser) {
+//                        navController.navigate(SettingRoutes.Register.route) {
+//                            popUpTo(AppRoutes.Start.route) { inclusive = false }
+//                        }
+//                    } else {
+//                        navController.navigate(ClientRoutes.MainMenu.route) {
+//                            popUpTo(AppRoutes.Start.route) { inclusive = true }
+//                        }
+//                    }
                 },
                 onLoginFailed = {
                     Log.d(TAG, "AppNavHost: Failed")
