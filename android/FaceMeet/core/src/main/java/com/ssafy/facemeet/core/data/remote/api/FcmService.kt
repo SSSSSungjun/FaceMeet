@@ -7,7 +7,7 @@ import retrofit2.http.Body
 import retrofit2.http.PUT
 
 interface FcmService {
-    @PUT("api/v1/fcm/tokens")
+    @PUT("/api/v1/fcm/tokens")
     fun registerDevice(
         @Body request: FcmTokenRequest
     ): Call<FcmTokenResponse>

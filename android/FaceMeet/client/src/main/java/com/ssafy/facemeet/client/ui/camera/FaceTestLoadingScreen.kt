@@ -17,16 +17,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import toMultipartBodyPart
 
 @Composable
 fun FaceTestLoadingScreen(
-    viewModel: FaceAnalyzeViewModel,
+    cameraShotViewModel: CameraShotViewModel,
+    analyzeViewModel: FaceAnalyzeViewModel,
     onNavigateToResult: () -> Unit
 ) {
-    val isLoading by viewModel.isLoading.collectAsState()
-    val result by viewModel.result.collectAsState()
-    val error by viewModel.error.collectAsState()
+
+    val isLoading by analyzeViewModel.isLoading.collectAsState()
+    val result by analyzeViewModel.result.collectAsState()
+    val error by analyzeViewModel.error.collectAsState()
     val context = LocalContext.current
+
+    // 분석 요청 시작 (한 번만)
+    LaunchedEffect(Unit) {
+        val front = cameraShotViewModel.front.value
+        val side = cameraShotViewModel.side.value
+
+        if (front != null && side != null) {
+            val frontPart = front.toMultipartBodyPart("image1")
+            val sidePart = side.toMultipartBodyPart("side_image1")
+
+            analyzeViewModel.analyzeFace(frontPart, sidePart)
+        }
+    }
 
     // ✅ 결과 도착 시 → 결과 화면으로 이동
     LaunchedEffect(result) {
@@ -58,6 +74,7 @@ fun FaceTestLoadingScreen(
             }
 
             else -> {
+                Text("else")
                 // 아무것도 안 보여줌 (혹시 result 도착 전 잠깐 비는 상태 방지용)
             }
         }

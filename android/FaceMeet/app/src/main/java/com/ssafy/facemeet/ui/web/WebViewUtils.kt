@@ -3,6 +3,7 @@ package com.ssafy.facemeet.ui.web
 import android.util.Log
 import android.view.View
 import android.webkit.WebView
+import com.google.firebase.installations.remote.TokenResult
 
 private const val TAG = "WebViewUtils"
 
@@ -15,7 +16,7 @@ object WebViewUtils {
     fun checkForTokens(
         view: WebView?,
         url: String?,
-        onTokenExtracted: (String, String, Boolean) -> Unit,
+        onTokenExtracted: (String, String, Boolean, Boolean) -> Unit, // accessToken, refreshToken, hasInfo, hasFace
         onError: (String) -> Unit,
         onDismiss: () -> Unit,
         onCancel: () -> Unit
@@ -26,17 +27,22 @@ object WebViewUtils {
                     onCancel()
                     onDismiss()
                 }
+
                 else -> {
                     view?.visibility = View.GONE
                     view?.stopLoading()
 
                     view?.evaluateJavascript("document.body.innerText") { result ->
                         if (result != null && result != "null" && result.contains("accessToken")) {
-
                             val cleanText = result.replace("\"", "").replace("\\", "")
                             val tokens = parseTokensFromText(cleanText)
                             if (tokens != null) {
-                                onTokenExtracted(tokens.first, tokens.second, tokens.third)
+                                onTokenExtracted(
+                                    tokens.accessToken,
+                                    tokens.refreshToken,
+                                    tokens.hasInfo,
+                                    tokens.hasFace
+                                )
                                 onDismiss()
                             } else {
                                 onError("토큰 파싱에 실패했습니다.")
@@ -48,32 +54,42 @@ object WebViewUtils {
         }
     }
 
-    private fun parseTokensFromText(text: String): Triple<String, String, Boolean>? {
+    data class TokenResult(
+        val accessToken: String,
+        val refreshToken: String,
+        val hasInfo: Boolean,
+        val hasFace: Boolean
+    )
+
+    private fun parseTokensFromText(text: String): TokenResult? {
         return try {
             Log.d(TAG, "파싱할 텍스트: $text")
 
-            val accessTokenRegex = """["']?accessToken["']?\s*:\s*["']?([^"',}\s]+)["']?""".toRegex(RegexOption.IGNORE_CASE)
-            val refreshTokenRegex = """["']?refreshToken["']?\s*:\s*["']?([^"',}\s]+)["']?""".toRegex(RegexOption.IGNORE_CASE)
-            val isNewRegex = """["']?isNew["']?\s*:\s*(true|false)""".toRegex(RegexOption.IGNORE_CASE)
+            val accessTokenRegex = """accessToken\s*:\s*([^,}]+)""".toRegex()
+            val refreshTokenRegex = """refreshToken\s*:\s*([^,}]+)""".toRegex()
+            val hasInfoRegex = """hasInfo\s*:\s*(true|false)""".toRegex()
+            val hasFaceRegex = """hasFace\s*:\s*(true|false)""".toRegex()
 
-            val accessMatch = accessTokenRegex.find(text)
-            val refreshMatch = refreshTokenRegex.find(text)
-            val isNewMatch = isNewRegex.find(text)
-
-            val accessToken = accessMatch?.groupValues?.get(1)?.trim()
-            val refreshToken = refreshMatch?.groupValues?.get(1)?.trim()
-            val isNewStr = isNewMatch?.groupValues?.get(1)?.trim()
-            val isNew = isNewStr?.toBoolean() == true
+            val accessToken = accessTokenRegex.find(text)?.groupValues?.get(1)?.trim()
+            val refreshToken = refreshTokenRegex.find(text)?.groupValues?.get(1)?.trim()
+            val hasInfo = hasInfoRegex.find(text)?.groupValues?.get(1)?.toBoolean() == true
+            val hasFace = hasFaceRegex.find(text)?.groupValues?.get(1)?.toBoolean() == true
 
             if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
-                Log.d(TAG, "정규식으로 토큰 추출 성공 - accessToken: $accessToken, refreshToken: $refreshToken, isNew: $isNew")
-                return Triple(accessToken, refreshToken, isNew)
+                Log.d(
+                    TAG,
+                    "파싱 성공 - accessToken: $accessToken, refreshToken: $refreshToken, hasInfo: $hasInfo, hasFace: $hasFace"
+                )
+                return TokenResult(accessToken, refreshToken, hasInfo, hasFace)
             }
 
-            Log.w(TAG, "토큰 파싱 실패 - accessToken: $accessToken, refreshToken: $refreshToken, isNew: $isNew")
+            Log.w(
+                TAG,
+                "파싱 실패 - accessToken: $accessToken, refreshToken: $refreshToken, hasInfo: $hasInfo, hasFace: $hasFace"
+            )
             null
         } catch (e: Exception) {
-            Log.e(TAG, "토큰 파싱 중 전체 오류", e)
+            Log.e(TAG, "토큰 파싱 중 예외 발생", e)
             null
         }
     }

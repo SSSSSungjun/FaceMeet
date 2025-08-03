@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
+import com.ssafy.facemeet.client.ui.theme.FaceMeetTheme
 import com.ssafy.facemeet.client.ui.theme.TitleTextStyle
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
@@ -327,8 +328,10 @@ fun ProfileCardWithBackground(
 
 @Preview(showBackground = true)
 @Composable
-fun MainMenuScreenPreview() {
-    MainMenuScreen()
+fun MainMenSucreenPreview() {
+    FaceMeetTheme {
+        MainMenuScreen()
+    }
 }
 
 
