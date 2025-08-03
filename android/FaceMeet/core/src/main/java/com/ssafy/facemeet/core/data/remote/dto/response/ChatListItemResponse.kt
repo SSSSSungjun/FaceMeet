@@ -1,13 +1,16 @@
 package com.ssafy.facemeet.core.data.remote.dto.response
 
 data class ChatListItemResponse(
-    val userId: Int,
-    val nickName: String?,
-    val lastSeen: String?,
+    val userId: Long,
+    val nickName: String? = "",
+    val lastActivatedTime: String? = "",
     val isOnline: Boolean,
-    val chatRoomId: Int,
-    val chatRoomStringId: String?,
-    val lastMessage: String?,
+    val chatRoomId: Long,
+    val chatRoomStringId: String? = "",
+    val lastMessage: String? = "",
+    val lastSendMessageTime: String? = "",
     val nonReadCnt: Int,
-    val blocked: Boolean
+    val blocked: Boolean,
+    val deleted: Boolean
 )
+

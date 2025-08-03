@@ -4,7 +4,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
@@ -43,12 +45,29 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
         MatchingLoadingScreen()
     }
 
-    composable(ClientRoutes.Chat.route,) {
+
+    composable(
+        route = ClientRoutes.Chat.route,
+        arguments = listOf(
+            navArgument("roomId") {
+                type = NavType.LongType
+                defaultValue = 0L // 기본값 설정 가능
+            },
+            navArgument("receiverId") {
+                type = NavType.LongType
+                defaultValue = 0L
+            }
+        )
+    ) { backStackEntry ->
+        val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0
+        val receiverId = backStackEntry.arguments?.getLong("receiverId") ?: 0
+
         ChattingScreen(
-            userId = 95,
-            roomId = 7,
-            receiverId = 97,
-            onBackClick = {}
+            roomId = roomId,
+            receiverId = receiverId,
+            onBackClick = {
+                navController.popBackStack()
+            }
         )
     }
 

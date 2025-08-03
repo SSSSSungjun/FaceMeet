@@ -6,7 +6,12 @@ sealed class ClientRoutes(val route: String) {
     object Notification : ClientRoutes("notification") //얘는 얼굴 고치는
     object MatchingLoading : ClientRoutes("matching_loading")
     object Profile : ClientRoutes("profile") //얘는 얼굴 고치는
-    object MyPage : ClientRoutes("my_page")
-    object Chat : ClientRoutes("chat")
+    //object MyPage : ClientRoutes("my_page")
+    object Chat {
+        const val route = "chat?roomId={roomId}&receiverId={receiverId}"
+        fun createRoute(roomId: Long, receiverId: Long): String {
+            return "chat?roomId=$roomId&receiverId=$receiverId"
+        }
+    }
 }
 

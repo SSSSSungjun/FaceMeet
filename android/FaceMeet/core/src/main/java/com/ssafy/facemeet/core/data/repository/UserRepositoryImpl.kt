@@ -16,8 +16,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun postOnline(): Result<Unit> =
-        runCatching { userDataRemoteDataSource.postOnline() }
-            .mapCatching { response ->
+        runCatching { userDataRemoteDataSource.postOnline() }.mapCatching { response ->
                 if (response.isSuccessful) Unit
                 else throw Exception("postOnline failed: ${response.code()}")
             }.onFailure {
@@ -26,8 +25,7 @@ class UserRepositoryImpl @Inject constructor(
 
 
     override suspend fun postOffline(): Result<Unit> =
-        runCatching { userDataRemoteDataSource.postOffline() }
-            .mapCatching { response ->
+        runCatching { userDataRemoteDataSource.postOffline() }.mapCatching { response ->
                 if (response.isSuccessful) Unit
                 else throw Exception("postOffline failed: ${response.code()}")
             }.onFailure {
@@ -36,8 +34,7 @@ class UserRepositoryImpl @Inject constructor(
 
 
     override suspend fun getUserInfo(): Result<UserInfoResponse> =
-        runCatching { userDataRemoteDataSource.getUserInfo() }
-            .mapCatching { response ->
+        runCatching { userDataRemoteDataSource.getUserInfo() }.mapCatching { response ->
                 if (response.isSuccessful) {
                     response.body() ?: throw Exception("Empty body")
                 } else throw Exception("getUserInfo failed: ${response.code()}")
@@ -47,8 +44,7 @@ class UserRepositoryImpl @Inject constructor(
 
 
     override suspend fun deleteUser(): Result<Unit> =
-        runCatching { userDataRemoteDataSource.deleteUser() }
-            .mapCatching { response ->
+        runCatching { userDataRemoteDataSource.deleteUser() }.mapCatching { response ->
                 if (response.isSuccessful) Unit
                 else throw Exception("deleteUser failed: ${response.code()}")
             }.onFailure {
@@ -57,8 +53,7 @@ class UserRepositoryImpl @Inject constructor(
 
 
     override suspend fun patchUserInfo(request: UserInfoModRequest): Result<UserInfoResponse> =
-        runCatching { userDataRemoteDataSource.patchUserInfo(request) }
-            .mapCatching { response ->
+        runCatching { userDataRemoteDataSource.patchUserInfo(request) }.mapCatching { response ->
                 if (response.isSuccessful) {
                     response.body() ?: throw Exception("Empty body")
                 } else throw Exception("patchUserInfo failed: ${response.code()}")

@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,7 +48,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,18 +59,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
-import com.ssafy.facemeet.core.data.remote.dto.response.ChatElementResponse
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
-import com.ssafy.facemeet.core.util.format.ParsingTimeData.formatSmartDate
+import com.ssafy.facemeet.core.domain.model.ChatElement
 
 private const val TAG = "ChattingScreen"
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChattingScreen(
-    userId: Long,
-    roomId: Int,
+    roomId: Long,
     receiverId: Long,
     onBackClick: () -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
@@ -79,9 +77,8 @@ fun ChattingScreen(
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
 
     val messages by viewModel.messages.observeAsState(emptyList())
-    val connectionState by viewModel.connectionState.observeAsState(
-        ConnectionState.DISCONNECTED
-    )
+    val connectionState by viewModel.connectionState.observeAsState(ConnectionState.DISCONNECTED)
+
     val listState = rememberLazyListState()
 
     LaunchedEffect(navigationEvent) {
@@ -89,20 +86,24 @@ fun ChattingScreen(
             ChatNaviEvent.ToBack -> onBackClick()
             else -> {}
         }
-
     }
-    LaunchedEffect(userId, roomId, receiverId) {
+
+    LaunchedEffect(roomId, receiverId) {
+        viewModel.getAllChattingMessage(roomId)
         viewModel.connectToChat(roomId, receiverId)
     }
+
     LaunchedEffect(connectionState) {
         viewModel.updateConnectionState(connectionState)
     }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
     }
-    LaunchedEffect(Unit) {
+
+    LaunchedEffect(messages) {
         viewModel.markAsRead()
     }
 
@@ -113,64 +114,61 @@ fun ChattingScreen(
         }
     }
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                color = Color(0xFFF4F3ED)
-            )
-            .systemBarsPadding()
-            .imePadding(),
+            .background(Color(0xFFF4F3ED))
+            .systemBarsPadding() ,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         ChatHeader(
             userName = "닉네임",
             compatibilityScore = 87,
             onBack = viewModel::navigateToBack
         )
+        Box(
+            modifier=Modifier.weight(1f).imePadding()
+        ){
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.Top,
+                contentPadding =PaddingValues(bottom = 8.dp)
+            ) {
+                items(messages) { messageItem ->
+                    when (messageItem.messageType) {
+                        MessageType.TEXT -> {
+                            ChatMessageBubble(
+                                message = messageItem.chatElement,
+                                isMyMessage = messageItem.chatElement.senderID == viewModel.currentUserId
+                            )
+                        }
 
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(
-                items = messages,
-                key = { item ->
-                    "${item.chatElement.roomID}-${item.chatElement.readAt}-${item.chatElement.senderID}"
-                }
-            ) { messageItem ->
-                when (messageItem.messageType) {
-                    MessageType.TEXT -> {
-                        ChatMessageBubble(
-                            message = messageItem.chatElement,
-                            isMyMessage = messageItem.chatElement.senderID == userId
-                        )
-                    }
+                        MessageType.SYSTEM_DATE -> {
+                            DateSeparator(date = messageItem.chatElement.content.toString())
+                        }
 
-                    MessageType.SYSTEM_DATE -> {
-                        DateSeparator(date = messageItem.chatElement.content.toString())
-                    }
-
-                    MessageType.CHAT_END -> {
-                        //ChatEndMessage()
+                        MessageType.CHAT_END -> {
+                            //ChatEndMessage()
+                        }
                     }
                 }
             }
+
+
+            MessageInput(
+                messageText = uiState.messageText,
+                onMessageChange = { viewModel.updateMessageText(it) },
+                onSendClick = { viewModel.sendMessage() },
+                canSend = uiState.canSendMessage,
+                isConnected = connectionState == ConnectionState.CONNECTED
+            )
+
         }
 
-
-        MessageInput(
-            messageText = uiState.messageText,
-            onMessageChange = { viewModel.updateMessageText(it) },
-            onSendClick = { viewModel.sendMessage() },
-            canSend = uiState.canSendMessage,
-            isConnected = connectionState == ConnectionState.CONNECTED
-        )
 
         if (uiState.isLoading) {
             Box(
@@ -181,7 +179,6 @@ fun ChattingScreen(
             }
         }
     }
-
 }
 
 @Composable
@@ -264,71 +261,73 @@ fun ConnectionStatusText(connectionState: ConnectionState) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChatMessageBubble(
-    message: ChatElementResponse,
+    message: ChatElement,
     isMyMessage: Boolean
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
     ) {
-        Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isMyMessage)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.surfaceVariant
-            ),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isMyMessage) 16.dp else 4.dp,
-                bottomEnd = if (isMyMessage) 4.dp else 16.dp
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
+        if (isMyMessage) {
+            // 내 메시지: 읽음/시간 - 메시지 (우측 정렬)
+            Row(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Text(
-                    text = message.content.toString(),
-                    color = if (isMyMessage)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.Bottom
+                Card(
+                    modifier = Modifier.widthIn(max = 240.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF824946)
+                    ),
+                    shape = RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp,
+                        bottomStart = 12.dp,
+                        bottomEnd = 4.dp
+                    )
                 ) {
                     Text(
-                        text = message.readAt?.formatSmartDate() ?: "",
-                        fontSize = 10.sp,
-                        color = if (isMyMessage)
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        text = message.content.toString(),
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        fontSize = 14.sp
                     )
-
-                    if (isMyMessage) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (message.isRead == true) "읽음" else "1",
-                            fontSize = 10.sp,
-                            color = if (message.isRead == true)
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                            else
-                                MaterialTheme.colorScheme.secondary
-                        )
-                    }
                 }
+            }
+        } else {
+
+            Row(
+                modifier = Modifier.align(Alignment.CenterStart),
+                verticalAlignment = Alignment.Bottom
+            ) {
+
+                Card(
+                    modifier = Modifier.widthIn(max = 240.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp,
+                        bottomStart = 4.dp,
+                        bottomEnd = 12.dp
+                    )
+                ) {
+                    Text(
+                        text = message.content.toString(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        fontSize = 14.sp
+                    )
+                }
+
             }
         }
     }
 }
+
 
 @Composable
 fun DateSeparator(date: String) {
@@ -355,7 +354,6 @@ fun DateSeparator(date: String) {
         }
     }
 }
-
 @Composable
 fun MessageInput(
     messageText: String,
@@ -364,43 +362,36 @@ fun MessageInput(
     canSend: Boolean,
     isConnected: Boolean
 ) {
-
-    // 입력창과 버튼을 포함하는 둥근 프레임
+    // 패딩 최소화 - 키보드와 딱 맞게
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp)
-            .shadow(
-                elevation = 1.dp,
-                shape = RoundedCornerShape(30.dp),
-                clip = true
+            .height(56.dp) // 고정 높이
+            .padding(horizontal = 8.dp, vertical = 4.dp) // 최소 패딩
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(28.dp)
             )
             .border(
                 width = 1.dp,
                 color = Color(0xFFE5E7EB),
-                shape = RoundedCornerShape(30.dp)
+                shape = RoundedCornerShape(28.dp)
             )
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(30.dp),
-            )
-            .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp) // 내부 패딩만
         ) {
-            // 텍스트 입력
             BasicTextField(
                 value = messageText,
-                onValueChange = {onMessageChange(it)},
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = 8.dp, horizontal = 5.dp),
+                onValueChange = { onMessageChange(it) },
+                modifier = Modifier.weight(1f),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     color = Color.Black
                 ),
-                maxLines = 4,
+                singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Send,
                     keyboardType = KeyboardType.Text
@@ -421,12 +412,11 @@ fun MessageInput(
                 enabled = isConnected
             )
 
-            // 전송 버튼 (메시지가 있을 때만 표시)
             if (canSend) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(32.dp)
                         .background(
                             color = Color(0xFF824946),
                             shape = CircleShape
@@ -438,23 +428,23 @@ fun MessageInput(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "전송",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
         }
     }
-
 }
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun ChattingScreenPreview() {
-    ChatMessageBubble(
-        ChatElementResponse("응 아니아", 1L, 2L, 0, "", false, ""),
-        isMyMessage = true
-    )
+    Box(modifier = Modifier.background(Color(0xFFF4F3ED))) {
+        ChatMessageBubble(
+            ChatElement("응 아니아", 1L, 1L, 0, "19:25", true, ""),
+            isMyMessage = true
+        )
+    }
+
 
 }

@@ -3,7 +3,6 @@ package com.ssafy.facemeet.client.ui.chatlist
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ssafy.facemeet.core.domain.model.ChatListItem
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,9 +38,3 @@ class ChattingListViewModel @Inject constructor(
     }
 
 }
-
-data class ChatListUiState(
-    val chatList: List<ChatListItem> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)

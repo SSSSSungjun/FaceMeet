@@ -112,7 +112,7 @@ fun ChatListItem(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = item.lastMessage,
+                    text = item.lastSendMessageTime ?:"",
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

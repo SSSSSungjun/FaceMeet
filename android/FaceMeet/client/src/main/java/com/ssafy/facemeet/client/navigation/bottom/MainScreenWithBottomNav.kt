@@ -72,9 +72,11 @@ fun MainScreenWithBottomNav(
 
             composable(BottomNavRoutes.ChattingList.route) {
                 ChattingListScreen(
-                    onItemClick = {
-                        mainNavController.navigate(ClientRoutes.Chat.route)
-                    } // chatItems의 Id값 정도 인자값으로 넘기면 됨
+                    onItemClick = {item->
+                        val roomId =item.chatRoomId
+                        val matcingUserId= item.userId
+                        mainNavController.navigate(ClientRoutes.Chat.createRoute(roomId,matcingUserId))
+                    }
                 )
             }
 
