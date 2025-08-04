@@ -125,6 +125,8 @@ fun NavGraphBuilder.settingNavHost(
                 navController.navigate(ClientRoutes.Profile.route) {
                     popUpTo(SettingRoutes.Register.route) { inclusive = false }
                 }
+            }, onCancel = {
+                navController.popBackStack()
             })
     }
 }
