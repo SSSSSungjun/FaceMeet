@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,7 +98,7 @@ fun MyPageScreen(
         ProfileImageSection()
         Spacer(modifier = Modifier.height(16.dp))
 
-        PushNotificationSection( uiState.marketingAlarmEnabled) {
+        PushNotificationSection(uiState.marketingAlarmEnabled) {
             viewModel::setMarketingAlarm
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -247,6 +249,7 @@ fun MyInfoSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
+
         Column {
             Row(
                 modifier = Modifier
@@ -272,6 +275,9 @@ fun MyInfoSection(
             }
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            ProfileInfoRow(label = "이메일", value = myData?.email ?: "")
+
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
             ProfileInfoRow(label = "이름", value = myData?.name ?: "")
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
@@ -281,7 +287,7 @@ fun MyInfoSection(
             ProfileInfoRow(label = "생년월일", value = myData?.birth ?: "")
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
-            ProfileInfoRow(label = "성별", value = myData?.gender ?: "")
+            ProfileInfoRow(label = "성별", value = myData?.getGenderLabel() ?: "")
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
             ProfileInfoRow(label = "주소", value = myData?.address ?: "")
@@ -332,7 +338,10 @@ fun ProfileInfoRow(
         Text(
             text = value,
             fontSize = 14.sp,
-            color = Color.Gray
+            color = Color.Gray,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 250.dp)
         )
 
     }
@@ -342,6 +351,8 @@ fun ProfileInfoRow(
 @Composable
 fun MyPageScreenPreview() {
     MaterialTheme {
-        ProfileInfoRow("dbstjwns", "dfs")
+        MyInfoSection(
+            UserInfo("윤성준", "1__________999@naver.com", "윤성주윤", "남", "ss", "1999-01-31", 2, 2)
+        ) {}
     }
 }
