@@ -91,64 +91,72 @@ class ChatWebSocketManager @Inject constructor() {
         })
     }
 
-    private fun addSystemMessage(content: String, roomId: Long) {
-        val systemMessage = ChatElement(
-            content = content,
-            senderID = -1, // 시스템 메시지는 -1로 구분
+    private fun addChatStartMessage(roomId: Long, similar: Int) {
+        val chatStartMessage = ChatElement(
+            content = "관상 궁합 ${similar}%로 매칭되었습니다 ✨\n" +
+                    "프로필을 눌러 상대방의 관상을 살펴보세요",
+            senderID = -1,
             receiverID = currentUserId,
             roomID = roomId,
             createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
-            isRead = true, // 시스템 메시지는 항상 읽음 처리
+            isRead = true,
             readAt = ZonedDateTime.now().toString()
         )
 
         val messageItem = ChatMessageItem(
-            chatElement = systemMessage,
-            messageType = MessageType.SYSTEM
+            chatElement = chatStartMessage,
+            messageType = MessageType.CHAT_START
         )
 
         messageList.add(messageItem)
         _messages.postValue(messageList.toList())
     }
 
-    // 입장 메시지
-    fun sendJoinMessage(roomId: Long, userName: String = "사용자") {
-        addSystemMessage("$userName 님이 입장하셨습니다.", roomId)
-    }
-
-    // 퇴장 메시지
-    fun sendLeaveMessage(roomId: Long, userName: String = "사용자") {
-        addSystemMessage("$userName 님이 퇴장하셨습니다.", roomId)
-    }
-
-    // 자정 시간 알림 메시지
-    fun sendMidnightMessage(roomId: Long) {
+    private fun addDateMessage(roomId: Long) {
         val currentDate = ZonedDateTime.now().format(
             java.time.format.DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
         )
-        addSystemMessage("날짜가 변경되었습니다. $currentDate", roomId)
-    }
 
-    // 날짜 구분자 추가
-    private fun addDateSeparator(date: String) {
         val dateMessage = ChatElement(
-            content = date,
-            senderID = -2, // 날짜 구분자는 -2로 구분
+            content = currentDate,
+            senderID = -2, // 날짜 메시지는 -2로 구분
             receiverID = currentUserId,
-            roomID = 0,
-            createdAt = date,
+            roomID = roomId,
+            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
             isRead = true,
             readAt = ZonedDateTime.now().toString()
         )
 
         val messageItem = ChatMessageItem(
             chatElement = dateMessage,
-            messageType = MessageType.SYSTEM
+            messageType = MessageType.DATE
         )
 
         messageList.add(messageItem)
         _messages.postValue(messageList.toList())
     }
+
+    // 채팅 종료 메시지 (누군가 방을 나갈 때)
+    private fun addChatEndMessage(roomId: Long, userName: String = "사용자") {
+        val chatEndMessage = ChatElement(
+            content = "$userName 님이 채팅방을 나가셨습니다.",
+            senderID = -3, // 채팅 종료 메시지는 -3으로 구분
+            receiverID = currentUserId,
+            roomID = roomId,
+            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
+            isRead = true,
+            readAt = ZonedDateTime.now().toString()
+        )
+
+        val messageItem = ChatMessageItem(
+            chatElement = chatEndMessage,
+            messageType = MessageType.CHAT_END
+        )
+
+        messageList.add(messageItem)
+        _messages.postValue(messageList.toList())
+    }
+
     private fun sendStompConnect() {
         val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:10000,10000\n\n\u0000"
         webSocket?.send(connectFrame)
@@ -181,7 +189,8 @@ class ChatWebSocketManager @Inject constructor() {
             return
         }
 
-        val frame = "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        val frame =
+            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
         webSocket?.send(frame)
         Log.d("WebSocket", "📤 메시지 전송: $destination")
     }
