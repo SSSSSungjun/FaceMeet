@@ -3,14 +3,18 @@ package com.ssafy.facemeet.navigation
 import LoginScreen
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.client.clientNavHost
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.navigation.setting.settingNavHost
+import com.ssafy.facemeet.client.ui.camera.CameraShotViewModel
+import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.ui.web.SocialProvider
 import com.ssafy.facemeet.ui.web.WebLoginScreen
 
@@ -22,6 +26,9 @@ fun AppNavHost(isLoggedIn: Boolean) {
     val navController = rememberNavController()
     // val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ModuleEntryRoute.ClientMainMenu.route
     val startDestination = AppRoutes.Start.route
+
+    val cameraVM: CameraShotViewModel = hiltViewModel()
+    val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,
@@ -51,11 +58,23 @@ fun AppNavHost(isLoggedIn: Boolean) {
 
             WebLoginScreen(
                 provider = provider,
-                onLoginSuccess = { isNewUser ->
-                    Log.d(TAG, "AppNavHost: ${isNewUser}")
-                    navController.navigate(SettingRoutes.Register.route) {
-                        popUpTo(AppRoutes.Start.route) { inclusive = false }
+                onLoginSuccess = { hasInfo, hasFace ->
+                    Log.d(TAG, "hasInfo: ${hasInfo}")
+
+                    if (!hasInfo) {
+                        navController.navigate(SettingRoutes.Register.route) {
+                            popUpTo(AppRoutes.Start.route) { inclusive = false }
+                        }
+                    } else if (!hasFace) {
+                        navController.navigate(SettingRoutes.CameraStart.route) {
+                            popUpTo(AppRoutes.Start.route) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(ClientRoutes.MainMenu.route) {
+                            popUpTo(AppRoutes.Start.route) { inclusive = true }
+                        }
                     }
+
 //                    if (isNewUser) {
 //                        navController.navigate(SettingRoutes.Register.route) {
 //                            popUpTo(AppRoutes.Start.route) { inclusive = false }
@@ -77,7 +96,7 @@ fun AppNavHost(isLoggedIn: Boolean) {
             )
         }
 
-        settingNavHost(navController)
+        settingNavHost(navController, cameraVM, analyzeVM)
         clientNavHost(navController)
     }
 }

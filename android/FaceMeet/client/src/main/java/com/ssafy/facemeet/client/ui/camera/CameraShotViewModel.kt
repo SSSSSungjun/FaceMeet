@@ -1,14 +1,16 @@
 package com.ssafy.facemeet.client.ui.camera
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
+
 @HiltViewModel
-class CameraShotViewModel  @Inject constructor() : ViewModel() {
+class CameraShotViewModel @Inject constructor() : ViewModel() {
     private val _front = MutableStateFlow<Bitmap?>(null)
     val front: StateFlow<Bitmap?> = _front
 
@@ -16,6 +18,7 @@ class CameraShotViewModel  @Inject constructor() : ViewModel() {
     val side: StateFlow<Bitmap?> = _side
 
     fun setFront(b: Bitmap) {
+        Log.d("FACE_MY", "setFront: $b")
         _front.value = b
     }
 

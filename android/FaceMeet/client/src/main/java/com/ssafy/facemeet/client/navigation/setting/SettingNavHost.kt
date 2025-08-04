@@ -18,16 +18,18 @@ import com.ssafy.facemeet.client.ui.camera.FaceTestLoadingScreen
 import com.ssafy.facemeet.client.ui.camera.ShotPreviewScreen
 import com.ssafy.facemeet.client.ui.map.MapScreen
 import com.ssafy.facemeet.client.ui.register.RegisterScreen
-import toMultipartBodyPart
 
 private const val TAG = "SettingNavHost"
 
 @SuppressLint("StateFlowValueCalledInComposition")
 fun NavGraphBuilder.settingNavHost(
-    navController: NavHostController
+    navController: NavHostController,
+    cameraVM: CameraShotViewModel,
+    analyzeVM: FaceAnalyzeViewModel
 ) {
+
     composable(
-       SettingRoutes.Register.route,
+        SettingRoutes.Register.route,
     ) {
         RegisterScreen(
             onNavigateToNext = {
@@ -54,7 +56,6 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.FrontCamera.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
         CameraCaptureScreen(
             mode = CaptureMode.FRONT,
             vm = cameraVM,
@@ -64,8 +65,10 @@ fun NavGraphBuilder.settingNavHost(
             )
     }
 
+
     composable(SettingRoutes.FrontPreview.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
+
+        Log.d("FACE_MY", "settingNavHost: ${cameraVM.front.value}")
         ShotPreviewScreen(
             image = cameraVM.front.value?.asImageBitmap(),
             title = "전면 사진에 이상 없으면 다음을 눌러주세요.",
@@ -77,8 +80,9 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.SidePreview.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
-        val analyzeVM : FaceAnalyzeViewModel = hiltViewModel()
+        val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
+
+        Log.d("FACE_MY", "settingNavHost: ${cameraVM.side.value}")
 
         ShotPreviewScreen(
             image = cameraVM.side.value?.asImageBitmap(),
@@ -96,24 +100,23 @@ fun NavGraphBuilder.settingNavHost(
                     val front = cameraVM.front.value!!
                     val side = cameraVM.side.value!!
 
-                    val frontPart = front.toMultipartBodyPart("image1")
-                    val sidePart = side.toMultipartBodyPart("side_image1")
-
-                    Log.d("FlowCheck", "✅ Multipart 생성 완료")
-
-                    analyzeVM.analyzeFace(frontPart, sidePart)
+//                    val frontPart = front.toMultipartBodyPart("image1")
+//                    val sidePart = side.toMultipartBodyPart("side_image1")
+//
+//                    Log.d("FlowCheck", "✅ Multipart 생성 완료")
+//
+//                    analyzeVM.analyzeFace(frontPart, sidePart)
 
                     navController.navigate(SettingRoutes.FaceTestLoading.route) {
                         popUpTo(SettingRoutes.Register.route) { inclusive = false }
                     }
                 }
-            } // 여기 너무 로직 길다고 생각합니다. 네비게이션인데..
+            } // 여기 너무 로직 길다고 생각합니다. 네비게이션인데.. 옙..
 
         )
     }
 
     composable(SettingRoutes.SideCamera.route) {
-        val cameraVM : CameraShotViewModel = hiltViewModel()
         CameraCaptureScreen(
             mode = CaptureMode.SIDE,
             vm = cameraVM,
@@ -122,9 +125,9 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.FaceTestLoading.route) {
-        val analyzeVM : FaceAnalyzeViewModel = hiltViewModel()
         FaceTestLoadingScreen(
-            viewModel = analyzeVM, onNavigateToResult = {
+            cameraShotViewModel = cameraVM,
+            analyzeViewModel = analyzeVM, onNavigateToResult = {
                 navController.navigate(ClientRoutes.Profile.route) {
                     popUpTo(SettingRoutes.Register.route) { inclusive = false }
                 }

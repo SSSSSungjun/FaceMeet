@@ -9,7 +9,7 @@ import retrofit2.http.Part
 
 interface FaceService {
     @Multipart
-    @POST("django/api/analyze/")
+    @POST("/django/api/v1/analyze/")
     suspend fun postAnalyze(
         @Part front_image: MultipartBody.Part,
         @Part side_image: MultipartBody.Part,

@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -24,7 +23,7 @@ private const val TAG = "WebLoginScreen"
 @Composable
 fun WebLoginScreen(
     provider: SocialProvider,
-    onLoginSuccess: (isNew: Boolean) -> Unit,
+    onLoginSuccess: (hasInfo: Boolean, hasFace: Boolean) -> Unit,
     onLoginFailed: () -> Unit,
     onCancel: () -> Unit,
     viewModel: WebLoginViewModel = hiltViewModel(),
@@ -47,11 +46,11 @@ fun WebLoginScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                     configureKakaoWebView(
-                        onTokenExtracted = { accessToken, refreshToken, isNew ->
+                        onTokenExtracted = { accessToken, refreshToken, hasInfo, hasFace ->
                             Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
 
                             viewModel.saveToken(refreshToken, accessToken)
-                            onLoginSuccess(isNew)
+                            onLoginSuccess(hasInfo, hasFace)
                         },
                         onError = { error ->
                             Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)
@@ -74,13 +73,13 @@ fun WebLoginScreen(
 
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun WebLoginScreenPreview() {
-    WebLoginScreen(
-        provider = SocialProvider.KAKAO,
-        onLoginSuccess = { },
-        onLoginFailed = { },
-        onCancel = { })
-}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun WebLoginScreenPreview() {
+//    WebLoginScreen(
+//        provider = SocialProvider.KAKAO,
+//        onLoginSuccess = {  },
+//        onLoginFailed = { },
+//        onCancel = { })
+//}
