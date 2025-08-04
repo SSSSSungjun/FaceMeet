@@ -45,8 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,6 +85,15 @@ fun ChattingScreen(
 
     val listState = rememberLazyListState()
 
+    val imeInsets = WindowInsets.ime
+    val density = LocalDensity.current
+    val keyboardHeight by remember {
+        derivedStateOf {
+            imeInsets.getBottom(density)
+        }
+    }
+
+
     LaunchedEffect(navigationEvent) {
         when (navigationEvent) {
             ChatNaviEvent.ToBack -> onBackClick()
@@ -102,6 +113,16 @@ fun ChattingScreen(
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    LaunchedEffect(keyboardHeight) {
+        if (keyboardHeight > 0 && messages.isNotEmpty()) {
+            val layoutInfo = listState.layoutInfo
+            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            if (lastVisibleIndex >= messages.size - 2) {
+                listState.scrollToItem(messages.size - 1)
+            }
         }
     }
 
@@ -138,7 +159,8 @@ fun ChattingScreen(
                 .weight(1f)
                 .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.Top,
-            contentPadding = PaddingValues(bottom =  WindowInsets.ime.getBottom(LocalDensity.current).dp)
+            contentPadding = PaddingValues(bottom = 4.dp),
+            reverseLayout = false
         ) {
             items(messages) { messageItem ->
                 when (messageItem.messageType) {
@@ -160,6 +182,7 @@ fun ChattingScreen(
                     MessageType.SYSTEM -> {
                         TODO()
                     }
+
                     MessageType.CHAT_START -> {
                         TODO()
                     }
