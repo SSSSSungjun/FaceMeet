@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.ui.camera
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ fun ShotPreviewScreen(
     onRetake: () -> Unit,
     onConfirm: () -> Unit
 ) {
+    Log.d("FACE_MY", "ShotPreviewScreen: ${image}")
     Box(
         Modifier
             .fillMaxSize()
@@ -42,6 +44,7 @@ fun ShotPreviewScreen(
         ) {
             Text(title, Modifier.padding(top = 24.dp), color = Color.White)
             Spacer(Modifier.height(24.dp))
+
             if (image != null) {
                 Image(
                     bitmap = image,

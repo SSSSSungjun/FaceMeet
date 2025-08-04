@@ -53,9 +53,6 @@ fun MainScreenWithBottomNav(
                     onProfile = {
                         mainNavController.navigate(ClientRoutes.Profile.route)
                     },
-                    onMyPage = {
-                        bottomNavController.navigate(BottomNavRoutes.MyPage.route)
-                    },
                     onNotification = {
                         mainNavController.navigate(ClientRoutes.Notification.route)
                     }

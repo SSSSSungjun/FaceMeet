@@ -149,12 +149,19 @@ fun ChattingScreen(
                         )
                     }
 
-                    MessageType.SYSTEM_DATE -> {
+                    MessageType.DATE -> {
                         DateSeparator(date = messageItem.chatElement.content.toString())
                     }
 
                     MessageType.CHAT_END -> {
                         //ChatEndMessage()
+                    }
+
+                    MessageType.SYSTEM -> {
+                        TODO()
+                    }
+                    MessageType.CHAT_START -> {
+                        TODO()
                     }
                 }
             }

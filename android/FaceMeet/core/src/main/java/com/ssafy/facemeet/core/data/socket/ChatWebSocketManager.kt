@@ -143,7 +143,7 @@ class ChatWebSocketManager @Inject constructor() {
 
         val messageItem = ChatMessageItem(
             chatElement = dateMessage,
-            messageType = MessageType.DATE_SEPARATOR
+            messageType = MessageType.SYSTEM
         )
 
         messageList.add(messageItem)

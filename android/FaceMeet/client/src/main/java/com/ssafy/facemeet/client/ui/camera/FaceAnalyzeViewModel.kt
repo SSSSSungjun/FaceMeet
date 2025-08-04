@@ -34,6 +34,7 @@ class FaceAnalyzeViewModel @Inject constructor(
                 Log.d("FlowCheck", "✅ ViewModel: analyzeFace() 호출됨")
                 _isLoading.value = true
                 _error.value = null
+                _result.value = null
 
                 val result = analyzeFaceUseCase(frontImage, sideImage)
 

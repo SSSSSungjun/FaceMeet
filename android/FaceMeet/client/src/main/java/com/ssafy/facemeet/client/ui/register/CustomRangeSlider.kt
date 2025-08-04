@@ -19,6 +19,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun CustomRangeSlider(
@@ -26,11 +27,11 @@ fun CustomRangeSlider(
     onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    thumbRadius: Dp = 8.dp,
-    trackHeight: Dp = 4.dp,
-    activeTrackColor: Color = Color(0xFF5B5141),
-    inactiveTrackColor: Color = Color(0xFFAFAFAF),
-    thumbColor: Color = Color(0xFF5B5141)
+    thumbRadius: Dp,
+    trackHeight: Dp,
+    activeTrackColor: Color = CommonColor.DarkBrown,
+    inactiveTrackColor: Color = CommonColor.BeigeDark,
+    thumbColor: Color = CommonColor.DarkBrown
 ) {
     val density = LocalDensity.current
     val thumbRadiusPx = with(density) { thumbRadius.toPx() }
@@ -64,14 +65,20 @@ fun CustomRangeSlider(
                     }
                 ) { _, dragAmount ->
                     if (isDraggingStart) {
-                        startThumbPosition = (startThumbPosition + dragAmount.x).coerceIn(0f, endThumbPosition)
+                        startThumbPosition =
+                            (startThumbPosition + dragAmount.x).coerceIn(0f, endThumbPosition)
                     } else if (isDraggingEnd) {
-                        endThumbPosition = (endThumbPosition + dragAmount.x).coerceIn(startThumbPosition, sliderWidth)
+                        endThumbPosition = (endThumbPosition + dragAmount.x).coerceIn(
+                            startThumbPosition,
+                            sliderWidth
+                        )
                     }
 
                     // 값 계산 및 콜백 호출
-                    val startValue = valueRange.start + (startThumbPosition / sliderWidth) * (valueRange.endInclusive - valueRange.start)
-                    val endValue = valueRange.start + (endThumbPosition / sliderWidth) * (valueRange.endInclusive - valueRange.start)
+                    val startValue =
+                        valueRange.start + (startThumbPosition / sliderWidth) * (valueRange.endInclusive - valueRange.start)
+                    val endValue =
+                        valueRange.start + (endThumbPosition / sliderWidth) * (valueRange.endInclusive - valueRange.start)
 
                     onValueChange(startValue..endValue)
                 }
@@ -82,8 +89,10 @@ fun CustomRangeSlider(
 
         // 초기 위치 계산
         if (startThumbPosition == 0f && endThumbPosition == 0f) {
-            startThumbPosition = ((value.start - valueRange.start) / (valueRange.endInclusive - valueRange.start)) * sliderWidth
-            endThumbPosition = ((value.endInclusive - valueRange.start) / (valueRange.endInclusive - valueRange.start)) * sliderWidth
+            startThumbPosition =
+                ((value.start - valueRange.start) / (valueRange.endInclusive - valueRange.start)) * sliderWidth
+            endThumbPosition =
+                ((value.endInclusive - valueRange.start) / (valueRange.endInclusive - valueRange.start)) * sliderWidth
         }
 
         // 비활성 트랙 그리기

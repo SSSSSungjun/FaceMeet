@@ -2,18 +2,29 @@ package com.ssafy.facemeet.client.ui.map
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.Geocoder
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,12 +37,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
@@ -43,6 +61,9 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
+import com.ssafy.facemeet.core.util.constant.CommonColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,10 +88,12 @@ fun MapScreen(
                 Log.d(TAG, "MapScreen: toBack")
                 toBack()
             }
+
             MapNaviEvent.ToAccept -> {
                 Log.d(TAG, "MapScreen: toAccept")
                 toAccept()
             }
+
             null -> {}
         }
     }
@@ -93,6 +116,7 @@ fun MapScreen(
         return withContext(Dispatchers.IO) {
             try {
                 geocoder?.getFromLocation(latLng.latitude, latLng.longitude, 1)?.let { addresses ->
+                    Log.d(TAG, "getAddressFromLatLng: ${addresses}")
                     if (addresses.isNotEmpty()) {
                         addresses[0].getAddressLine(0) ?: "주소를 찾을 수 없음"
                     } else {
@@ -213,6 +237,35 @@ fun MapScreen(
             .fillMaxSize()
             .systemBarsPadding()
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = toBack) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_back),
+                    contentDescription = "뒤로가기",
+                    tint = CommonColor.Brown
+                )
+            }
+            Text(
+                text = "위치를 클릭해 주소선택",
+                fontFamily = ChosunCentennial,
+                fontSize = 20.sp,
+                color = CommonColor.Brown
+            )
+            IconButton(onClick = { openPlaceSearch() }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_search),
+                    contentDescription = "검색",
+                    tint = CommonColor.Brown
+                )
+            }
+        }
+
         GoogleMap(
             modifier = Modifier
                 .fillMaxWidth()
@@ -243,64 +296,97 @@ fun MapScreen(
                 state = MarkerState(position = markerPosition),
                 title = markerTitle,
                 snippet = markerSnippet,
+                icon = bitmapDescriptorFromRes(context, R.drawable.ic_locate_marker, 120, 96)
             )
         }
 
-        if (currentSelectedAddress.isNotEmpty()) {
-            Text(
-                text = "선택된 주소: $currentSelectedAddress",
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                color = Color(0xFF2196F3)
-            )
-        } else {
-            Text(
-                text = "주소를 선택해주세요",
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                color = Color.Gray
-            )
-        }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(Alignment.CenterVertically)
-        ) {
-            Button(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
-                onClick = { openPlaceSearch() }
-            ) {
-                Text("검색")
-            }
-
-            Button(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
-                onClick = {
-                    Log.d(TAG, "확인 버튼 클릭 - 선택된 주소: ${mapData.address}")
-                    Log.d(TAG, "확인 버튼 클릭 - 선택된 위도: ${mapData.latitude}")
-                    Log.d(TAG, "확인 버튼 클릭 - 선택된 경도: ${mapData.longitude}")
-                    viewModel.navigateToAccept()
-                },
-                enabled = isLocationSelected
-            ) {
-                Text("확인")
-            }
-
-            Button(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
-                onClick = {
-                    viewModel.navigateToBack()
-                }
-            ) {
-                Text("취소")
-            }
-        }
+        SelectedAddressSection(currentSelectedAddress, {
+            Log.d(TAG, "확인 버튼 클릭 - 선택된 주소: ${mapData.address}")
+            Log.d(TAG, "확인 버튼 클릭 - 선택된 위도: ${mapData.latitude}")
+            Log.d(TAG, "확인 버튼 클릭 - 선택된 경도: ${mapData.longitude}")
+            viewModel.navigateToAccept()
+        })
     }
 
 
+}
+
+fun bitmapDescriptorFromRes(context: Context, resId: Int, width: Int, height: Int): BitmapDescriptor {
+    val originalBitmap = BitmapFactory.decodeResource(context.resources, resId)
+    val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, width, height, false)
+    return BitmapDescriptorFactory.fromBitmap(resizedBitmap)
+}
+
+
+@Composable
+fun SelectedAddressSection(
+    roadAddress: String,
+    onConfirmClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, shape = RoundedCornerShape(16.dp))
+            .padding(horizontal = 20.dp, vertical = 24.dp)
+    ) {
+        if (roadAddress.isBlank()) {
+            // 주소가 비어 있을 경우
+            Text(
+                text = "주소를 선택해주세요",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 16.sp
+                ),
+                color = Color.Gray
+            )
+        } else {
+            // 주소가 있을 경우
+            Text(
+                text = roadAddress,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                ),
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "지도의 표시와 실제 주소가 맞는지 확인해주세요",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 14.sp
+                ),
+                color = Color(0xFFDE6C6C),
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onConfirmClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF38322B),
+                    contentColor = Color.White
+                )
+            ) {
+                Text(
+                    text = "이 위치로 주소 등록",
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun PreviewSelectedAddressSection() {
+    SelectedAddressSection("도로명", {})
 }

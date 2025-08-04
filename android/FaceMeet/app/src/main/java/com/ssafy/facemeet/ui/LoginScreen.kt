@@ -1,4 +1,3 @@
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssafy.facemeet.R
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 const val BASE_KAKAO_URL = "http://i13d201.p.ssafy.io/oauth2/authorization/kakao"
@@ -46,7 +46,8 @@ fun LoginScreen(
         Text(
             text = "상견례",
             color = Color.White,
-            fontSize = 36.sp
+            fontSize = 36.sp,
+            fontFamily = ChosunCentennial
         )
 
         Spacer(modifier = Modifier.padding(20.dp))
@@ -64,8 +65,9 @@ fun LoginScreen(
         Text(
             text = "로그인하고 AI로 분석한 \n 내 관상으로 프로필을 만들어보세요!",
             color = Color.White,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            fontFamily = ChosunCentennial
         )
 
         Spacer(modifier = Modifier.padding(30.dp))
@@ -145,14 +147,8 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.padding(20.dp))
+        Spacer(modifier = Modifier.padding(8.dp))
 
-        // 임시 버튼
-//        Button(
-//            onClick = onNavigateToClient
-//        ) {
-//            Text("임시방편")
-//        }
     }
 }
 
