@@ -248,20 +248,20 @@ fun MapScreen(
                 Icon(
                     painter = painterResource(R.drawable.ic_back),
                     contentDescription = "뒤로가기",
-                    tint = CommonColor.Brown
+                    tint = CommonColor.Brown500
                 )
             }
             Text(
                 text = "위치를 클릭해 주소선택",
                 fontFamily = ChosunCentennial,
                 fontSize = 20.sp,
-                color = CommonColor.Brown
+                color = CommonColor.Brown500
             )
             IconButton(onClick = { openPlaceSearch() }) {
                 Icon(
                     painter = painterResource(R.drawable.ic_search),
                     contentDescription = "검색",
-                    tint = CommonColor.Brown
+                    tint = CommonColor.Brown500
                 )
             }
         }
@@ -296,10 +296,9 @@ fun MapScreen(
                 state = MarkerState(position = markerPosition),
                 title = markerTitle,
                 snippet = markerSnippet,
-                icon = bitmapDescriptorFromRes(context, R.drawable.ic_locate_marker, 120, 96)
+                icon = bitmapDescriptorFromRes(context, R.drawable.ic_locate_marker, 120, 120)
             )
         }
-
 
         SelectedAddressSection(currentSelectedAddress, {
             Log.d(TAG, "확인 버튼 클릭 - 선택된 주소: ${mapData.address}")

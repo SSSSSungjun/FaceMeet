@@ -37,7 +37,8 @@ import toMultipartBodyPart
 fun FaceTestLoadingScreen(
     cameraShotViewModel: CameraShotViewModel,
     analyzeViewModel: FaceAnalyzeViewModel,
-    onNavigateToResult: () -> Unit
+    onNavigateToResult: () -> Unit,
+    retry: () -> Unit,
 ) {
 
     val isLoading by analyzeViewModel.isLoading.collectAsState()
@@ -49,7 +50,7 @@ fun FaceTestLoadingScreen(
         val side = cameraShotViewModel.side.value
 
         if (front != null && side != null) {
-            val frontPart = front.toMultipartBodyPart("front_image")
+            val frontPart = front.toMultipartBodyPart("front_image1")
             val sidePart = side.toMultipartBodyPart("side_image")
 
             analyzeViewModel.analyzeFace(frontPart, sidePart)
@@ -83,7 +84,7 @@ fun FaceTestLoadingScreen(
             error != null -> {
                 CuteInlineError(
                     errorCode = error,
-                    onRetry = { tryAnalyze() }
+                    onRetry = { retry() }
                 )
             }
 
@@ -116,7 +117,7 @@ fun CuteInlineError(
                 textAlign = TextAlign.Center,
                 fontFamily = Roboto,
                 fontSize = 18.sp,
-                color = CommonColor.Brown,
+                color = CommonColor.Brown500,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp)
@@ -127,7 +128,7 @@ fun CuteInlineError(
                 Text(
                     text = "분석실패 : $errorCode",
                     textAlign = TextAlign.Center,
-                    color = CommonColor.Brown,
+                    color = CommonColor.Brown500,
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 12.sp,
                 )

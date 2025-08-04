@@ -24,8 +24,8 @@ private const val TAG = "MainNavHost"
 fun AppNavHost(isLoggedIn: Boolean) {
 
     val navController = rememberNavController()
-    val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ClientRoutes.MainMenu.route
-    //val startDestination = AppRoutes.Start.route
+//    val startDestination = if (!isLoggedIn) AppRoutes.Start.route else ClientRoutes.MainMenu.route
+    val startDestination = AppRoutes.Start.route
 
     val cameraVM: CameraShotViewModel = hiltViewModel()
     val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
@@ -59,7 +59,7 @@ fun AppNavHost(isLoggedIn: Boolean) {
             WebLoginScreen(
                 provider = provider,
                 onLoginSuccess = { hasInfo, hasFace ->
-                    Log.d(TAG, "hasInfo: ${hasInfo}")
+                    Log.d(TAG, "hasInfo: ${hasInfo}  hasFace : ${hasFace}")
 
                     if (!hasInfo) {
                         navController.navigate(SettingRoutes.Register.route) {
@@ -70,20 +70,11 @@ fun AppNavHost(isLoggedIn: Boolean) {
                             popUpTo(AppRoutes.Start.route) { inclusive = true }
                         }
                     } else {
+                        Log.d(TAG, "AppNavHost: else")
                         navController.navigate(ClientRoutes.MainMenu.route) {
                             popUpTo(AppRoutes.Start.route) { inclusive = true }
                         }
                     }
-
-//                    if (isNewUser) {
-//                        navController.navigate(SettingRoutes.Register.route) {
-//                            popUpTo(AppRoutes.Start.route) { inclusive = false }
-//                        }
-//                    } else {
-//                        navController.navigate(ClientRoutes.MainMenu.route) {
-//                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-//                        }
-//                    }
                 },
                 onLoginFailed = {
                     Log.d(TAG, "AppNavHost: Failed")

@@ -81,7 +81,7 @@ fun MainMenuScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_notification),
                     contentDescription = "알림 아이콘",
-                    tint = CommonColor.Brown,
+                    tint = CommonColor.Brown500,
                     modifier = Modifier
                         .size(28.dp)
                 )

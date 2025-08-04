@@ -51,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.saveBitmapToGallery
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareImageWithText
@@ -121,7 +122,7 @@ fun ProfileScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.temp_face),
+                    painter = rememberAsyncImagePainter(model = result.img),
                     contentDescription = "분석 결과 이미지",
                     modifier = Modifier
                         .size(240.dp)
@@ -130,7 +131,7 @@ fun ProfileScreenContent(
                 Text(result.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(modifier = Modifier.height(17.dp))
                 Text(
-                    text =result.description,
+                    text = result.description,
                     fontSize = 13.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center,
@@ -270,14 +271,14 @@ fun ProfileScreenContent(
 
         shareRow()
 
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             "나와 잘 맞는 사람은 누구일까?", fontSize = 13.sp, color = Color.Gray,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         MatchingStartButton(onMatching = onMatching, buttonText = "매칭 시작하기")
 
 
@@ -512,17 +513,17 @@ fun ProfileScreenPreview() {
         ProfileScreenContent(
             {}, {}, {}, FaceInfoResponse(
                 faceId = 0,
-                img ="",
+                img = "",
                 title = "",
                 description = "",
-                faceShapeDesc ="",
+                faceShapeDesc = "",
                 eyeDesc = "",
                 eyebrowDesc = "",
                 noseDesc = "",
                 chinDesc = "",
-                mouthDesc ="",
-                personality ="",
-                careerTraits ="",
+                mouthDesc = "",
+                personality = "",
+                careerTraits = "",
                 interpersonalRelationships = "",
                 lifeDirection = "",
                 summaryAnalysis = "",
