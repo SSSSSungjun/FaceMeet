@@ -1,5 +1,7 @@
 package com.ssafy.facemeet.client.navigation.bottom
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -14,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -35,6 +38,7 @@ fun MainScreenWithBottomNav(
     val bottomNavController = rememberNavController()
 
     Scaffold(
+        modifier = Modifier.fillMaxSize().background(Color(0xFFF4F3ED)),
         bottomBar = {
             BottomNavigationBar(navController = bottomNavController)
         }
@@ -65,9 +69,11 @@ fun MainScreenWithBottomNav(
 
             composable(BottomNavRoutes.ChattingList.route) {
                 ChattingListScreen(
-                    onItemClick = {
-                        mainNavController.navigate(ClientRoutes.Chat.createRoute("abc123"))
-                    } // chatItems의 Id값 정도 인자값으로 넘기면 됨
+                    onItemClick = {item->
+                        val roomId =item.chatRoomId
+                        val matcingUserId= item.userId
+                        mainNavController.navigate(ClientRoutes.Chat.createRoute(roomId,matcingUserId))
+                    }
                 )
             }
 

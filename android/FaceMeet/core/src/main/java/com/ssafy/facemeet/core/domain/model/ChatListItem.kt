@@ -1,13 +1,15 @@
 package com.ssafy.facemeet.core.domain.model
 
 data class ChatListItem(
-    val userId: Int,
+    val userId: Long,
     val nickName: String,
-    val lastSeen: String,
+    val lastActivatedTime: String?,
     val isOnline: Boolean,
-    val chatRoomId: Int,
+    val chatRoomId: Long,
     val chatRoomStringId: String,
     val lastMessage: String,
+    val lastSendMessageTime: String?,
     val nonReadCnt: Int,
-    val blocked: Boolean
+    val blocked: Boolean,
+    val deleted: Boolean
 )

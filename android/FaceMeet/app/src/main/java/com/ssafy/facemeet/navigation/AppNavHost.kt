@@ -24,8 +24,8 @@ private const val TAG = "MainNavHost"
 fun AppNavHost(isLoggedIn: Boolean) {
 
     val navController = rememberNavController()
-    // val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ModuleEntryRoute.ClientMainMenu.route
-    val startDestination = AppRoutes.Start.route
+    val startDestination =if(!isLoggedIn) AppRoutes.Start.route else ClientRoutes.MainMenu.route
+    //val startDestination = AppRoutes.Start.route
 
     val cameraVM: CameraShotViewModel = hiltViewModel()
     val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()

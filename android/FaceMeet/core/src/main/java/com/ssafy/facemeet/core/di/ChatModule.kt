@@ -7,7 +7,8 @@ import com.ssafy.facemeet.core.data.remote.datasource.ChatRemoteDataSource
 import com.ssafy.facemeet.core.data.repository.ChatRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
-import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesUseCase
+import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesAllUseCase
+import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesLastUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLikeUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingListUseCase
@@ -42,7 +43,7 @@ object ChatModule {
     @Provides
     @Singleton
     fun provideChatRepository(
-       chatRemoteDataSource: ChatRemoteDataSource
+        chatRemoteDataSource: ChatRemoteDataSource
     ): ChatRepository {
         return ChatRepositoryImpl(chatRemoteDataSource)
     }
@@ -73,7 +74,13 @@ object ChatModule {
 
     @Provides
     @Singleton
-    fun provideGetChattingMessagesUseCase(
+    fun provideGetChattingMessagesLastUseCase(
         repository: ChatRepository
-    ): GetChattingMessagesUseCase = GetChattingMessagesUseCase(repository)
+    ): GetChattingMessagesLastUseCase = GetChattingMessagesLastUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetChattingMessagesAllUseCase(
+        repository: ChatRepository
+    ): GetChattingMessagesAllUseCase = GetChattingMessagesAllUseCase(repository)
 }

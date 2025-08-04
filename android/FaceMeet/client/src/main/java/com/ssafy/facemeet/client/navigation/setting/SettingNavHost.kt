@@ -4,7 +4,6 @@ package com.ssafy.facemeet.client.navigation.setting
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -32,11 +31,11 @@ fun NavGraphBuilder.settingNavHost(
         SettingRoutes.Register.route,
     ) {
         RegisterScreen(
-            onNavigateToNext = {
+            toNext = {
                 navController.navigate(ClientRoutes.MainMenu.route)
             }, // 여기서 뒤로가면 등록 못가게 해야할듯.
-            onNavigateToBack = { navController.popBackStack() },
-            onNavigateToMap = { navController.navigate(SettingRoutes.Map.route) }
+            toBack = { navController.popBackStack() },
+            toMap = { navController.navigate(SettingRoutes.Map.route) }
         )
     }
 
@@ -67,7 +66,6 @@ fun NavGraphBuilder.settingNavHost(
 
 
     composable(SettingRoutes.FrontPreview.route) {
-
         Log.d("FACE_MY", "settingNavHost: ${cameraVM.front.value}")
         ShotPreviewScreen(
             image = cameraVM.front.value?.asImageBitmap(),
@@ -80,10 +78,6 @@ fun NavGraphBuilder.settingNavHost(
     }
 
     composable(SettingRoutes.SidePreview.route) {
-        val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
-
-        Log.d("FACE_MY", "settingNavHost: ${cameraVM.side.value}")
-
         ShotPreviewScreen(
             image = cameraVM.side.value?.asImageBitmap(),
             title = "옆면 사진에 이상 없으면 다음을 눌러주세요.",

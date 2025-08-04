@@ -1,11 +1,19 @@
 package com.ssafy.facemeet.core.domain.model
 
+import com.google.gson.annotations.SerializedName
+
 data class ChatElement(
     val content: String,
-    val senderID: Long,
-    val receiverID: Long,
-    val roomID: String,
+
+    @SerializedName("senderId")
+    val senderID: Long?,
+    @SerializedName("receiverId")
+    val receiverID: Long?,
+    @SerializedName("roomId")
+    val roomID: Long?,
+    @SerializedName("sendAt")
     val createdAt: String,
+
     val isRead: Boolean,
     val readAt: String
 )

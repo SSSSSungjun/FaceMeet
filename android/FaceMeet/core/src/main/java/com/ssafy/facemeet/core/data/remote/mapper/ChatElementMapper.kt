@@ -10,12 +10,12 @@ import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
 @RequiresApi(Build.VERSION_CODES.O)
 fun ChatElementResponse.toDomain() : ChatElement{
    return ChatElement(
-       content = content,
+       content = content ?:"",
        senderID = senderID,
        receiverID = receiverID,
        roomID = roomID,
-       createdAt = createdAt.formatSmartDate(),
-       isRead = isRead,
-       readAt = readAt.toHourMinuteString()
+       createdAt = createdAt?.formatSmartDate() ?: "",
+       isRead = isRead == true,
+       readAt = readAt?.toHourMinuteString() ?: ""
    )
 }

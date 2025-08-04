@@ -1,15 +1,18 @@
 package com.ssafy.facemeet.core.data.repository
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.ssafy.facemeet.core.data.remote.datasource.ChatRemoteDataSource
 import com.ssafy.facemeet.core.data.remote.dto.request.MatchingUserRequest
 import com.ssafy.facemeet.core.data.remote.mapper.toDomain
-import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.domain.model.ChatListItem
+import com.ssafy.facemeet.core.domain.model.ChattingAll
 import com.ssafy.facemeet.core.domain.model.Matching
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
 import javax.inject.Inject
+
+private const val TAG = "ChatRepositoryImpl"
 
 @RequiresApi(Build.VERSION_CODES.O)
 class ChatRepositoryImpl @Inject constructor(
@@ -19,8 +22,10 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun getChattingList(): Result<List<ChatListItem>> = runCatching {
         val response = remoteDataSource.getChattingList()
         if (response.isSuccessful) {
+            Log.d(TAG, "getChattingList: ${response.body()}")
             (response.body() ?: emptyList()).map { it.toDomain() }
         } else {
+            Log.d(TAG, "getChattingList: ${response.body()}")
             throw Exception("Failed to fetch chat list: ${response.message()}")
         }
     }
@@ -35,7 +40,8 @@ class ChatRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun postChattingLike(roomId: Int, selected: Boolean): Result<Unit> =
+
+    override suspend fun postChattingLike(roomId: Long, selected: Boolean): Result<Unit> =
         runCatching {
             val response = remoteDataSource.postChattingLike(roomId, selected)
             if (!response.isSuccessful) {
@@ -43,20 +49,33 @@ class ChatRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun postChattingLeave(roomId: Int): Result<Unit> = runCatching {
+    override suspend fun postChattingLeave(roomId: Long): Result<Unit> = runCatching {
         val response = remoteDataSource.postChattingLeave(roomId)
         if (!response.isSuccessful) {
             throw Exception("Failed to leave chat room: ${response.message()}")
         }
     }
 
-    override suspend fun getChattingMessages(roomId: Int, limit: Int): Result<List<ChatElement>> =
+    override suspend fun getChattingMessagesLast(roomId: Long, limit: Int): Result<ChattingAll> =
         runCatching {
-            val response = remoteDataSource.getChattingMessages(roomId, limit)
-            if (response.isSuccessful) {
-                (response.body() ?: emptyList()).map { it.toDomain() }
+            val response = remoteDataSource.getChattingMessagesLast(roomId, limit)
+            if (!response.isSuccessful) {
+                (response.body()?.toDomain()) ?: throw Exception("Empty response body")
             } else {
                 throw Exception("Failed to fetch messages: ${response.message()}")
             }
         }
+
+    override suspend fun getChattingMessagesAll(roomId: Long): Result<ChattingAll> =
+        runCatching {
+            val response = remoteDataSource.getChattingMessagesAll(roomId)
+            if (response.isSuccessful) {
+                Log.d(TAG, "getChattingMessagesAll: 불러오기 성공")
+                (response.body()?.toDomain()) ?: throw Exception("Empty response body")
+            } else {
+                Log.d(TAG, "getChattingMessagesAll: 불러오기 실패")
+                throw Exception("Failed to fetch messages: ${response.message()}")
+            }
+        }
+
 }

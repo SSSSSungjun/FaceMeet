@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,15 +38,16 @@ import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
+import com.ssafy.facemeet.client.ui.theme.FaceMeetTheme
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 private const val TAG = "RegisterScreen"
 
 @Composable
 fun RegisterScreen(
-    onNavigateToNext: () -> Unit = {},
-    onNavigateToBack: () -> Unit = {},
-    onNavigateToMap: () -> Unit = {},
+    toNext: () -> Unit = {},
+    toBack: () -> Unit = {},
+    toMap: () -> Unit = {},
     viewModel: RegisterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -56,10 +58,11 @@ fun RegisterScreen(
     }
 
     LaunchedEffect(navigationEvent) {
-        when (navigationEvent) {
-            RegisterNaviEvent.ToBack -> onNavigateToBack()
-            RegisterNaviEvent.ToCamera -> onNavigateToNext()
-            RegisterNaviEvent.ToMap -> onNavigateToMap()
+        when(navigationEvent){
+            RegisterNaviEvent.ToBack -> toBack()
+            RegisterNaviEvent.ToCamera -> toNext()
+            RegisterNaviEvent.ToMap -> toMap()
+
             else -> Log.d(TAG, "RegisterScreen: Unknown")
         }
     }
@@ -319,5 +322,13 @@ fun InputBtns(
                 modifier = Modifier.padding(5.dp)
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RegisterScreenPreview(){
+    FaceMeetTheme {
+        RegisterScreen()
     }
 }
