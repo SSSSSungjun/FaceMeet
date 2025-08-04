@@ -10,6 +10,7 @@ import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
+import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -35,7 +36,6 @@ class ChatWebSocketManager @Inject constructor() {
     private var currentUserId: Long = 0
     private var isStompConnected = false
 
-    // 🔥 초기 메시지 설정 (API에서 가져온 기존 메시지들)
     fun setInitialMessages(initialMessages: List<ChatMessageItem>) {
         messageList.clear()
         messageList.addAll(initialMessages)
@@ -43,7 +43,6 @@ class ChatWebSocketManager @Inject constructor() {
         Log.d("WebSocket", "초기 메시지 ${initialMessages.size}개 설정 완료")
     }
 
-    // 🔥 WebSocket 연결
     fun connect(userId: Long, token: String) {
         currentUserId = userId
 
@@ -92,14 +91,70 @@ class ChatWebSocketManager @Inject constructor() {
         })
     }
 
-    // 🔥 STOMP 연결
+    private fun addSystemMessage(content: String, roomId: Long) {
+        val systemMessage = ChatElement(
+            content = content,
+            senderID = -1, // 시스템 메시지는 -1로 구분
+            receiverID = currentUserId,
+            roomID = roomId,
+            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
+            isRead = true, // 시스템 메시지는 항상 읽음 처리
+            readAt = ZonedDateTime.now().toString()
+        )
+
+        val messageItem = ChatMessageItem(
+            chatElement = systemMessage,
+            messageType = MessageType.SYSTEM
+        )
+
+        messageList.add(messageItem)
+        _messages.postValue(messageList.toList())
+    }
+
+    // 입장 메시지
+    fun sendJoinMessage(roomId: Long, userName: String = "사용자") {
+        addSystemMessage("$userName 님이 입장하셨습니다.", roomId)
+    }
+
+    // 퇴장 메시지
+    fun sendLeaveMessage(roomId: Long, userName: String = "사용자") {
+        addSystemMessage("$userName 님이 퇴장하셨습니다.", roomId)
+    }
+
+    // 자정 시간 알림 메시지
+    fun sendMidnightMessage(roomId: Long) {
+        val currentDate = ZonedDateTime.now().format(
+            java.time.format.DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
+        )
+        addSystemMessage("날짜가 변경되었습니다. $currentDate", roomId)
+    }
+
+    // 날짜 구분자 추가
+    private fun addDateSeparator(date: String) {
+        val dateMessage = ChatElement(
+            content = date,
+            senderID = -2, // 날짜 구분자는 -2로 구분
+            receiverID = currentUserId,
+            roomID = 0,
+            createdAt = date,
+            isRead = true,
+            readAt = ZonedDateTime.now().toString()
+        )
+
+        val messageItem = ChatMessageItem(
+            chatElement = dateMessage,
+            messageType = MessageType.DATE_SEPARATOR
+        )
+
+        messageList.add(messageItem)
+        _messages.postValue(messageList.toList())
+    }
     private fun sendStompConnect() {
         val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:10000,10000\n\n\u0000"
         webSocket?.send(connectFrame)
         Log.d("WebSocket", "📤 STOMP CONNECT 전송")
     }
 
-    // 🔥 STOMP 메시지 처리
     private fun handleStompMessage(message: String) {
         when {
             message.startsWith("CONNECTED") -> {
@@ -137,7 +192,6 @@ class ChatWebSocketManager @Inject constructor() {
         Log.d("WebSocket", "📡 구독: $destination")
     }
 
-    // 🔥 메시지 전송
     fun sendMessage(content: String, roomId: Long, senderId: Long, receiverId: Long) {
         // 1. 내 메시지를 즉시 UI에 추가
         addMyMessageToUI(content, senderId, receiverId, roomId)
@@ -152,7 +206,6 @@ class ChatWebSocketManager @Inject constructor() {
         sendStompMessage("/pub/chat.private", gson.toJson(messageRequest))
     }
 
-    // 🔥 읽음 처리
     fun markAsRead(roomId: String, userId: Long, senderId: Long) {
         val readRequest = mapOf(
             "readerId" to userId,
@@ -162,7 +215,6 @@ class ChatWebSocketManager @Inject constructor() {
         sendStompMessage("/pub/chat.read", gson.toJson(readRequest))
     }
 
-    // 🔥 메시지 파싱
     private fun parseStompMessage(message: String) {
         val lines = message.split("\n")
         val bodyStart = lines.indexOfFirst { it.isEmpty() }
@@ -183,14 +235,13 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
-    // 🔥 내 메시지 UI 추가
     private fun addMyMessageToUI(content: String, senderId: Long, receiverId: Long, roomId: Long) {
         val myMessage = ChatElement(
             content = content,
             senderID = senderId,
             receiverID = receiverId,
             roomID = roomId,
-            createdAt = ZonedDateTime.now().toString(),
+            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
             isRead = false,
             readAt = ZonedDateTime.now().toString()
         )
@@ -204,11 +255,9 @@ class ChatWebSocketManager @Inject constructor() {
         _messages.postValue(messageList.toList())
     }
 
-    // 🔥 상대방 메시지 처리
     private fun handleChatMessage(response: ChatElement) {
         Log.d("WebSocket", "메시지 처리 - 보낸사람: ${response.senderID}")
 
-        // 내가 보낸 메시지가 아닌 경우만 추가 (상대방 메시지)
         if (response.senderID != currentUserId) {
             Log.d("WebSocket", "상대방 메시지 추가")
             addMessageToList(response)
@@ -217,7 +266,6 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
-    // 🔥 메시지 리스트에 추가
     private fun addMessageToList(response: ChatElement) {
         val messageItem = ChatMessageItem(
             chatElement = response,
@@ -227,7 +275,6 @@ class ChatWebSocketManager @Inject constructor() {
         _messages.postValue(messageList.toList())
     }
 
-    // 🔥 연결 종료
     fun disconnect() {
         Log.d("WebSocket", "연결 종료")
 
@@ -242,7 +289,6 @@ class ChatWebSocketManager @Inject constructor() {
         _connectionState.postValue(ConnectionState.DISCONNECTED)
     }
 
-    // 🔥 메시지 리스트 초기화 (화면 나갈 때)
     fun clearMessages() {
         messageList.clear()
         _messages.postValue(emptyList())

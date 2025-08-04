@@ -1,5 +1,5 @@
 package com.ssafy.facemeet.core.data.socket.model
 
 enum class MessageType {
-    TEXT, SYSTEM_DATE, CHAT_END
+    TEXT, SYSTEM, DATE, CHAT_START, CHAT_END
 }
