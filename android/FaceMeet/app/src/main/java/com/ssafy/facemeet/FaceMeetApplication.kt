@@ -5,10 +5,12 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
+import com.ssafy.facemeet.core.domain.repository.UserRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,14 +19,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val TAG = "FaceMeetApplication"
+
 @HiltAndroidApp
-class FaceMeetApplication : Application() {
+class FaceMeetApplication : Application(), LifecycleObserver {
 
     @Inject
     lateinit var tokenManager: TokenManager
 
     @Inject
     lateinit var chatWebSocketManager: ChatWebSocketManager
+
+    @Inject
+    lateinit var userRepository: UserRepository
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -55,12 +61,31 @@ class FaceMeetApplication : Application() {
                     if (userId != null && !accessToken.isNullOrEmpty()) {
                         Log.d(TAG, "WebSocket 재연결 시도")
                         chatWebSocketManager.connect(userId, accessToken)
+
+                        Log.d(TAG, "onStart: ✅ 온라인 상태 전송")
+                        val result = userRepository.postOnline()
+
                     }
                 }
             }
 
+
             override fun onStop(owner: LifecycleOwner) {
+                super.onStop(owner)
+
+                applicationScope.launch {
+                    val userId = tokenManager.getUserPK()?.toLongOrNull()
+                    val accessToken = tokenManager.getAccessToken()
+//                    val role = tokenManager.getRole()
+
+//                    if (userId != null && !accessToken.isNullOrEmpty() && role == "USER") {
+                    if (userId != null && !accessToken.isNullOrEmpty()) {
+                        Log.d(TAG, "onStop: ✅ 오프라인 상태 전송")
+                        userRepository.postOffline()
+                    }
+                }
             }
+
         })
     }
 }
