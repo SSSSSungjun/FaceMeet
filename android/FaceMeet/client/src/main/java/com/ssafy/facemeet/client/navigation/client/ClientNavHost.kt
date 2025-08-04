@@ -67,7 +67,7 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
 
         ChattingScreen(
             roomId = roomId,
-            receiverId = receiverId,
+            receiverId =receiverId,
             onBackClick = {
                 navController.popBackStack()
             }

@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -57,6 +58,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,7 +75,7 @@ private const val TAG = "ChattingScreen"
 @Composable
 fun ChattingScreen(
     roomId: Long,
-    receiverId: Long,
+    receiverId : Long,
     onBackClick: () -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
@@ -93,7 +95,6 @@ fun ChattingScreen(
         }
     }
 
-
     LaunchedEffect(navigationEvent) {
         when (navigationEvent) {
             ChatNaviEvent.ToBack -> onBackClick()
@@ -103,7 +104,7 @@ fun ChattingScreen(
 
     LaunchedEffect(roomId, receiverId) {
         viewModel.getAllChattingMessage(roomId)
-        viewModel.connectToChat(roomId, receiverId)
+        viewModel.connectToChat()
     }
 
     LaunchedEffect(connectionState) {
@@ -146,7 +147,7 @@ fun ChattingScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ChatHeader(
-            userName = "닉네임",
+            userName = uiState.roomInfo.partnerNickname,
             compatibilityScore = 87,
             onBack = viewModel::navigateToBack
         )
@@ -180,10 +181,6 @@ fun ChattingScreen(
                     }
 
                     MessageType.SYSTEM -> {
-                        TODO()
-                    }
-
-                    MessageType.CHAT_START -> {
                         TODO()
                     }
                 }
@@ -263,29 +260,6 @@ fun ChatHeader(
         )
     }
 
-}
-
-@Composable
-fun ConnectionStatusText(connectionState: ConnectionState) {
-    val (color, text) = when (connectionState) {
-        ConnectionState.CONNECTING ->
-            MaterialTheme.colorScheme.primary to "연결 중..."
-
-        ConnectionState.CONNECTED ->
-            Color.Green to "온라인"
-
-        ConnectionState.DISCONNECTED ->
-            Color.Red to "연결 끊김"
-
-        ConnectionState.ERROR ->
-            MaterialTheme.colorScheme.error to "연결 오류"
-    }
-
-    Text(
-        text = text,
-        color = color,
-        fontSize = 12.sp
-    )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -386,6 +360,28 @@ fun DateSeparator(date: String) {
 }
 
 @Composable
+fun ChatEndMessage(content: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(horizontal = 10.dp)
+            .background(
+                color = Color(0xFFE5E4DD), shape = RoundedCornerShape(10.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = content,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            color = Color(0xFF666666),
+            modifier=Modifier.padding(7.dp)
+        )
+    }
+}
+
+@Composable
 fun MessageInput(
     messageText: String,
     onMessageChange: (String) -> Unit,
@@ -474,14 +470,11 @@ fun MessageInput(
 @Preview
 @Composable
 fun ChattingScreenPreview() {
+    Column {
+        ChatEndMessage("채팅을 할 수 가 없다")
+        DateSeparator("2020-01-01")
 
-    ChatHeader("dbstjdwns", 89, {})
-//    Box(modifier = Modifier.background(Color(0xFFF4F3ED))) {
-//        ChatMessageBubble(
-//            ChatElement("응 아니아", 1L, 1L, 0, "19:25", true, ""),
-//            isMyMessage = true
-//        )
-//    }
+    }
 
 
 }

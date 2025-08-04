@@ -10,7 +10,6 @@ import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
-import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesAllUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -63,19 +62,17 @@ class ChattingViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             getChattingMessagesAllUseCase.invoke(roomId).onSuccess { chattingAll ->
-                val existingMessages = chattingAll.messages.map { chatElement ->
-                    ChatMessageItem(
-                        chatElement = chatElement,
-                        messageType = MessageType.TEXT
-                    )
+
+                val messageItems: List<ChatMessageItem> = chattingAll.messages.messages.map {
+                    ChatMessageItem(chatElement = it)
                 }
-
-                webSocketManager.setInitialMessages(existingMessages)
-
+                val chatRoom= chattingAll.chatRoom
+                Log.d(TAG, "getAllChattingMessage: $chatRoom")
                 _uiState.update {
                     it.copy(
-                        roomId = roomId,
-                        isLoading = false
+                        isLoading = false,
+                        chattingAllList = messageItems,
+                        roomInfo = chatRoom
                     )
                 }
             }.onFailure {
@@ -85,21 +82,10 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-
-    fun connectToChat(roomId: Long, receiverId: Long) {
+    fun connectToChat() {
         viewModelScope.launch {
             try {
-                _uiState.update {
-                    it.copy(
-                        currentUserId = currentUserId,
-                        roomId = roomId,
-                        receiverId = receiverId,
-                        isLoading = true
-                    )
-                }
-
                 val token = tokenManager.getAccessToken()
-
                 if (token != null) {
                     webSocketManager.connect(currentUserId, token)
                 }
@@ -127,23 +113,22 @@ class ChattingViewModel @Inject constructor(
 
     fun sendMessage() {
         val state = _uiState.value
-        if (!state.canSendMessage || state.currentUserId == 0L) return
+        if (!state.canSendMessage || currentUserId == 0L) return
 
         viewModelScope.launch {
             try {
                 webSocketManager.sendMessage(
                     content = state.messageText.trim(),
-                    roomId = state.roomId,
-                    senderId = state.currentUserId,
-                    receiverId = state.receiverId
+                    roomId = state.roomInfo.chatRoomID,
+                    senderId = currentUserId,
+                    receiverId = state.roomInfo.partnerID
                 )
                 _uiState.update {
                     it.copy(
                         messageText = "",
-                        canSendMessage = false
+                        canSendMessage = false,
                     )
                 }
-
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
             }
@@ -152,11 +137,11 @@ class ChattingViewModel @Inject constructor(
 
     fun markAsRead() {
         val state = _uiState.value
-        if (state.currentUserId != 0L && state.roomId != 0L) {
+        if (currentUserId != 0L && state.roomInfo.chatRoomID != 0L) {
             webSocketManager.markAsRead(
-                roomId = state.roomId.toString(),
-                userId = state.currentUserId,
-                senderId = state.receiverId
+                roomId = state.roomInfo.chatRoomID.toString(),
+                userId =currentUserId,
+                senderId = state.roomInfo.partnerID
             )
         }
     }

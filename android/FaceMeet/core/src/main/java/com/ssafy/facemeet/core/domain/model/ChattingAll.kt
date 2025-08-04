@@ -1,6 +1,21 @@
 package com.ssafy.facemeet.core.domain.model
 
-data class ChattingAll(
-    val messages: MutableList<ChatElement> = mutableListOf(),
-    val totalPages: Int,
+data class ChattingAll (
+    val messages: Messages,
+    val chatRoom: ChatRoom
 )
+
+data class ChatRoom (
+    val chatRoomID: Long=0L,
+    val partnerID: Long=0L,
+    val partnerNickname: String="",
+    val imgURL: String="",
+    val similar: Long=0L
+)
+
+data class Messages (
+    val messages: List<ChatElement> =listOf(),
+    val currentPage: Long= 0L ,
+    val totalPages: Long= 0L
+)
+
