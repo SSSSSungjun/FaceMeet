@@ -22,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -44,7 +43,6 @@ fun FaceTestLoadingScreen(
     val isLoading by analyzeViewModel.isLoading.collectAsState()
     val result by analyzeViewModel.result.collectAsState()
     val error by analyzeViewModel.error.collectAsState()
-    val context = LocalContext.current
 
     fun tryAnalyze() {
         val front = cameraShotViewModel.front.value
@@ -71,7 +69,6 @@ fun FaceTestLoadingScreen(
         }
     }
 
-
     // ✅ 상태에 따라 다른 UI 보여주기
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when {
@@ -91,7 +88,6 @@ fun FaceTestLoadingScreen(
             }
 
             else -> {
-                Text("else")
                 // 아무것도 안 보여줌 (혹시 result 도착 전 잠깐 비는 상태 방지용)
             }
         }
