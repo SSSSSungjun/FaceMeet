@@ -50,7 +50,7 @@ fun FaceTestLoadingScreen(
         val side = cameraShotViewModel.side.value
 
         if (front != null && side != null) {
-            val frontPart = front.toMultipartBodyPart("front_image1")
+            val frontPart = front.toMultipartBodyPart("front_image")
             val sidePart = side.toMultipartBodyPart("side_image")
 
             analyzeViewModel.analyzeFace(frontPart, sidePart)
