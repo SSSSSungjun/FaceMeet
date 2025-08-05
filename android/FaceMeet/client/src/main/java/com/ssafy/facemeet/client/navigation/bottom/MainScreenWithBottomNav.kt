@@ -22,7 +22,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
@@ -33,12 +32,14 @@ import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
 @Composable
 fun MainScreenWithBottomNav(
     mainNavController: NavHostController,
+    bottomNavController: NavHostController,
     initialTab: String = BottomNavRoutes.Home.route
 ) {
-    val bottomNavController = rememberNavController()
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF4F3ED)),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF4F3ED)),
         bottomBar = {
             BottomNavigationBar(navController = bottomNavController)
         }
@@ -69,10 +70,15 @@ fun MainScreenWithBottomNav(
 
             composable(BottomNavRoutes.ChattingList.route) {
                 ChattingListScreen(
-                    onItemClick = {item->
-                        val roomId =item.chatRoomId
-                        val matcingUserId= item.userId
-                        mainNavController.navigate(ClientRoutes.Chat.createRoute(roomId,matcingUserId))
+                    onItemClick = { item ->
+                        val roomId = item.chatRoomId
+                        val matcingUserId = item.userId
+                        mainNavController.navigate(
+                            ClientRoutes.Chat.createRoute(
+                                roomId,
+                                matcingUserId
+                            )
+                        )
                     }
                 )
             }

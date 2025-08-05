@@ -1,7 +1,9 @@
 package com.ssafy.facemeet.navigation
 
 import LoginScreen
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -20,10 +22,12 @@ import com.ssafy.facemeet.ui.web.WebLoginScreen
 
 private const val TAG = "MainNavHost"
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(isLoggedIn: Boolean) {
 
     val navController = rememberNavController()
+    val bottomNavController = rememberNavController()
 //    val startDestination = if (!isLoggedIn) AppRoutes.Start.route else ClientRoutes.MainMenu.route
     val startDestination = AppRoutes.Start.route
 
@@ -88,6 +92,6 @@ fun AppNavHost(isLoggedIn: Boolean) {
         }
 
         settingNavHost(navController, cameraVM, analyzeVM)
-        clientNavHost(navController)
+        clientNavHost(navController, bottomNavController)
     }
 }
