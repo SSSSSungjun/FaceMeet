@@ -16,7 +16,8 @@ object CommonColor {
     val Gray900 = Color(0xFF333333)
     val Gray500 = Color(0xFF666666)
     val Gray300 = Color(0xFF999999)
-    val Gray100 = Color(0xFFF2F2F2)
+    val Gray200 = Color(0xFFF2F2F2)
+    val Gray100 = Color(0xFFF8F8F8)
 
     val Brown500 = Color(0xFF665A48)
     val Brown100 = Color(0xFFAD9A8D)

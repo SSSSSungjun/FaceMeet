@@ -256,7 +256,7 @@ fun ProfileCardWithBackground(
                 }
 
                 Divider(
-                    color = CommonColor.Gray100, modifier = Modifier.padding(horizontal = 20.dp)
+                    color = CommonColor.Gray200, modifier = Modifier.padding(horizontal = 20.dp)
                 )
 
                 Row(
@@ -295,7 +295,7 @@ fun ProfileCardWithBackground(
 
                     // 세로선
                     Divider(
-                        color = CommonColor.Gray100,
+                        color = CommonColor.Gray200,
                         modifier = Modifier
                             .fillMaxHeight()
                             .padding(top = 12.dp, bottom = 22.dp)
