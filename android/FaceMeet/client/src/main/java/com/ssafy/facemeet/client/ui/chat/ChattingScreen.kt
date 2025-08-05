@@ -47,7 +47,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -71,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
@@ -87,75 +87,66 @@ fun ChattingScreen(
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val messageState by viewModel.messageState.collectAsState()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
-
-    val pagedMessagesFlow by viewModel.pagedMessages.collectAsState()
-    val pagedMessages = pagedMessagesFlow.collectAsLazyPagingItems()
-
-    val realtimeMessages by viewModel.realtimeMessages.collectAsState()
-    val tempMessages by viewModel.tempMessages.collectAsState()
     val connectionState by viewModel.connectionState.observeAsState(ConnectionState.DISCONNECTED)
+
+
+    val pagedMessages = messageState.pagedMessages.collectAsLazyPagingItems()
+    val liveMessages by viewModel.liveMessages.collectAsState()
 
     val listState = rememberLazyListState()
 
-    val imeInsets = WindowInsets.ime
-    val density = LocalDensity.current
-    val keyboardHeight by remember {
-        derivedStateOf {
-            imeInsets.getBottom(density)
-        }
-    }
-
-    // 키보드 상태 추적
+    // 키보드 높이 추적을 위한 간소화된 로직
+    val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
     var previousKeyboardHeight by remember { mutableIntStateOf(0) }
 
-    // 스크롤 상태 감지
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) {
-            viewModel.onUserScrollStart()
-        } else {
-            viewModel.onUserScrollEnd()
-        }
-    }
-
-    // 스크롤 위치 추적
-    LaunchedEffect(listState.firstVisibleItemIndex) {
-        val totalItemCount = tempMessages.size + realtimeMessages.size + pagedMessages.itemCount
-        viewModel.onScrollPositionChanged(
+    // 스크롤 상태 감지 - 통합된 하나의 LaunchedEffect
+    LaunchedEffect(
+        listState.isScrollInProgress,
+        listState.firstVisibleItemIndex
+    ) {
+        val totalItemCount = liveMessages.size + pagedMessages.itemCount
+        viewModel.onScrollStateChanged(
+            isScrolling = listState.isScrollInProgress,
             firstVisibleItemIndex = listState.firstVisibleItemIndex,
             totalItemCount = totalItemCount
         )
     }
 
-    // 자동 스크롤 처리 (새 메시지, 메시지 전송 시)
+    // 스크롤 이벤트 처리 - 통합
     LaunchedEffect(Unit) {
-        viewModel.scrollToBottom.collect {
-            listState.animateScrollToItem(0)
+        viewModel.scrollEvent.collect { event ->
+            when (event) {
+                is ScrollEvent.ToBottom -> {
+                    listState.animateScrollToItem(0)
+                }
+                is ScrollEvent.WithKeyboard -> {
+                    listState.animateScrollToItem(0)
+                }
+            }
         }
     }
 
-    // 키보드와 함께 스크롤 처리
-    LaunchedEffect(Unit) {
-        viewModel.scrollWithKeyboard.collect {
-            // 부드럽게 스크롤 (키보드 높이만큼)
-            listState.animateScrollToItem(0)
-        }
-    }
-
-    // 키보드 높이 변화 감지
+    // 키보드 상태 변화 감지
     LaunchedEffect(keyboardHeight) {
         when {
             keyboardHeight > 0 && previousKeyboardHeight == 0 -> {
-                // 키보드가 올라옴
                 viewModel.onKeyboardShown()
-            }
-            keyboardHeight == 0 && previousKeyboardHeight > 0 -> {
-                // 키보드가 내려감 - 아무것도 하지 않음 (현재 위치 유지)
             }
         }
         previousKeyboardHeight = keyboardHeight
     }
 
+    // 초기 로딩 완료 감지
+    LaunchedEffect(pagedMessages.loadState.refresh) {
+        if (pagedMessages.loadState.refresh is LoadState.NotLoading && pagedMessages.itemCount > 0) {
+            delay(100)
+            viewModel.onInitialLoadComplete()
+        }
+    }
+
+    // 기타 이벤트들
     LaunchedEffect(navigationEvent) {
         when (navigationEvent) {
             ChatNaviEvent.ToBack -> onBackClick()
@@ -171,17 +162,9 @@ fun ChattingScreen(
         viewModel.updateConnectionState(connectionState)
     }
 
-    // 🔧 핵심 수정: 초기 로딩 후 스크롤 처리
-    LaunchedEffect(pagedMessages.loadState.refresh) {
-        if (pagedMessages.loadState.refresh is LoadState.NotLoading && pagedMessages.itemCount > 0) {
-            delay(300) // 로딩 완료 후 잠시 대기
-            viewModel.onInitialLoadComplete() // ViewModel에 초기 로드 완료 알림
-        }
-    }
-
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            Log.d("ChattingScreen", "ChattingScreen: Error occur")
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Log.d("ChattingScreen", "Error: $it")
             viewModel.clearError()
         }
     }
@@ -210,93 +193,34 @@ fun ChattingScreen(
                 contentPadding = PaddingValues(bottom = 4.dp),
                 reverseLayout = true
             ) {
-                // 1. 임시 메시지
+                // 실시간/임시 메시지 (최신 순)
                 items(
-                    count = tempMessages.size,
+                    count = liveMessages.size,
                     key = { index ->
-                        val tempMessage = tempMessages.reversed()[index]
-                        "temp_${tempMessage.chatElement.content}_${tempMessage.chatElement.createdAt}_${index}"
+                        val message = liveMessages[index]
+                        "live_${message.chatElement.senderID}_${message.chatElement.createdAt}_${message.chatElement.content.hashCode()}_${index}"
                     }
                 ) { index ->
-                    val tempMessage = tempMessages.reversed()[index]
-                    when (tempMessage.messageType) {
-                        MessageType.TEXT -> {
-                            ChatMessageBubble(
-                                message = tempMessage.chatElement,
-                                isMyMessage = tempMessage.chatElement.senderID == viewModel.currentUserId,
-                                isTemporary = true
-                            )
-                        }
-
-                        MessageType.DATE -> {
-                            DateSeparator(date = tempMessage.chatElement.content.toString())
-                        }
-
-                        MessageType.CHAT_END -> {
-                            ChatEndMessage(tempMessage.chatElement.content)
-                        }
-
-                        MessageType.SYSTEM -> {}
-                    }
+                    val message = liveMessages[index]
+                    RenderMessage(
+                        message = message,
+                        isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
+                        isTemporary = false // 임시 메시지 여부는 별도 처리 가능
+                    )
                 }
 
-                // 2. 실시간 메시지
-                items(
-                    count = realtimeMessages.size,
-                    key = { index ->
-                        val realtimeMessage = realtimeMessages.reversed()[index]
-                        "realtime_${realtimeMessage.chatElement.senderID}_${realtimeMessage.chatElement.createdAt}_${realtimeMessage.chatElement.content.hashCode()}"
-                    }
-                ) { index ->
-                    val realtimeMessage = realtimeMessages.reversed()[index]
-                    when (realtimeMessage.messageType) {
-                        MessageType.TEXT -> {
-                            ChatMessageBubble(
-                                message = realtimeMessage.chatElement,
-                                isMyMessage = realtimeMessage.chatElement.senderID == viewModel.currentUserId,
-                                isTemporary = false
-                            )
-                        }
-
-                        MessageType.DATE -> {
-                            DateSeparator(date = realtimeMessage.chatElement.content.toString())
-                        }
-
-                        MessageType.CHAT_END -> {
-                            ChatEndMessage(realtimeMessage.chatElement.content)
-                        }
-
-                        MessageType.SYSTEM -> {}
-                    }
-                }
-
-                // 3. 페이징 메시지
+                // 페이징된 메시지
                 items(pagedMessages.itemCount) { index ->
-                    val messageItem = pagedMessages[index]
-                    messageItem?.let {
-                        when (it.messageType) {
-                            MessageType.TEXT -> {
-                                ChatMessageBubble(
-                                    message = it.chatElement,
-                                    isMyMessage = it.chatElement.senderID == viewModel.currentUserId,
-                                    isTemporary = false
-                                )
-                            }
-
-                            MessageType.DATE -> {
-                                DateSeparator(date = it.chatElement.content.toString())
-                            }
-
-                            MessageType.CHAT_END -> {
-                                ChatEndMessage(it.chatElement.content)
-                            }
-
-                            MessageType.SYSTEM -> {}
-                        }
+                    pagedMessages[index]?.let { message ->
+                        RenderMessage(
+                            message = message,
+                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
+                            isTemporary = false
+                        )
                     }
                 }
 
-                // 로딩 상태 처리
+                // 로딩 상태
                 when (pagedMessages.loadState.append) {
                     is LoadState.Loading -> {
                         item {
@@ -308,21 +232,19 @@ fun ChattingScreen(
                             }
                         }
                     }
-
                     is LoadState.Error -> {
                         item {
                             Text("메시지를 불러오는데 실패했습니다")
                         }
                     }
-
                     else -> {}
                 }
             }
 
-            // 맨 아래로 스크롤 버튼
-            if (listState.firstVisibleItemIndex > 3) {
+            // 맨 아래로 스크롤 버튼 - 조건 간소화
+            if (!uiState.scrollState.isAtBottom) {
                 FloatingActionButton(
-                    onClick = { viewModel.scrollToBottomManually() },
+                    onClick = viewModel::scrollToBottomManually,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
@@ -338,8 +260,8 @@ fun ChattingScreen(
 
         MessageInput(
             messageText = uiState.messageText,
-            onMessageChange = { viewModel.updateMessageText(it) },
-            onSendClick = { viewModel.sendMessage() },
+            onMessageChange = viewModel::updateMessageText,
+            onSendClick = viewModel::sendMessage,
             canSend = uiState.canSendMessage,
             isConnected = connectionState == ConnectionState.CONNECTED
         )
@@ -355,7 +277,34 @@ fun ChattingScreen(
     }
 }
 
-// ChatMessageBubble에 isTemporary 파라미터만 추가
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun RenderMessage(
+    message: ChatMessageItem,
+    isMyMessage: Boolean,
+    isTemporary: Boolean
+) {
+    when (message.messageType) {
+        MessageType.TEXT -> {
+            ChatMessageBubble(
+                message = message.chatElement,
+                isMyMessage = isMyMessage,
+                isTemporary = isTemporary
+            )
+        }
+        MessageType.DATE -> {
+            DateSeparator(date = message.chatElement.content.toString())
+        }
+        MessageType.CHAT_END -> {
+            ChatEndMessage(message.chatElement.content)
+        }
+        MessageType.SYSTEM -> {
+            // 시스템 메시지 처리
+        }
+    }
+}
+
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChatMessageBubble(

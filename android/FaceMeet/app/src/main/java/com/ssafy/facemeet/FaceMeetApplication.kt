@@ -17,50 +17,49 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val TAG = "FaceMeetApplication"
-@HiltAndroidApp
-class FaceMeetApplication : Application() {
 
+@HiltAndroidApp
+@RequiresApi(Build.VERSION_CODES.O)
+class FaceMeetApplication : Application() {
     @Inject
     lateinit var tokenManager: TokenManager
-
     @Inject
     lateinit var chatWebSocketManager: ChatWebSocketManager
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
+        initializeApplication()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(appLifecycleObserver)
+    }
 
+    private val appLifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onStart(owner: LifecycleOwner) {
+            Log.d(TAG, "앱이 포그라운드로 전환되었습니다. WebSocket 재연결 시도")
+            connectWebSocket()
+        }
+    }
+
+    private fun initializeApplication() {
         applicationScope.launch {
             tokenManager.initializeCache()
+            Log.d(TAG, "토큰 캐시 초기화 완료")
+            connectWebSocket()
+        }
+    }
 
+    private fun connectWebSocket() {
+        applicationScope.launch {
             val userId = tokenManager.getUserPK()?.toLongOrNull()
             val accessToken = tokenManager.getAccessToken()
 
             if (userId != null && !accessToken.isNullOrEmpty()) {
+                Log.d(TAG, "userId: $userId, accessToken 유효. WebSocket 연결 시작.")
                 chatWebSocketManager.connect(userId, accessToken)
+            } else {
+                Log.w(TAG, "userId 또는 accessToken이 유효하지 않아 WebSocket 연결을 건너뜁니다.")
             }
         }
-
-        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-            @RequiresApi(Build.VERSION_CODES.O)
-            override fun onStart(owner: LifecycleOwner) {
-                Log.d("App", "앱 포그라운드 복귀")
-
-                applicationScope.launch {
-                    val userId = tokenManager.getUserPK()?.toLongOrNull()
-                    val accessToken = tokenManager.getAccessToken()
-
-                    if (userId != null && !accessToken.isNullOrEmpty()) {
-                        Log.d(TAG, "WebSocket 재연결 시도")
-                        chatWebSocketManager.connect(userId, accessToken)
-                    }
-                }
-            }
-
-            override fun onStop(owner: LifecycleOwner) {
-            }
-        })
     }
 }

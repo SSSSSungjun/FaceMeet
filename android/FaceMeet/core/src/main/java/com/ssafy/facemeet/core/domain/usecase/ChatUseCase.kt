@@ -72,9 +72,12 @@ class GetChattingMessagesCurrentUseCase @Inject constructor(
 
         return Pager(
             config = PagingConfig(
-                pageSize = 30,
+                pageSize = 20,
                 enablePlaceholders = false,
-                initialLoadSize = 60,
+                initialLoadSize = 30,
+                prefetchDistance = 3,
+                maxSize = PagingConfig.MAX_SIZE_UNBOUNDED,
+                jumpThreshold = 100
             ),
             pagingSourceFactory = {
                 Log.d("GetChattingMessagesCurrentUseCase", "ChatPagingSource 생성 중...")
