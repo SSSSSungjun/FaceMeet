@@ -75,6 +75,7 @@ fun ChattingScreen(
     roomId: Long,
     receiverId: Long,
     onBackClick: () -> Unit = {},
+    onPartnerProfile: (partnerId: Long) -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -148,7 +149,9 @@ fun ChattingScreen(
         ChatHeader(
             userName = "닉네임",
             compatibilityScore = 87,
-            onBack = viewModel::navigateToBack
+            onBack = viewModel::navigateToBack,
+            onPartnerProfile = onPartnerProfile,
+            receiverId = receiverId
         )
 
         // 채팅 목록
@@ -215,7 +218,9 @@ fun ChattingScreen(
 fun ChatHeader(
     userName: String,
     compatibilityScore: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onPartnerProfile: (partnerId: Long) -> Unit,
+    receiverId: Long
 ) {
 
     Row(
@@ -252,7 +257,10 @@ fun ChatHeader(
                 text = userName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF8B5A2B)
+                color = Color(0xFF8B5A2B),
+                modifier = Modifier.clickable {
+                    onPartnerProfile(receiverId)
+                }
             )
         }
 
@@ -475,7 +483,7 @@ fun MessageInput(
 @Composable
 fun ChattingScreenPreview() {
 
-    ChatHeader("dbstjdwns", 89, {})
+    ChatHeader("dbstjdwns", 89, {}, {}, 100)
 //    Box(modifier = Modifier.background(Color(0xFFF4F3ED))) {
 //        ChatMessageBubble(
 //            ChatElement("응 아니아", 1L, 1L, 0, "19:25", true, ""),

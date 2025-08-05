@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +57,7 @@ import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.saveBitmapToGallery
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareImageWithText
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareToInstagramStory
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.util.hasWritePermission
 import com.ssafy.facemeet.client.util.rememberPermissionLauncher
 import com.ssafy.facemeet.core.data.remote.dto.response.FaceInfoResponse
@@ -103,6 +105,7 @@ fun ProfileScreenContent(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFAF9F4))
+            .statusBarsPadding()
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
@@ -184,10 +187,8 @@ fun ProfileScreenContent(
             border = BorderStroke(2.dp, color = CommonColor.Beige)
         ) {
             Surface(
-
                 color = Color(0xFFFDFDFD),
-
-                ) {
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     PersonalityDetail("✨ 성격", result.personality)
                     Spacer(modifier = Modifier.height(20.dp))
@@ -239,7 +240,7 @@ fun ProfileScreenContent(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.",
+                        result.summaryAnalysis,
                         fontSize = 13.sp,
                         lineHeight = 20.sp,
                         color = Color(0xFF8B5A2B)
@@ -307,7 +308,8 @@ fun TopBarSection(onHome: () -> Unit) {
             style = MaterialTheme.typography.titleLarge,
             color = Color(0xFF4A3C2F),
             modifier = Modifier.align(Alignment.Center),
-            fontSize = 24.sp
+            fontSize = 24.sp,
+            fontFamily = ChosunCentennial
         )
     }
 }
@@ -334,7 +336,7 @@ fun DetailItem(
                     contentDescription = null,
                     modifier = Modifier.size(14.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = title,
                     fontSize = 14.sp,
@@ -342,7 +344,7 @@ fun DetailItem(
                     color = CommonColor.Gray900
                 )
             }
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(7.dp))
             Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray500)
         }
     }
@@ -355,10 +357,12 @@ fun PersonalityDetail(title: String, desc: String) {
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = CommonColor.RedBrown
+            color = CommonColor.RedBrown,
+            lineHeight = 22.sp
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray900)
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray900,
+            lineHeight = 20.sp,)
     }
 }
 

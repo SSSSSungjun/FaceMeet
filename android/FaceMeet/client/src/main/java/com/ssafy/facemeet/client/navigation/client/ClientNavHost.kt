@@ -14,6 +14,7 @@ import com.ssafy.facemeet.client.ui.chat.ChattingScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingLoadingScreen
 import com.ssafy.facemeet.client.ui.notification.NotificationScreen
 import com.ssafy.facemeet.client.ui.profile.ProfileScreen
+import com.ssafy.facemeet.client.ui.profile.partner.PartnerProfileScreen
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -90,8 +91,20 @@ fun NavGraphBuilder.clientNavHost(
             receiverId = receiverId,
             onBackClick = {
                 navController.popBackStack()
+            },
+            onPartnerProfile = {partnerId ->
+                navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId))
             }
         )
+    }
+
+    // navGraph
+    composable(
+        route = "${ClientRoutes.PartnerProfile.route}/{partnerId}",
+        arguments = listOf(navArgument("partnerId") { type = NavType.LongType })
+    ) {
+        val partnerId = it.arguments?.getLong("partnerId") ?: return@composable
+        PartnerProfileScreen(partnerId = partnerId, onBack = { navController.popBackStack() })
     }
 
 }
