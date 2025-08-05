@@ -56,18 +56,12 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
                 type = NavType.LongType
                 defaultValue = 0L // 기본값 설정 가능
             },
-            navArgument("receiverId") {
-                type = NavType.LongType
-                defaultValue = 0L
-            }
         )
     ) { backStackEntry ->
         val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0
-        val receiverId = backStackEntry.arguments?.getLong("receiverId") ?: 0
 
         ChattingScreen(
             roomId = roomId,
-            receiverId =receiverId,
             onBackClick = {
                 navController.popBackStack()
             }

@@ -297,6 +297,11 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
+    //notice
+    fun toggleNotice() {
+        _uiState.update { it.copy(isNoticeOpen = !it.isNoticeOpen) }
+    }
+
     // 기타 메서드들
     suspend fun loadChatRoomInfo(roomId: Long) {
         getChattingMessagesLastUseCase.invoke(roomId, 20).onSuccess { chattingAll ->

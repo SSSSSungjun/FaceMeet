@@ -35,15 +35,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.core.domain.model.ChatListItem
 
-//data class ChatItem(
-//    val id: String,
-//    val name: String,
-//    val lastMessageTime: String,
-//    val lastMessage: String,
-//    val unreadCount: Int,
-//    val profileImageUrl: String? = null
-//)
-
 private const val TAG = "ChattingListScreen"
 
 @Composable

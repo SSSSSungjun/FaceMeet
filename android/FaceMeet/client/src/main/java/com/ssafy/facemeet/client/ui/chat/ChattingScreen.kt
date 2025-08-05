@@ -70,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.ui.chat.component.CompactNoticeToggle
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
@@ -82,7 +83,6 @@ private const val TAG = "ChattingScreen"
 @Composable
 fun ChattingScreen(
     roomId: Long,
-    receiverId: Long,
     onBackClick: () -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
@@ -182,6 +182,11 @@ fun ChattingScreen(
             compatibilityScore = 87,
             onBack = viewModel::navigateToBack
         )
+        CompactNoticeToggle(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            isNoticeOpen = uiState.isNoticeOpen,
+            onToggleNotice = viewModel::toggleNotice
+        )
 
         Box(modifier = Modifier.weight(1f)) {
             LazyColumn(
@@ -277,6 +282,7 @@ fun ChattingScreen(
     }
 }
 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun RenderMessage(
@@ -350,7 +356,7 @@ fun ChatMessageBubble(
                     Text(
                         text = message.content.toString(),
                         color = Color.White,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         fontSize = 14.sp
                     )
                 }
@@ -375,7 +381,7 @@ fun ChatMessageBubble(
                     Text(
                         text = message.content.toString(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         fontSize = 14.sp
                     )
                 }
@@ -574,7 +580,6 @@ fun ChattingScreenPreview() {
     Column {
         ChatEndMessage("채팅을 할 수 가 없다")
         DateSeparator("2020-01-01")
-
     }
 
 
