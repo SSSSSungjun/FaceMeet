@@ -116,6 +116,8 @@ fun NavGraphBuilder.settingNavHost(
                 navController.navigate(SettingRoutes.CameraStart.route) {
                     popUpTo(SettingRoutes.CameraStart.route) { inclusive = false }
                 }
+            }, onCancel = {
+                navController.popBackStack()
             })
     }
 }

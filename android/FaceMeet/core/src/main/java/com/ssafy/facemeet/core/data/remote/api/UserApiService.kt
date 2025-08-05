@@ -13,7 +13,7 @@ interface UserApiService {
     @POST("/api/v1/users/online")
     suspend fun postOnline(): Response<Unit>
 
-    @POST("//api/v1/users/offline")
+    @POST("/api/v1/users/offline")
     suspend fun postOffline(): Response<Unit>
 
     @GET("/api/v1/users/me")
@@ -23,7 +23,7 @@ interface UserApiService {
     suspend fun deleteUser(): Response<Unit>
 
     @PATCH("/api/v1/users/me")
-    suspend fun patchUserInfo(@Body request : UserInfoModRequest): Response<UserInfoResponse>
+    suspend fun patchUserInfo(@Body request: UserInfoModRequest): Response<UserInfoResponse>
 
 //    @GET("/api/v1/users/status")
 //    suspend fun getUserStatus(): Response<AuthResponse<Unit>>

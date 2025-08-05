@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.core.data.remote.interceptor
 
+import android.util.Log
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -13,6 +14,7 @@ class AuthInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder().apply {
             val token = runBlocking { tokenManager.getAccessToken() }
+            Log.d("AuthInterceptor", "intercepted with token: $token")
             if (token != null) {
                 addHeader("Authorization", "Bearer $token")
             }
