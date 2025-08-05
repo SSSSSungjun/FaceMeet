@@ -51,7 +51,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,7 +71,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.ssafy.facemeet.client.R
-import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
@@ -108,55 +106,8 @@ fun ChattingScreen(
         }
     }
 
+    // 키보드 상태 추적
     var previousKeyboardHeight by remember { mutableIntStateOf(0) }
-
-    // 🔧 페이징 데이터 버퍼링
-    var stablePagedMessages by remember { mutableStateOf<List<ChatMessageItem>>(emptyList()) }
-    var lastStableCount by remember { mutableIntStateOf(0) }
-    var stabilityCheckCount by remember { mutableIntStateOf(0) }
-
-    // 🔧 페이징 데이터 안정성 체크 + 중복 제거
-    LaunchedEffect(pagedMessages.itemCount, pagedMessages.loadState.refresh) {
-        if (pagedMessages.loadState.refresh is LoadState.NotLoading && pagedMessages.itemCount > 0) {
-
-            if (pagedMessages.itemCount == lastStableCount) {
-                stabilityCheckCount++
-            } else {
-                stabilityCheckCount = 0
-                lastStableCount = pagedMessages.itemCount
-            }
-
-            Log.d(TAG, "📊 페이징 안정성 체크: count=${pagedMessages.itemCount}, stability=${stabilityCheckCount}")
-
-            if (stabilityCheckCount >= 2) {
-                Log.d(TAG, "✅ 페이징 데이터 안정화 완료 - UI 업데이트")
-
-                // 🔧 안정화된 데이터를 UI용 버퍼에 복사 (중복 제거)
-                val bufferedMessages = mutableListOf<ChatMessageItem>()
-                for (i in 0 until pagedMessages.itemCount) {
-                    pagedMessages[i]?.let { pagedMessage ->
-                        // 실시간 메시지와 중복되지 않는지 확인
-                        val isDuplicate = realtimeMessages.any { realtimeMessage ->
-                            realtimeMessage.chatElement.content == pagedMessage.chatElement.content &&
-                                    realtimeMessage.chatElement.senderID == pagedMessage.chatElement.senderID &&
-                                    realtimeMessage.chatElement.createdAt == pagedMessage.chatElement.createdAt
-                        }
-
-                        if (!isDuplicate) {
-                            bufferedMessages.add(pagedMessage)
-                        }
-                    }
-                }
-                stablePagedMessages = bufferedMessages
-
-                // 첫 번째 안정화 시에만 스크롤
-                if (stablePagedMessages.isNotEmpty() && listState.firstVisibleItemIndex == 0) {
-                    delay(100)
-                    listState.scrollToItem(0)
-                }
-            }
-        }
-    }
 
     // 스크롤 상태 감지
     LaunchedEffect(listState.isScrollInProgress) {
@@ -169,7 +120,7 @@ fun ChattingScreen(
 
     // 스크롤 위치 추적
     LaunchedEffect(listState.firstVisibleItemIndex) {
-        val totalItemCount = tempMessages.size + realtimeMessages.size + stablePagedMessages.size
+        val totalItemCount = tempMessages.size + realtimeMessages.size + pagedMessages.itemCount
         viewModel.onScrollPositionChanged(
             firstVisibleItemIndex = listState.firstVisibleItemIndex,
             totalItemCount = totalItemCount
@@ -186,6 +137,7 @@ fun ChattingScreen(
     // 키보드와 함께 스크롤 처리
     LaunchedEffect(Unit) {
         viewModel.scrollWithKeyboard.collect {
+            // 부드럽게 스크롤 (키보드 높이만큼)
             listState.animateScrollToItem(0)
         }
     }
@@ -194,10 +146,11 @@ fun ChattingScreen(
     LaunchedEffect(keyboardHeight) {
         when {
             keyboardHeight > 0 && previousKeyboardHeight == 0 -> {
+                // 키보드가 올라옴
                 viewModel.onKeyboardShown()
             }
             keyboardHeight == 0 && previousKeyboardHeight > 0 -> {
-                // 키보드가 내려감 - 현재 위치 유지
+                // 키보드가 내려감 - 아무것도 하지 않음 (현재 위치 유지)
             }
         }
         previousKeyboardHeight = keyboardHeight
@@ -212,14 +165,18 @@ fun ChattingScreen(
 
     LaunchedEffect(roomId) {
         viewModel.initializeChat(roomId)
-        // 새 채팅방 진입 시 버퍼 초기화
-        stablePagedMessages = emptyList()
-        lastStableCount = 0
-        stabilityCheckCount = 0
     }
 
     LaunchedEffect(connectionState) {
         viewModel.updateConnectionState(connectionState)
+    }
+
+    // 🔧 핵심 수정: 초기 로딩 후 스크롤 처리
+    LaunchedEffect(pagedMessages.loadState.refresh) {
+        if (pagedMessages.loadState.refresh is LoadState.NotLoading && pagedMessages.itemCount > 0) {
+            delay(300) // 로딩 완료 후 잠시 대기
+            viewModel.onInitialLoadComplete() // ViewModel에 초기 로드 완료 알림
+        }
     }
 
     uiState.error?.let { error ->
@@ -253,7 +210,7 @@ fun ChattingScreen(
                 contentPadding = PaddingValues(bottom = 4.dp),
                 reverseLayout = true
             ) {
-                // 1. 임시 메시지 (실시간)
+                // 1. 임시 메시지
                 items(
                     count = tempMessages.size,
                     key = { index ->
@@ -283,12 +240,12 @@ fun ChattingScreen(
                     }
                 }
 
-                // 2. 실시간 메시지 (실시간)
+                // 2. 실시간 메시지
                 items(
                     count = realtimeMessages.size,
                     key = { index ->
                         val realtimeMessage = realtimeMessages.reversed()[index]
-                        "realtime_${index}_${realtimeMessage.chatElement.senderID}_${realtimeMessage.chatElement.createdAt}_${realtimeMessage.chatElement.content.hashCode()}"
+                        "realtime_${realtimeMessage.chatElement.senderID}_${realtimeMessage.chatElement.createdAt}_${realtimeMessage.chatElement.content.hashCode()}"
                     }
                 ) { index ->
                     val realtimeMessage = realtimeMessages.reversed()[index]
@@ -313,79 +270,52 @@ fun ChattingScreen(
                     }
                 }
 
-                // 3. 🔧 안정화된 페이징 메시지 (버퍼링됨)
-                items(
-                    count = stablePagedMessages.size,
-                    key = { index ->
-                        val messageItem = stablePagedMessages.reversed()[index]
-                        "paged_${index}_${messageItem.chatElement.senderID}_${messageItem.chatElement.createdAt}_${messageItem.chatElement.content.hashCode()}"
-                    }
-                ) { index ->
-                    val messageItem = stablePagedMessages.reversed()[index]
-                    when (messageItem.messageType) {
-                        MessageType.TEXT -> {
-                            ChatMessageBubble(
-                                message = messageItem.chatElement,
-                                isMyMessage = messageItem.chatElement.senderID == viewModel.currentUserId,
-                                isTemporary = false
-                            )
-                        }
+                // 3. 페이징 메시지
+                items(pagedMessages.itemCount) { index ->
+                    val messageItem = pagedMessages[index]
+                    messageItem?.let {
+                        when (it.messageType) {
+                            MessageType.TEXT -> {
+                                ChatMessageBubble(
+                                    message = it.chatElement,
+                                    isMyMessage = it.chatElement.senderID == viewModel.currentUserId,
+                                    isTemporary = false
+                                )
+                            }
 
-                        MessageType.DATE -> {
-                            DateSeparator(date = messageItem.chatElement.content.toString())
-                        }
+                            MessageType.DATE -> {
+                                DateSeparator(date = it.chatElement.content.toString())
+                            }
 
-                        MessageType.CHAT_END -> {
-                            ChatEndMessage(messageItem.chatElement.content)
-                        }
+                            MessageType.CHAT_END -> {
+                                ChatEndMessage(it.chatElement.content)
+                            }
 
-                        MessageType.SYSTEM -> {}
+                            MessageType.SYSTEM -> {}
+                        }
                     }
                 }
 
-                // 🔧 로딩 상태는 원본 페이징 데이터 기준 (사용자 스크롤 시에만)
-                if (stablePagedMessages.isNotEmpty()) {
-                    when (pagedMessages.loadState.append) {
-                        is LoadState.Loading -> {
-                            item {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                // 로딩 상태 처리
+                when (pagedMessages.loadState.append) {
+                    is LoadState.Loading -> {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
                             }
                         }
+                    }
 
-                        is LoadState.Error -> {
-                            item {
-                                Text("메시지를 불러오는데 실패했습니다")
-                            }
+                    is LoadState.Error -> {
+                        item {
+                            Text("메시지를 불러오는데 실패했습니다")
                         }
-
-                        else -> {}
                     }
-                }
-            }
 
-            // 초기 로딩 중일 때만 로딩 표시
-            if (stablePagedMessages.isEmpty() && pagedMessages.loadState.refresh is LoadState.Loading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF824946))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "채팅을 불러오는 중...",
-                            color = Color(0xFF8B5A2B),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    else -> {}
                 }
             }
 
@@ -413,8 +343,18 @@ fun ChattingScreen(
             canSend = uiState.canSendMessage,
             isConnected = connectionState == ConnectionState.CONNECTED
         )
+
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
 }
+
 // ChatMessageBubble에 isTemporary 파라미터만 추가
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -427,7 +367,8 @@ fun ChatMessageBubble(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
-            .alpha(if (isTemporary) 0.6f else 1f) // 임시 메시지는 반투명
+            .alpha(if (isTemporary) 0.6f else 1f)
+
     ) {
         if (isMyMessage) {
             // 내 메시지: 읽음/시간 - 메시지 (우측 정렬)
