@@ -52,7 +52,7 @@ private const val TAG = "MainMenuScreen"
 
 @Composable
 fun MainMenuScreen(
-    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}
+    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {}
 ) {
 
     Column(
@@ -99,7 +99,7 @@ fun MainMenuScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { /* 인연 찾기 클릭 */ },
+                onClick = { onMatch() },
                 modifier = Modifier
                     .weight(1f)
                     .shadow(
