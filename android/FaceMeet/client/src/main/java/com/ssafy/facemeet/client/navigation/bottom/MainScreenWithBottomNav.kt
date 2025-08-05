@@ -3,31 +3,30 @@ package com.ssafy.facemeet.client.navigation.bottom
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
+import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun MainScreenWithBottomNav(
@@ -114,21 +113,44 @@ fun BottomNavigationBar(navController: NavHostController) {
 
     val items = remember {
         listOf(
-            Triple(BottomNavRoutes.Home.route, Icons.Default.Home, "홈"),
-            Triple(BottomNavRoutes.Matching.route, Icons.Default.Favorite, "매칭"),
-            Triple(BottomNavRoutes.ChattingList.route, Icons.AutoMirrored.Filled.List, "채팅"),
-            Triple(BottomNavRoutes.MyPage.route, Icons.Default.Person, "마이페이지")
+            BottomNavItem(
+                BottomNavRoutes.Home.route,
+                R.drawable.ic_bottom_navi_home,
+                R.drawable.ic_bottom_navi_home_fill,
+                "홈"
+            ),
+            BottomNavItem(
+                BottomNavRoutes.Matching.route,
+                R.drawable.ic_bottom_navi_match,
+                R.drawable.ic_bottom_navi_match_fill,
+                "매칭"
+            ),
+            BottomNavItem(
+                BottomNavRoutes.ChattingList.route,
+                R.drawable.ic_bottom_navi_chat,
+                R.drawable.ic_bottom_navi_chat_fill,
+                "채팅"
+            ),
+            BottomNavItem(
+                BottomNavRoutes.MyPage.route,
+                R.drawable.ic_bottom_navi_setting,
+                R.drawable.ic_bottom_navi_setting_fill,
+                "마이페이지"
+            )
         )
     }
 
-    NavigationBar {
-        items.forEach { (route, icon, label) ->
-            NavigationBarItem(
-                selected = currentRoute == route,
-                onClick = {
+    NavigationBar(
+        containerColor = CommonColor.Beige100
+    ) {
+        items.forEach { item ->
+            val selected = currentRoute == item.route
 
-                    if (currentRoute != route) {
-                        navController.navigate(route) {
+            NavigationBarItem(
+                selected = selected,
+                onClick = {
+                    if (!selected) {
+                        navController.navigate(item.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = false
                             }
@@ -137,9 +159,25 @@ fun BottomNavigationBar(navController: NavHostController) {
                         }
                     }
                 },
-                icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
+                icon = {
+                    Icon(
+                        painter = painterResource(id = if (selected) item.selectedIcon else item.icon),
+                        contentDescription = item.label, tint = CommonColor.Brown500
+                    )
+                },
+                label = { Text(item.label) },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = CommonColor.Beige200
+                )
             )
         }
     }
+
 }
+
+data class BottomNavItem(
+    val route: String,
+    val icon: Int,
+    val selectedIcon: Int,
+    val label: String
+)
