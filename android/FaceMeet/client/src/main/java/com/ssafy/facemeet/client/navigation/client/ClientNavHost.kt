@@ -92,19 +92,29 @@ fun NavGraphBuilder.clientNavHost(
             onBackClick = {
                 navController.popBackStack()
             },
-            onPartnerProfile = {partnerId ->
-                navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId))
+            onPartnerProfile = { partnerId ->
+                navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId, roomId))
             }
         )
     }
 
     // navGraph
     composable(
-        route = "${ClientRoutes.PartnerProfile.route}/{partnerId}",
-        arguments = listOf(navArgument("partnerId") { type = NavType.LongType })
+        route = "${ClientRoutes.PartnerProfile.route}/{partnerId}/{roomId}",
+        arguments = listOf(
+            navArgument("partnerId") { type = NavType.LongType },
+            navArgument("roomId") { type = NavType.LongType }
+        )
     ) {
         val partnerId = it.arguments?.getLong("partnerId") ?: return@composable
-        PartnerProfileScreen(partnerId = partnerId, onBack = { navController.popBackStack() })
+        val roomId = it.arguments?.getLong("roomId") ?: return@composable
+
+        PartnerProfileScreen(
+            partnerId = partnerId,
+            roomId = roomId,
+            onBack = { navController.popBackStack() }
+        )
     }
+
 
 }

@@ -7,7 +7,7 @@ sealed class ClientRoutes(val route: String) {
     object MatchingLoading : ClientRoutes("matching_loading")
     object Profile : ClientRoutes("profile")
     object PartnerProfile : ClientRoutes("partner_profile") {
-        fun routeWithArgs(partnerId: Long): String = "$route/$partnerId"
+        fun routeWithArgs(partnerId: Long, roomId: Long): String = "$route/$partnerId/$roomId"
     }
 
     //object MyPage : ClientRoutes("my_page")
