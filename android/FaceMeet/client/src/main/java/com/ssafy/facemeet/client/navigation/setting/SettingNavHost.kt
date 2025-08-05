@@ -107,10 +107,12 @@ fun NavGraphBuilder.settingNavHost(
     composable(SettingRoutes.FaceTestLoading.route) {
         FaceTestLoadingScreen(
             cameraShotViewModel = cameraVM,
-            analyzeViewModel = analyzeVM, onNavigateToResult = {
-                navController.navigate(ClientRoutes.Profile.route) {
-                    popUpTo(SettingRoutes.Register.route) { inclusive = false }
+            analyzeViewModel = analyzeVM,
+            onNavigateToResult = {
+                navController.navigate(ClientRoutes.MainMenu.route) {
+                    popUpTo(0) { inclusive = true } // 백스택 싹 날림
                 }
+                navController.navigate(ClientRoutes.Profile.route)
             },
             retry = {
                 navController.navigate(SettingRoutes.CameraStart.route) {
