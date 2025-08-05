@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.ssafy.facemeet.client.navigation.bottom.BottomNavRoutes
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
@@ -16,11 +17,15 @@ import com.ssafy.facemeet.client.ui.profile.ProfileScreen
 
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
+fun NavGraphBuilder.clientNavHost(
+    navController: NavHostController,
+    bottomNavController: NavHostController
+) {
 
     composable(ClientRoutes.MainMenu.route) {
         MainScreenWithBottomNav(
-            mainNavController = navController
+            mainNavController = navController,
+            bottomNavController = bottomNavController
         )
     }
 
@@ -44,7 +49,22 @@ fun NavGraphBuilder.clientNavHost(navController: NavHostController) {
     composable(ClientRoutes.MatchingLoading.route) {
         MatchingLoadingScreen(
             onCancel = { navController.popBackStack() },
-            navController = navController
+            onMatchFound = { matchedChatRoomId ->
+
+                // 2. 채팅리스트 밑에 깔고,
+                bottomNavController.navigate(BottomNavRoutes.ChattingList.route) {
+                    popUpTo(BottomNavRoutes.Matching.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+
+                // 3. 그 다음 Chat 진입
+                navController.navigate(ClientRoutes.Chat.createRoute(matchedChatRoomId, -1L)) {
+                    popUpTo(ClientRoutes.MatchingLoading.route) { inclusive = true } // 로딩까지 제거
+                    launchSingleTop = true
+                }
+            }
+
+
         )
     }
 

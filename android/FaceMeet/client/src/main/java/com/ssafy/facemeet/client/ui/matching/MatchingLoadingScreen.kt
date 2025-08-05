@@ -36,26 +36,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun MatchingLoadingScreen(
-    onMatchFound: (String) -> Unit = {},
+    onMatchFound: (Long) -> Unit = {},
     onCancel: () -> Unit = {},
     viewModel: MatchingViewModel = hiltViewModel(),
-    navController: NavController,
 ) {
-    val result by viewModel.matchingResult.collectAsState()
+    val matchedChatRoomId by viewModel.matchedChatRoomId.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.startMatching()
     }
 
-    LaunchedEffect(result) {
-        if (result != null) {
-            navController.navigate("chat/${result}")
+    LaunchedEffect(matchedChatRoomId) {
+        if (matchedChatRoomId != null) {
+            onMatchFound(matchedChatRoomId!!)
             viewModel.resetMatchingResult() // 재방문 시 중복 이동 방지
         }
     }
