@@ -3,6 +3,7 @@ package com.ssafy.facemeet.core.data.remote.dto.response
 import com.google.gson.annotations.SerializedName
 
 data class ChattingAllResponse (
+    @SerializedName("messages")
     val messages: MessagesResponse,
     val chatRoom: ChatRoomResponse
 )

@@ -11,6 +11,6 @@ interface ChatRepository {
     suspend fun postChattingLike(roomId: Long, selected: Boolean) :Result<Unit>
     suspend fun postChattingLeave(roomId: Long) : Result<Unit>
     suspend fun getChattingMessagesLast(roomId: Long, limit: Int = 20): Result<ChattingAll>
-
-    suspend fun getChattingMessagesAll(roomId : Long) : Result<ChattingAll>
+    suspend fun getChattingMessagesCurrent(roomId :Long, limit: Int, page: Int): Result<ChattingAll>
+    //suspend fun getChattingMessagesAll(roomId : Long) : Result<ChattingAll>
 }

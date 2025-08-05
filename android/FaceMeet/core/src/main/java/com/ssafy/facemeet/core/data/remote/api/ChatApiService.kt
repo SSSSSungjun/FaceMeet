@@ -28,15 +28,17 @@ interface ChatApiService {
     @POST("/api/v1/chatrooms/{roomId}/leave")
     suspend fun postChattingLeave(@Path("roomId") roomId: Long): Response<Unit>
 
-    @GET("/api/v1/chatrooms/{roomId}/messages/all")
-    suspend fun getChattingMessagesAll(
-        @Path("roomId") roomId: Long,
-    ): Response<ChattingAllResponse>
-
     @GET("/api/v1/chatrooms/{roomId}/messages/last")
     suspend fun getChattingMessagesLast(
         @Path("roomId") roomId: Long,
         @Query("limit") limit: Int = 20
+    ): Response<ChattingAllResponse>
+
+    @GET("/api/v1/chatrooms/{roomId}/messages")
+    suspend fun getChattingMessagesCurrent(
+        @Path("roomId") roomId: Long,
+        @Query("limit") limit: Int,
+        @Query("page") page: Int
     ): Response<ChattingAllResponse>
 
 }

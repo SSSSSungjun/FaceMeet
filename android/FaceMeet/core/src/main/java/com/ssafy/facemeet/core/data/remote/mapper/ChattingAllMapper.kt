@@ -12,26 +12,32 @@ import com.ssafy.facemeet.core.domain.model.Messages
 @RequiresApi(Build.VERSION_CODES.O)
 fun ChattingAllResponse.toDomain(): ChattingAll {
     return ChattingAll(
-        messages = messages.toDomain(),
-        chatRoom = chatRoom.toDomain()
+        messages = messages?.toDomain() ?: Messages(emptyList(), 0, 0),
+        chatRoom = chatRoom?.toDomain() ?: ChatRoom(
+            chatRoomID = 0L,
+            partnerID = 0L,
+            partnerNickname = "",
+            imgURL = "",
+            similar = 0
+        )
     )
 }
 
 fun ChatRoomResponse.toDomain(): ChatRoom {
     return ChatRoom(
-        chatRoomID = chatRoomID,
-        partnerID = partnerID,
-        partnerNickname = partnerNickname,
-        imgURL = this.imgURL ?: "",
-        similar = similar
+        chatRoomID = chatRoomID ?: 0L,
+        partnerID = partnerID ?: 0L,
+        partnerNickname = partnerNickname ?: "",
+        imgURL = imgURL ?: "",
+        similar = similar ?: 0
     )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun MessagesResponse.toDomain(): Messages {
     return Messages(
-        messages = messages.map { it.toDomain() },
-        currentPage = currentPage,
-        totalPages = totalPages
+        messages = messages?.mapNotNull { it?.toDomain() } ?: emptyList(),
+        currentPage = currentPage ?: 0,
+        totalPages = totalPages ?: 0
     )
 }
