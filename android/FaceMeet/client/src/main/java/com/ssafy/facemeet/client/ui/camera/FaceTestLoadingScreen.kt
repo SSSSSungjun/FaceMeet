@@ -48,59 +48,59 @@ fun FaceTestLoadingScreen(
     cameraShotViewModel: CameraShotViewModel,
     analyzeViewModel: FaceAnalyzeViewModel,
     onNavigateToResult: () -> Unit,
+    retry: () -> Unit,
     onCancel: () -> Unit,
 ) {
 
-//    val isLoading by analyzeViewModel.isLoading.collectAsState()
-//    val result by analyzeViewModel.result.collectAsState()
-//    val error by analyzeViewModel.error.collectAsState()
-//
-//    fun tryAnalyze() {
-//        val front = cameraShotViewModel.front.value
-//        val side = cameraShotViewModel.side.value
-//
-//        if (front != null && side != null) {
-//            val frontPart = front.toMultipartBodyPart("front_image")
-//            val sidePart = side.toMultipartBodyPart("side_image")
-//
-//            analyzeViewModel.analyzeFace(frontPart, sidePart)
-//        }
-//    }
-//
-//    // 분석 요청 시작 (한 번만)
-//    LaunchedEffect(Unit) {
-//        tryAnalyze()
-//    }
-//
-//
-//    // ✅ 결과 도착 시 → 결과 화면으로 이동
-//    LaunchedEffect(result) {
-//        if (result != null) {
-//            onNavigateToResult()
-//        }
-//    }
-//
-//    // ✅ 상태에 따라 다른 UI 보여주기
-//    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-//        when {
-//            isLoading -> {
-//                RotatingFaceLoadingScreen(onCancel)
-//            }
-//
-//            error != null -> {
-//                CuteInlineError(
-//                    errorCode = error,
-//                    onRetry = { tryAnalyze() }
-//                )
-//            }
-//
-//            else -> {
-//                // 아무것도 안 보여줌 (혹시 result 도착 전 잠깐 비는 상태 방지용)
-//            }
-//        }
-//    }
+    val isLoading by analyzeViewModel.isLoading.collectAsState()
+    val result by analyzeViewModel.result.collectAsState()
+    val error by analyzeViewModel.error.collectAsState()
 
-    RotatingFaceLoadingScreen(onCancel)
+    fun tryAnalyze() {
+        val front = cameraShotViewModel.front.value
+        val side = cameraShotViewModel.side.value
+
+        if (front != null && side != null) {
+            val frontPart = front.toMultipartBodyPart("front_image")
+            val sidePart = side.toMultipartBodyPart("side_image")
+
+            analyzeViewModel.analyzeFace(frontPart, sidePart)
+        }
+    }
+
+    // 분석 요청 시작 (한 번만)
+    LaunchedEffect(Unit) {
+        tryAnalyze()
+    }
+
+
+    // ✅ 결과 도착 시 → 결과 화면으로 이동
+    LaunchedEffect(result) {
+        if (result != null) {
+            onNavigateToResult()
+        }
+    }
+
+    // ✅ 상태에 따라 다른 UI 보여주기
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when {
+            isLoading -> {
+                RotatingFaceLoadingScreen(onCancel)
+            }
+
+            error != null -> {
+                CuteInlineError(
+                    errorCode = error,
+                    onRetry = { tryAnalyze() }
+                )
+            }
+
+            else -> {
+                // 아무것도 안 보여줌 (혹시 result 도착 전 잠깐 비는 상태 방지용)
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -229,7 +229,7 @@ fun CuteInlineError(
                 textAlign = TextAlign.Center,
                 fontFamily = Roboto,
                 fontSize = 18.sp,
-                color = CommonColor.Brown,
+                color = CommonColor.Brown500,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp)
@@ -240,7 +240,7 @@ fun CuteInlineError(
                 Text(
                     text = "분석실패 : $errorCode",
                     textAlign = TextAlign.Center,
-                    color = CommonColor.Brown,
+                    color = CommonColor.Brown500,
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 12.sp,
                 )

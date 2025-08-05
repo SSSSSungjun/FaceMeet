@@ -79,7 +79,7 @@ fun MatchingLoadingScreen(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_back),
-                tint = CommonColor.Brown,
+                tint = CommonColor.Brown500,
                 contentDescription = "뒤로가기"
             )
         }
@@ -95,7 +95,7 @@ fun MatchingLoadingScreen(
             Text(
                 text = "당신과 궁합이\n가장 잘 맞는 분을 찾고 있어요",
                 fontSize = 16.sp,
-                color = CommonColor.Brown,
+                color = CommonColor.Brown500,
                 textAlign = TextAlign.Center
             )
 
@@ -108,7 +108,7 @@ fun MatchingLoadingScreen(
             Text(
                 text = "잠시만 기다려주세요",
                 fontSize = 16.sp,
-                color = CommonColor.Brown
+                color = CommonColor.Brown500
             )
         }
     }

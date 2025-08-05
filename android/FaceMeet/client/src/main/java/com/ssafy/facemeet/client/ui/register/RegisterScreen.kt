@@ -155,7 +155,7 @@ fun InputNickName(
             },
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = CommonColor.Orange,
-                unfocusedIndicatorColor = CommonColor.Brown,
+                unfocusedIndicatorColor = CommonColor.Brown500,
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White
             ),
@@ -207,9 +207,9 @@ fun InputAddress(
                     )
                 },
                 colors = TextFieldDefaults.colors(
-                    disabledIndicatorColor = CommonColor.Brown,
+                    disabledIndicatorColor = CommonColor.Brown500,
                     disabledContainerColor = Color.White,
-                    disabledTextColor = CommonColor.Brown
+                    disabledTextColor = CommonColor.Brown500
                 ),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
