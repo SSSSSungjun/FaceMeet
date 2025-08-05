@@ -123,7 +123,7 @@ fun PartnerProfileContent(
     var showReportDialog by remember { mutableStateOf(false) }
 
     val reportResult by viewModel.reportResult.collectAsState()
-    
+
     LaunchedEffect(reportResult) {
         reportResult?.onSuccess {
             Toast.makeText(context, "신고가 완료되었습니다", Toast.LENGTH_SHORT).show()
