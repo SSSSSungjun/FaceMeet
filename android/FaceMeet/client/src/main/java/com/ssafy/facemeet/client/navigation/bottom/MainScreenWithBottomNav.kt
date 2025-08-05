@@ -56,6 +56,9 @@ fun MainScreenWithBottomNav(
                     },
                     onNotification = {
                         mainNavController.navigate(ClientRoutes.Notification.route)
+                    },
+                    onMatch = {
+                        bottomNavController.navigate(BottomNavRoutes.Matching.route)
                     }
                 )
             }
@@ -123,10 +126,11 @@ fun BottomNavigationBar(navController: NavHostController) {
             NavigationBarItem(
                 selected = currentRoute == route,
                 onClick = {
+
                     if (currentRoute != route) {
                         navController.navigate(route) {
                             popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+                                saveState = false
                             }
                             launchSingleTop = true
                             restoreState = true
