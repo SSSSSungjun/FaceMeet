@@ -9,16 +9,11 @@ sealed class ClientRoutes(val route: String) {
     object PartnerProfile : ClientRoutes("partner_profile") {
         fun routeWithArgs(partnerId: Long, roomId: Long): String = "$route/$partnerId/$roomId"
     }
-
     //object MyPage : ClientRoutes("my_page")
     object Chat {
-        const val route = "chat?roomId={roomId}&receiverId={receiverId}"
-
-        fun createRoute(roomId: Long, receiverId: Long? = null): String {
-            return if (receiverId != null)
-                "chat?roomId=$roomId&receiverId=$receiverId"
-            else
-                "chat?roomId=$roomId"
+        const val route = "chat/{roomId}"
+        fun createRoute(roomId: Long): String {
+            return "chat/$roomId"
         }
     }
 

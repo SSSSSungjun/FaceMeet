@@ -75,12 +75,7 @@ fun MainScreenWithBottomNav(
                     onItemClick = { item ->
                         val roomId = item.chatRoomId
                         val matcingUserId = item.userId
-                        mainNavController.navigate(
-                            ClientRoutes.Chat.createRoute(
-                                roomId,
-                                matcingUserId
-                            )
-                        )
+                        mainNavController.navigate(ClientRoutes.Chat.createRoute(roomId))
                     }
                 )
             }

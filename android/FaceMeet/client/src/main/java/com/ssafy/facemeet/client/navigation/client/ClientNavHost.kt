@@ -59,7 +59,7 @@ fun NavGraphBuilder.clientNavHost(
                 }
 
                 // 3. 그 다음 Chat 진입
-                navController.navigate(ClientRoutes.Chat.createRoute(matchedChatRoomId, -1L)) {
+                navController.navigate(ClientRoutes.Chat.createRoute(matchedChatRoomId)) {
                     popUpTo(ClientRoutes.MatchingLoading.route) { inclusive = true } // 로딩까지 제거
                     launchSingleTop = true
                 }
@@ -77,18 +77,12 @@ fun NavGraphBuilder.clientNavHost(
                 type = NavType.LongType
                 defaultValue = 0L // 기본값 설정 가능
             },
-            navArgument("receiverId") {
-                type = NavType.LongType
-                defaultValue = 0L
-            }
         )
     ) { backStackEntry ->
         val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0
-        val receiverId = backStackEntry.arguments?.getLong("receiverId") ?: 0
 
         ChattingScreen(
             roomId = roomId,
-            receiverId = receiverId,
             onBackClick = {
                 navController.popBackStack()
             },

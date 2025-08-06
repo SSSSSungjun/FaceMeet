@@ -93,6 +93,9 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.datastore:datastore-core:1.1.7")
 
+    api("androidx.paging:paging-compose:3.3.6")
+    api("androidx.compose.foundation:foundation:1.8.3")
+
     // room
     api(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)

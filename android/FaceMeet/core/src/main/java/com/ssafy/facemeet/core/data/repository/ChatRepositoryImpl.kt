@@ -59,21 +59,27 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun getChattingMessagesLast(roomId: Long, limit: Int): Result<ChattingAll> =
         runCatching {
             val response = remoteDataSource.getChattingMessagesLast(roomId, limit)
-            if (!response.isSuccessful) {
+            if (response.isSuccessful) {
+                Log.d(TAG, "getChattingMessagesLast: ${response.body()}")
                 (response.body()?.toDomain()) ?: throw Exception("Empty response body")
             } else {
+                Log.e("실패", "HTTP ${response.code()} - ${response.errorBody()?.string()}")
                 throw Exception("Failed to fetch messages: ${response.message()}")
             }
         }
 
-    override suspend fun getChattingMessagesAll(roomId: Long): Result<ChattingAll> =
+    override suspend fun getChattingMessagesCurrent(
+        roomId: Long,
+        limit: Int,
+        page: Int
+    ): Result<ChattingAll> =
         runCatching {
-            val response = remoteDataSource.getChattingMessagesAll(roomId)
+            val response = remoteDataSource.getChattingMessagesCurrent(roomId, limit, page)
             if (response.isSuccessful) {
-                Log.d(TAG, "getChattingMessagesAll: 불러오기 성공")
+                Log.d(TAG, "getChattingMessagesLast: ${response.body()}")
                 (response.body()?.toDomain()) ?: throw Exception("Empty response body")
             } else {
-                Log.d(TAG, "getChattingMessagesAll: 불러오기 실패")
+                Log.e("실패", "HTTP ${response.code()} - ${response.errorBody()?.string()}")
                 throw Exception("Failed to fetch messages: ${response.message()}")
             }
         }

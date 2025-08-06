@@ -10,45 +10,36 @@ import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
-import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
-import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-
 @RequiresApi(Build.VERSION_CODES.O)
 class ChatWebSocketManager @Inject constructor() {
 
     private var webSocket: WebSocket? = null
     private val gson = Gson()
 
-    private val _messages = MutableLiveData<List<ChatMessageItem>>()
-    val messages: LiveData<List<ChatMessageItem>> = _messages
-
     private val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    private val messageList = mutableListOf<ChatMessageItem>()
     private var currentUserId: Long = 0
     private var isStompConnected = false
 
-    fun setInitialMessages(initialMessages: List<ChatMessageItem>) {
-        messageList.clear()
-        messageList.addAll(initialMessages)
-        _messages.postValue(messageList.toList())
-        Log.d("WebSocket", "초기 메시지 ${initialMessages.size}개 설정 완료")
+    // 새 메시지 콜백 (ChatMessageItem 전달)
+    private var onNewMessageReceived: ((ChatMessageItem) -> Unit)? = null
+
+    fun setOnNewMessageCallback(callback: (ChatMessageItem) -> Unit) {
+        onNewMessageReceived = callback
     }
 
     fun connect(userId: Long, token: String) {
         currentUserId = userId
-
         Log.d("WebSocket", "WebSocket 연결 시작 - userId: $userId")
         _connectionState.postValue(ConnectionState.CONNECTING)
-
         tryConnection(token)
     }
 
@@ -91,72 +82,6 @@ class ChatWebSocketManager @Inject constructor() {
         })
     }
 
-    private fun addChatStartMessage(roomId: Long, similar: Int) {
-        val chatStartMessage = ChatElement(
-            content = "관상 궁합 ${similar}%로 매칭되었습니다 ✨\n" +
-                    "프로필을 눌러 상대방의 관상을 살펴보세요",
-            senderID = -1,
-            receiverID = currentUserId,
-            roomID = roomId,
-            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
-            isRead = true,
-            readAt = ZonedDateTime.now().toString()
-        )
-
-        val messageItem = ChatMessageItem(
-            chatElement = chatStartMessage,
-            messageType = MessageType.CHAT_START
-        )
-
-        messageList.add(messageItem)
-        _messages.postValue(messageList.toList())
-    }
-
-    private fun addDateMessage(roomId: Long) {
-        val currentDate = ZonedDateTime.now().format(
-            java.time.format.DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
-        )
-
-        val dateMessage = ChatElement(
-            content = currentDate,
-            senderID = -2, // 날짜 메시지는 -2로 구분
-            receiverID = currentUserId,
-            roomID = roomId,
-            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
-            isRead = true,
-            readAt = ZonedDateTime.now().toString()
-        )
-
-        val messageItem = ChatMessageItem(
-            chatElement = dateMessage,
-            messageType = MessageType.DATE
-        )
-
-        messageList.add(messageItem)
-        _messages.postValue(messageList.toList())
-    }
-
-    // 채팅 종료 메시지 (누군가 방을 나갈 때)
-    private fun addChatEndMessage(roomId: Long, userName: String = "사용자") {
-        val chatEndMessage = ChatElement(
-            content = "$userName 님이 채팅방을 나가셨습니다.",
-            senderID = -3, // 채팅 종료 메시지는 -3으로 구분
-            receiverID = currentUserId,
-            roomID = roomId,
-            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
-            isRead = true,
-            readAt = ZonedDateTime.now().toString()
-        )
-
-        val messageItem = ChatMessageItem(
-            chatElement = chatEndMessage,
-            messageType = MessageType.CHAT_END
-        )
-
-        messageList.add(messageItem)
-        _messages.postValue(messageList.toList())
-    }
-
     private fun sendStompConnect() {
         val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:10000,10000\n\n\u0000"
         webSocket?.send(connectFrame)
@@ -189,8 +114,7 @@ class ChatWebSocketManager @Inject constructor() {
             return
         }
 
-        val frame =
-            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        val frame = "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
         webSocket?.send(frame)
         Log.d("WebSocket", "📤 메시지 전송: $destination")
     }
@@ -201,18 +125,17 @@ class ChatWebSocketManager @Inject constructor() {
         Log.d("WebSocket", "📡 구독: $destination")
     }
 
-    fun sendMessage(content: String, roomId: Long, senderId: Long, receiverId: Long) {
-        // 1. 내 메시지를 즉시 UI에 추가
-        addMyMessageToUI(content, senderId, receiverId, roomId)
-
-        // 2. 서버로 메시지 전송
+    // 메시지 전송 (tempId 추가)
+    fun sendMessage(content: String, roomId: Long, senderId: Long, receiverId: Long, tempId: Long? = null) {
         val messageRequest = mapOf(
             "roomId" to roomId,
             "senderId" to senderId,
             "receiverId" to receiverId,
-            "content" to content
+            "content" to content,
+            "tempId" to tempId // 클라이언트 임시 ID
         )
         sendStompMessage("/pub/chat.private", gson.toJson(messageRequest))
+        Log.d("WebSocket", "메시지 전송 완료 - tempId: $tempId")
     }
 
     fun markAsRead(roomId: String, userId: Long, senderId: Long) {
@@ -244,44 +167,17 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
-    private fun addMyMessageToUI(content: String, senderId: Long, receiverId: Long, roomId: Long) {
-        val myMessage = ChatElement(
-            content = content,
-            senderID = senderId,
-            receiverID = receiverId,
-            roomID = roomId,
-            createdAt = ZonedDateTime.now().toString().toHourMinuteString(),
-            isRead = false,
-            readAt = ZonedDateTime.now().toString()
-        )
-
-        val messageItem = ChatMessageItem(
-            chatElement = myMessage,
-            messageType = MessageType.TEXT
-        )
-
-        messageList.add(messageItem)
-        _messages.postValue(messageList.toList())
-    }
-
     private fun handleChatMessage(response: ChatElement) {
         Log.d("WebSocket", "메시지 처리 - 보낸사람: ${response.senderID}")
 
-        if (response.senderID != currentUserId) {
-            Log.d("WebSocket", "상대방 메시지 추가")
-            addMessageToList(response)
-        } else {
-            Log.d("WebSocket", "내 메시지 - 이미 UI에 있음")
-        }
-    }
-
-    private fun addMessageToList(response: ChatElement) {
+        // ChatMessageItem으로 변환하여 콜백 호출
         val messageItem = ChatMessageItem(
             chatElement = response,
             messageType = MessageType.TEXT
         )
-        messageList.add(messageItem)
-        _messages.postValue(messageList.toList())
+
+        // ViewModel에 새 메시지 전달
+        onNewMessageReceived?.invoke(messageItem)
     }
 
     fun disconnect() {
@@ -296,10 +192,5 @@ class ChatWebSocketManager @Inject constructor() {
         webSocket = null
         isStompConnected = false
         _connectionState.postValue(ConnectionState.DISCONNECTED)
-    }
-
-    fun clearMessages() {
-        messageList.clear()
-        _messages.postValue(emptyList())
     }
 }
