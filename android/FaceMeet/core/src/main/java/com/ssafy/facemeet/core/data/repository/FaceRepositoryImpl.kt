@@ -3,6 +3,7 @@ package com.ssafy.facemeet.core.data.repository
 import android.util.Log
 import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.data.remote.dto.response.FaceAnalysisResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.FaceInfoResponse
 import com.ssafy.facemeet.core.domain.repository.FaceRepository
 import okhttp3.MultipartBody
 import javax.inject.Inject
@@ -33,6 +34,15 @@ class FaceRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("FlowCheck", "🔥 예외 발생: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getMyFaceInfo(): Result<FaceInfoResponse> {
+        return try {
+            val response = faceService.getMyFaceInfo()
+            Result.success(response)
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

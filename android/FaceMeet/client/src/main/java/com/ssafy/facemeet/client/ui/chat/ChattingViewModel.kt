@@ -370,6 +370,12 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
+    fun navigateToProfile() {
+        viewModelScope.launch{
+            _naviEvent.emit(ChatNaviEvent.ToProfile)
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         endChatRoom()

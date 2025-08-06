@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.ui.profile
 
+import android.Manifest
 import android.app.Activity
 import android.widget.Toast
 import androidx.annotation.DrawableRes
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,32 +52,60 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
-import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.saveBitmapToGallery
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareImageWithText
 import com.ssafy.facemeet.client.ui.profile.ShareUtil.shareToInstagramStory
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.util.hasWritePermission
 import com.ssafy.facemeet.client.util.rememberPermissionLauncher
+import com.ssafy.facemeet.core.data.remote.dto.response.FaceInfoResponse
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun ProfileScreen(
-    viewModel: FaceAnalyzeViewModel = hiltViewModel(),
+    viewModel: FaceInfoViewModel = hiltViewModel(),
     onHome: () -> Unit,
     onMatching: () -> Unit,
     onRetry: () -> Unit
 ) {
-    val result by viewModel.result.collectAsState()
-    ProfileScreenContent(onHome, onMatching, onRetry)
+    val faceInfo by viewModel.faceInfo.collectAsState()
+    val isLoading by viewModel.loading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadFaceInfo()
+    }
+
+    when {
+        isLoading -> {
+            Text("불러오는 중...")
+        }
+
+        error != null -> {
+            Text("에러: ${error}")
+        }
+
+        faceInfo != null -> {
+            ProfileScreenContent(onHome, onMatching, onRetry, faceInfo!!)
+
+        }
+    }
 }
 
 @Composable
-fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: () -> Unit) {
+fun ProfileScreenContent(
+    onHome: () -> Unit,
+    onMatching: () -> Unit,
+    onRetry: () -> Unit,
+    result: FaceInfoResponse
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFAF9F4))
+            .statusBarsPadding()
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
@@ -94,16 +125,16 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.temp_face),
+                    painter = rememberAsyncImagePainter(model = result.img),
                     contentDescription = "분석 결과 이미지",
                     modifier = Modifier
                         .size(240.dp)
                         .padding(8.dp)
                 )
-                Text("알수없상", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(result.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(modifier = Modifier.height(17.dp))
                 Text(
-                    text = "츤데레 or 철벽? 알면 알수록 빠져드는 얼굴두줄두줄두줄두줄두줄두줄두줄",
+                    text = result.description,
                     fontSize = 13.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center,
@@ -133,12 +164,20 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        DetailItem("얼굴형", "온화하고 지혜로운 눈매", R.drawable.nose)
-        DetailItem("눈", "온화하고 지혜로운 눈매", R.drawable.nose)
-        DetailItem("눈썹", "의지가 강한 형태", R.drawable.nose)
-        DetailItem("코", "의지가 강한 형태", R.drawable.nose)
-        DetailItem("턱", "따뜻한 성격을 나타내는 입술", R.drawable.nose)
-        DetailItem("입", "따뜻한 성격을 나타내는 입술", R.drawable.nose)
+        DetailItem(
+            "얼굴형",
+            result.faceShapeDesc,
+            R.drawable.nose
+        )
+        DetailItem("눈", result.eyeDesc, R.drawable.nose)
+        DetailItem(
+            "눈썹",
+            result.eyebrowDesc,
+            R.drawable.nose
+        )
+        DetailItem("코", result.noseDesc, R.drawable.nose)
+        DetailItem("턱", result.chinDesc, R.drawable.nose)
+        DetailItem("입", result.mouthDesc, R.drawable.nose)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -148,26 +187,24 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
             border = BorderStroke(2.dp, color = CommonColor.Beige)
         ) {
             Surface(
-
                 color = Color(0xFFFDFDFD),
-
-                ) {
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    PersonalityDetail("✨ 성격", "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.")
+                    PersonalityDetail("✨ 성격", result.personality)
                     Spacer(modifier = Modifier.height(20.dp))
                     PersonalityDetail(
                         "✨ 직업특성",
-                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다."
+                        result.careerTraits
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     PersonalityDetail(
                         "✨ 대인관계",
-                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다."
+                        result.interpersonalRelationships
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     PersonalityDetail(
                         "✨ 삶의방향",
-                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다."
+                        result.lifeDirection
                     )
                 }
             }
@@ -203,7 +240,7 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.",
+                        result.summaryAnalysis,
                         fontSize = 13.sp,
                         lineHeight = 20.sp,
                         color = Color(0xFF8B5A2B)
@@ -235,14 +272,14 @@ fun ProfileScreenContent(onHome: () -> Unit, onMatching: () -> Unit, onRetry: ()
 
         shareRow()
 
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             "나와 잘 맞는 사람은 누구일까?", fontSize = 13.sp, color = Color.Gray,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         MatchingStartButton(onMatching = onMatching, buttonText = "매칭 시작하기")
 
 
@@ -271,7 +308,8 @@ fun TopBarSection(onHome: () -> Unit) {
             style = MaterialTheme.typography.titleLarge,
             color = Color(0xFF4A3C2F),
             modifier = Modifier.align(Alignment.Center),
-            fontSize = 24.sp
+            fontSize = 24.sp,
+            fontFamily = ChosunCentennial
         )
     }
 }
@@ -298,7 +336,7 @@ fun DetailItem(
                     contentDescription = null,
                     modifier = Modifier.size(14.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = title,
                     fontSize = 14.sp,
@@ -306,7 +344,7 @@ fun DetailItem(
                     color = CommonColor.Gray900
                 )
             }
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(7.dp))
             Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray500)
         }
     }
@@ -319,10 +357,12 @@ fun PersonalityDetail(title: String, desc: String) {
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = CommonColor.RedBrown
+            color = CommonColor.RedBrown,
+            lineHeight = 22.sp
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray900)
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray900,
+            lineHeight = 20.sp,)
     }
 }
 
@@ -391,7 +431,7 @@ fun shareRow() {
                     ).show()
                 }
             } else {
-                permissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
         },
         ShareOption(R.drawable.ic_share_instagram, "Instagram") {
@@ -474,7 +514,25 @@ fun shareRow() {
 @Composable
 fun ProfileScreenPreview() {
     MaterialTheme {
-        ProfileScreenContent({}, {}, {})
+        ProfileScreenContent(
+            {}, {}, {}, FaceInfoResponse(
+                faceId = 0,
+                img = "",
+                title = "",
+                description = "",
+                faceShapeDesc = "",
+                eyeDesc = "",
+                eyebrowDesc = "",
+                noseDesc = "",
+                chinDesc = "",
+                mouthDesc = "",
+                personality = "",
+                careerTraits = "",
+                interpersonalRelationships = "",
+                lifeDirection = "",
+                summaryAnalysis = "",
+            )
+        )
     }
 }
 

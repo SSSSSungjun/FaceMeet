@@ -32,7 +32,7 @@ fun NavGraphBuilder.settingNavHost(
     ) {
         RegisterScreen(
             toNext = {
-                navController.navigate(ClientRoutes.MainMenu.route)
+                navController.navigate(SettingRoutes.CameraStart.route)
             }, // 여기서 뒤로가면 등록 못가게 해야할듯.
             toBack = { navController.popBackStack() },
             toMap = { navController.navigate(SettingRoutes.Map.route) }
@@ -86,26 +86,12 @@ fun NavGraphBuilder.settingNavHost(
                 navController.popBackStack(SettingRoutes.SideCamera.route, false)
             },
             onConfirm = {
-                Log.d("FlowCheck", "✅ onConfirm 호출됨")
-
                 if (cameraVM.readyBoth()) {
-                    Log.d("FlowCheck", "✅ front & side 준비 완료")
-
-                    val front = cameraVM.front.value!!
-                    val side = cameraVM.side.value!!
-
-//                    val frontPart = front.toMultipartBodyPart("image1")
-//                    val sidePart = side.toMultipartBodyPart("side_image1")
-//
-//                    Log.d("FlowCheck", "✅ Multipart 생성 완료")
-//
-//                    analyzeVM.analyzeFace(frontPart, sidePart)
-
                     navController.navigate(SettingRoutes.FaceTestLoading.route) {
-                        popUpTo(SettingRoutes.Register.route) { inclusive = false }
+                        popUpTo(ClientRoutes.Profile.route) { inclusive = false }
                     }
                 }
-            } // 여기 너무 로직 길다고 생각합니다. 네비게이션인데.. 옙..
+            }
 
         )
     }
@@ -121,10 +107,19 @@ fun NavGraphBuilder.settingNavHost(
     composable(SettingRoutes.FaceTestLoading.route) {
         FaceTestLoadingScreen(
             cameraShotViewModel = cameraVM,
-            analyzeViewModel = analyzeVM, onNavigateToResult = {
-                navController.navigate(ClientRoutes.Profile.route) {
-                    popUpTo(SettingRoutes.Register.route) { inclusive = false }
+            analyzeViewModel = analyzeVM,
+            onNavigateToResult = {
+                navController.navigate(ClientRoutes.MainMenu.route) {
+                    popUpTo(0) { inclusive = true } // 백스택 싹 날림
                 }
+                navController.navigate(ClientRoutes.Profile.route)
+            },
+            retry = {
+                navController.navigate(SettingRoutes.CameraStart.route) {
+                    popUpTo(SettingRoutes.CameraStart.route) { inclusive = false }
+                }
+            }, onCancel = {
+                navController.popBackStack()
             })
     }
 }

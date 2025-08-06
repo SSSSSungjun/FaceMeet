@@ -2,29 +2,33 @@ package com.ssafy.facemeet.client.ui.matching
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ssafy.facemeet.core.data.remote.datasource.MatchRemoteDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MatchingViewModel @Inject constructor() : ViewModel() {
+class MatchingViewModel @Inject constructor(
+    private val matchRemoteDataSource: MatchRemoteDataSource
+) : ViewModel() {
 
-    private val _matchingResult = MutableStateFlow<String?>(null)
-    val matchingResult: StateFlow<String?> = _matchingResult
+    private val _matchedChatRoomId = MutableStateFlow<Long?>(null)
+    val matchedChatRoomId: StateFlow<Long?> = _matchedChatRoomId
 
     fun startMatching() {
         viewModelScope.launch {
-            // TODO: 실제 API 요청
-            delay(3000) // 시뮬레이션용
-
-            _matchingResult.value = "아이디들어갈값" // API 결과를 emit
+            try {
+                val response = matchRemoteDataSource.getMatch()
+                _matchedChatRoomId.value = response.chatRoomId.toLong()
+            } catch (e: Exception) {
+                _matchedChatRoomId.value = 0
+            }
         }
     }
 
     fun resetMatchingResult() {
-        _matchingResult.value = null
+        _matchedChatRoomId.value = null
     }
 }

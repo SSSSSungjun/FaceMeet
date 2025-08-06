@@ -9,6 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
+import com.ssafy.facemeet.core.domain.repository.UserRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,8 +24,12 @@ private const val TAG = "FaceMeetApplication"
 class FaceMeetApplication : Application() {
     @Inject
     lateinit var tokenManager: TokenManager
+
     @Inject
     lateinit var chatWebSocketManager: ChatWebSocketManager
+
+    @Inject
+    lateinit var userRepository: UserRepository
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -38,6 +43,16 @@ class FaceMeetApplication : Application() {
         override fun onStart(owner: LifecycleOwner) {
             Log.d(TAG, "앱이 포그라운드로 전환되었습니다. WebSocket 재연결 시도")
             connectWebSocket()
+            applicationScope.launch {
+                userRepository.postOnline()
+            }
+        }
+
+        override fun onStop(owner: LifecycleOwner) {
+            super.onStop(owner)
+            applicationScope.launch {
+                userRepository.postOffline()
+            }
         }
     }
 
@@ -62,4 +77,5 @@ class FaceMeetApplication : Application() {
             }
         }
     }
+
 }

@@ -40,6 +40,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +85,7 @@ private const val TAG = "ChattingScreen"
 fun ChattingScreen(
     roomId: Long,
     onBackClick: () -> Unit = {},
+    onPartnerProfile: (partnerId: Long) -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -91,17 +93,14 @@ fun ChattingScreen(
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
     val connectionState by viewModel.connectionState.observeAsState(ConnectionState.DISCONNECTED)
 
-
     val pagedMessages = messageState.pagedMessages.collectAsLazyPagingItems()
     val liveMessages by viewModel.liveMessages.collectAsState()
 
     val listState = rememberLazyListState()
 
-    // 키보드 높이 추적을 위한 간소화된 로직
     val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
     var previousKeyboardHeight by remember { mutableIntStateOf(0) }
 
-    // 스크롤 상태 감지 - 통합된 하나의 LaunchedEffect
     LaunchedEffect(
         listState.isScrollInProgress,
         listState.firstVisibleItemIndex
@@ -114,7 +113,6 @@ fun ChattingScreen(
         )
     }
 
-    // 스크롤 이벤트 처리 - 통합
     LaunchedEffect(Unit) {
         viewModel.scrollEvent.collect { event ->
             when (event) {
@@ -128,7 +126,6 @@ fun ChattingScreen(
         }
     }
 
-    // 키보드 상태 변화 감지
     LaunchedEffect(keyboardHeight) {
         when {
             keyboardHeight > 0 && previousKeyboardHeight == 0 -> {
@@ -138,7 +135,6 @@ fun ChattingScreen(
         previousKeyboardHeight = keyboardHeight
     }
 
-    // 초기 로딩 완료 감지
     LaunchedEffect(pagedMessages.loadState.refresh) {
         if (pagedMessages.loadState.refresh is LoadState.NotLoading && pagedMessages.itemCount > 0) {
             delay(100)
@@ -146,10 +142,10 @@ fun ChattingScreen(
         }
     }
 
-    // 기타 이벤트들
     LaunchedEffect(navigationEvent) {
         when (navigationEvent) {
             ChatNaviEvent.ToBack -> onBackClick()
+            ChatNaviEvent.ToProfile -> onPartnerProfile(uiState.roomInfo.partnerID)
             else -> {}
         }
     }
@@ -180,7 +176,8 @@ fun ChattingScreen(
         ChatHeader(
             userName = uiState.roomInfo.partnerNickname,
             compatibilityScore = 87,
-            onBack = viewModel::navigateToBack
+            onBack = viewModel::navigateToBack,
+            onPartnerProfile = viewModel::navigateToProfile,
         )
         CompactNoticeToggle(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -246,18 +243,23 @@ fun ChattingScreen(
                 }
             }
 
-            // 맨 아래로 스크롤 버튼 - 조건 간소화
             if (!uiState.scrollState.isAtBottom) {
                 FloatingActionButton(
                     onClick = viewModel::scrollToBottomManually,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
-                        .size(48.dp)
-                ) {
+                        .size(48.dp),
+                    containerColor = Color.White.copy(alpha = 0.8f),
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 1.dp, // 기본 그림자 크기
+                        pressedElevation = 4.dp  // 눌렀을 때 그림자 크기
+                    )
+                ){
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "맨 아래로"
+                        contentDescription = "맨 아래로",
+                        tint = Color.Transparent
                     )
                 }
             }
@@ -395,7 +397,8 @@ fun ChatMessageBubble(
 fun ChatHeader(
     userName: String,
     compatibilityScore: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onPartnerProfile: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -430,7 +433,10 @@ fun ChatHeader(
                 text = userName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF8B5A2B)
+                color = Color(0xFF8B5A2B),
+                modifier = Modifier.clickable {
+                    onPartnerProfile()
+                }
             )
         }
 
@@ -581,6 +587,5 @@ fun ChattingScreenPreview() {
         ChatEndMessage("채팅을 할 수 가 없다")
         DateSeparator("2020-01-01")
     }
-
 
 }

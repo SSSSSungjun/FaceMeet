@@ -57,7 +57,7 @@ fun NotificationScreen(
                         text = "알림",
                         fontSize = 16.sp,
                         modifier = Modifier.fillMaxWidth(),
-                        color = CommonColor.Brown,
+                        color = CommonColor.Brown500,
                         textAlign = TextAlign.Center,
                         fontFamily = ChosunCentennial
                     )
@@ -67,7 +67,7 @@ fun NotificationScreen(
                         Icon(
                             painter = painterResource(R.drawable.ic_back),
                             contentDescription = "뒤로가기",
-                            tint = CommonColor.Brown
+                            tint = CommonColor.Brown500
                         )
                     }
                 },

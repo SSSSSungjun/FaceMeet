@@ -36,26 +36,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun MatchingLoadingScreen(
-    onMatchFound: (String) -> Unit = {},
+    onMatchFound: (Long) -> Unit = {},
     onCancel: () -> Unit = {},
     viewModel: MatchingViewModel = hiltViewModel(),
-    navController: NavController,
 ) {
-    val result by viewModel.matchingResult.collectAsState()
+    val matchedChatRoomId by viewModel.matchedChatRoomId.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.startMatching()
     }
 
-    LaunchedEffect(result) {
-        if (result != null) {
-            navController.navigate("chat/${result}")
+    LaunchedEffect(matchedChatRoomId) {
+        if (matchedChatRoomId != null) {
+            onMatchFound(matchedChatRoomId!!)
             viewModel.resetMatchingResult() // 재방문 시 중복 이동 방지
         }
     }
@@ -79,7 +77,7 @@ fun MatchingLoadingScreen(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_back),
-                tint = CommonColor.Brown,
+                tint = CommonColor.Brown500,
                 contentDescription = "뒤로가기"
             )
         }
@@ -95,7 +93,7 @@ fun MatchingLoadingScreen(
             Text(
                 text = "당신과 궁합이\n가장 잘 맞는 분을 찾고 있어요",
                 fontSize = 16.sp,
-                color = CommonColor.Brown,
+                color = CommonColor.Brown500,
                 textAlign = TextAlign.Center
             )
 
@@ -108,7 +106,7 @@ fun MatchingLoadingScreen(
             Text(
                 text = "잠시만 기다려주세요",
                 fontSize = 16.sp,
-                color = CommonColor.Brown
+                color = CommonColor.Brown500
             )
         }
     }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,6 +64,8 @@ fun ShotPreviewScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .navigationBarsPadding() // ← 하단 시스템 UI 높이만큼 padding
+
                 .height(72.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -70,7 +73,7 @@ fun ShotPreviewScreen(
             Button(
                 onClick = onRetake,
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(vertical = 16.dp),
+                contentPadding = PaddingValues(vertical = 32.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
             ) {
                 Text("다시찍기", color = Color.White)

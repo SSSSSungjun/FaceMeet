@@ -49,7 +49,7 @@ fun MatchingScreen(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 lineHeight = 22.sp,
-                color = CommonColor.Brown,
+                color = CommonColor.Brown500,
                 modifier = Modifier,
                 textAlign = TextAlign.Center
             )

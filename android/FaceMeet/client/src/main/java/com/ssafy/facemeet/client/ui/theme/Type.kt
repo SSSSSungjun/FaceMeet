@@ -37,6 +37,6 @@ val Typography = Typography(
 val TitleTextStyle = TextStyle(
     fontSize = 20.sp,
     fontWeight = FontWeight.Bold,
-    color = CommonColor.Brown, // 갈색 예시
+    color = CommonColor.Brown500, // 갈색 예시
     fontFamily = ChosunCentennial
 )
