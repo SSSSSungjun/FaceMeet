@@ -107,7 +107,6 @@ private fun ExpandedNoticeCard(
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFFBFBFB)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
 
@@ -123,7 +122,7 @@ private fun ExpandedNoticeCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "관상 궁합 ${similar}% 로 매칭되었습니다 ✨\n" +
+                    text = "관상 궁합 ${similar}%로 매칭되었습니다 ✨\n" +
                             "프로필을 눌러 상대방의 관상을 살펴보세요",
                     textAlign = TextAlign.Center,
                     fontSize = 14.sp,
@@ -141,7 +140,7 @@ private fun ExpandedNoticeCard(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "닫기",
-                    tint = Color(0xFF1976D2),
+                    tint = Color(0xFF666666),
                     modifier = Modifier.size(18.dp)
                 )
             }

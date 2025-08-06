@@ -193,7 +193,7 @@ fun ChattingScreen(
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.Top,
                 contentPadding = PaddingValues(bottom = 4.dp),
                 reverseLayout = true
@@ -357,7 +357,7 @@ fun ChatMessageBubble(
                         text = message.content.toString(),
                         color = Color.White,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        fontSize = 14.sp
+                        fontSize = 15.sp
                     )
                 }
             }
@@ -382,7 +382,7 @@ fun ChatMessageBubble(
                         text = message.content.toString(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        fontSize = 14.sp
+                        fontSize = 15.sp
                     )
                 }
             }
