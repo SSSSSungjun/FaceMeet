@@ -47,14 +47,12 @@ class ChattingViewModel @Inject constructor(
 
     var currentUserId: Long = 0L
 
-    // 상태 통합
     private val _messageState = MutableStateFlow(MessageState())
     val messageState: StateFlow<MessageState> = _messageState
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState
 
-    // 이벤트들
     private val _naviEvent = MutableSharedFlow<ChatNaviEvent?>()
     val naviEvent: SharedFlow<ChatNaviEvent?> = _naviEvent.asSharedFlow()
 
@@ -62,6 +60,7 @@ class ChattingViewModel @Inject constructor(
     val scrollEvent: SharedFlow<ScrollEvent> = _scrollEvent.asSharedFlow()
 
     val connectionState: LiveData<ConnectionState> = webSocketManager.connectionState
+    private val _isInitialLoadCompleted = MutableStateFlow(false)
 
     // 임시 메시지 관리
     private data class TempMessage(
@@ -284,7 +283,7 @@ class ChattingViewModel @Inject constructor(
     private fun removeTempMessage(realMessage: ChatMessageItem) {
         _tempMessages.update { currentList ->
             currentList.filter { temp ->
-                !(temp.message.chatElement.content == realMessage.chatElement.content &&
+                !(temp.message.chatElement.content.trim() == realMessage.chatElement.content.trim() &&
                         temp.message.chatElement.senderID == realMessage.chatElement.senderID &&
                         temp.message.chatElement.roomID == realMessage.chatElement.roomID)
             }

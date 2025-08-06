@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.ui.matching
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.remote.datasource.MatchRemoteDataSource
@@ -8,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "MatchingViewModel"
 
 @HiltViewModel
 class MatchingViewModel @Inject constructor(
@@ -22,6 +25,7 @@ class MatchingViewModel @Inject constructor(
             try {
                 val response = matchRemoteDataSource.getMatch()
                 _matchedChatRoomId.value = response.chatRoomId.toLong()
+                Log.d(TAG, "startMatching: ${response.chatRoomId.toLong()}")
             } catch (e: Exception) {
                 _matchedChatRoomId.value = 0
             }

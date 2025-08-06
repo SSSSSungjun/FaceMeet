@@ -117,10 +117,11 @@ fun ChattingScreen(
         viewModel.scrollEvent.collect { event ->
             when (event) {
                 is ScrollEvent.ToBottom -> {
-                    listState.animateScrollToItem(0)
+                    listState.scrollToItem(0)
                 }
+
                 is ScrollEvent.WithKeyboard -> {
-                    listState.animateScrollToItem(0)
+                    listState.scrollToItem(0)
                 }
             }
         }
@@ -195,30 +196,38 @@ fun ChattingScreen(
                 contentPadding = PaddingValues(bottom = 4.dp),
                 reverseLayout = true
             ) {
-                // 실시간/임시 메시지 (최신 순)
                 items(
                     count = liveMessages.size,
                     key = { index ->
                         val message = liveMessages[index]
-                        "live_${message.chatElement.senderID}_${message.chatElement.createdAt}_${message.chatElement.content.hashCode()}_${index}"
+                        "${message.chatElement.senderID}_${message.chatElement.roomID}_${message.chatElement.content.hashCode()}_${message.chatElement.createdAt.hashCode()}"
                     }
                 ) { index ->
                     val message = liveMessages[index]
+                    Log.d("DEBUG_RENDER", "실시간 메시지 렌더링: index=$index, 총=${liveMessages.size}")
                     RenderMessage(
                         message = message,
                         isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                        isTemporary = false // 임시 메시지 여부는 별도 처리 가능
+                        isTemporary = false
                     )
                 }
 
-                // 페이징된 메시지
                 items(pagedMessages.itemCount) { index ->
                     pagedMessages[index]?.let { message ->
-                        RenderMessage(
-                            message = message,
-                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                            isTemporary = false
-                        )
+                        Log.d("DEBUG_RENDER", "페이징 메시지 렌더링: index=$index, 총=${pagedMessages.itemCount}")
+                        val isDuplicate = liveMessages.any { liveMsg ->
+                            liveMsg.chatElement.content == message.chatElement.content &&
+                                    liveMsg.chatElement.senderID == message.chatElement.senderID &&
+                                    liveMsg.chatElement.createdAt == message.chatElement.createdAt
+                        }
+
+                        if (!isDuplicate) {
+                            RenderMessage(
+                                message = message,
+                                isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
+                                isTemporary = false
+                            )
+                        }
                     }
                 }
 
@@ -226,6 +235,7 @@ fun ChattingScreen(
                 when (pagedMessages.loadState.append) {
                     is LoadState.Loading -> {
                         item {
+                            Log.d("DEBUG_RENDER", "로딩 UI 렌더링됨")
                             Box(
                                 modifier = Modifier.fillMaxWidth(),
                                 contentAlignment = Alignment.Center
@@ -234,14 +244,17 @@ fun ChattingScreen(
                             }
                         }
                     }
+
                     is LoadState.Error -> {
                         item {
                             Text("메시지를 불러오는데 실패했습니다")
                         }
                     }
+
                     else -> {}
                 }
             }
+
 
             if (!uiState.scrollState.isAtBottom) {
                 FloatingActionButton(
@@ -255,11 +268,11 @@ fun ChattingScreen(
                         defaultElevation = 1.dp, // 기본 그림자 크기
                         pressedElevation = 4.dp  // 눌렀을 때 그림자 크기
                     )
-                ){
+                ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = "맨 아래로",
-                        tint = Color.Transparent
+                        tint = Color.Black
                     )
                 }
             }
@@ -300,12 +313,15 @@ private fun RenderMessage(
                 isTemporary = isTemporary
             )
         }
+
         MessageType.DATE -> {
             DateSeparator(date = message.chatElement.content.toString())
         }
+
         MessageType.CHAT_END -> {
             ChatEndMessage(message.chatElement.content)
         }
+
         MessageType.SYSTEM -> {
             // 시스템 메시지 처리
         }

@@ -18,7 +18,7 @@ class ChatPagingSource(
         return try {
             val response = if (params.key == null) {
                 Log.d("ChatPagingSource", "초기 로딩: Last API 사용")
-                chatRepository.getChattingMessagesLast(roomId, params.loadSize)
+                chatRepository.getChattingMessagesLast(roomId, 20)
             } else {
 
                 val page = params.key ?:0
