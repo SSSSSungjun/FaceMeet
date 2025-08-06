@@ -176,7 +176,7 @@ fun ChattingScreen(
     ) {
         ChatHeader(
             userName = uiState.roomInfo.partnerNickname,
-            compatibilityScore = 87,
+            compatibilityScore = uiState.roomInfo.similar,
             onBack = viewModel::navigateToBack,
             onPartnerProfile = viewModel::navigateToProfile,
         )
@@ -412,7 +412,7 @@ fun ChatMessageBubble(
 @Composable
 fun ChatHeader(
     userName: String,
-    compatibilityScore: Int,
+    compatibilityScore: Long,
     onBack: () -> Unit,
     onPartnerProfile: () -> Unit,
 ) {

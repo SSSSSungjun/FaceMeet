@@ -303,7 +303,7 @@ class ChattingViewModel @Inject constructor(
 
     // 기타 메서드들
     suspend fun loadChatRoomInfo(roomId: Long) {
-        getChattingMessagesLastUseCase.invoke(roomId, 20).onSuccess { chattingAll ->
+        getChattingMessagesLastUseCase.invoke(roomId, 30).onSuccess { chattingAll ->
             _uiState.update { it.copy(roomInfo = chattingAll.chatRoom) }
         }
     }

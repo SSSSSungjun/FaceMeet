@@ -1,6 +1,5 @@
 package com.ssafy.facemeet.client.navigation.bottom
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -37,8 +36,8 @@ fun MainScreenWithBottomNav(
 
     Scaffold(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF4F3ED)),
+            .fillMaxSize(),
+        containerColor = Color(0xFFF4F3ED),
         bottomBar = {
             BottomNavigationBar(navController = bottomNavController)
         }

@@ -59,6 +59,7 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun getChattingMessagesLast(roomId: Long, limit: Int): Result<ChattingAll> =
         runCatching {
             val response = remoteDataSource.getChattingMessagesLast(roomId, limit)
+            Log.d(TAG, "getChattingMessagesLast: $response")
             if (response.isSuccessful) {
                 Log.d(TAG, "getChattingMessagesLast: ${response.body()}")
                 (response.body()?.toDomain()) ?: throw Exception("Empty response body")

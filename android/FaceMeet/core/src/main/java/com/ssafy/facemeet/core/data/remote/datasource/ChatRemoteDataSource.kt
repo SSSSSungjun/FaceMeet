@@ -33,6 +33,7 @@ class ChatRemoteDataSource @Inject constructor(
     }
 
     suspend fun getChattingMessagesLast(roomId: Long, limit: Int): Response<ChattingAllResponse> {
+        Log.d(TAG, "getChattingMessagesLast: 호출")
         return chatApiService.getChattingMessagesLast(roomId, limit)
     }
 
