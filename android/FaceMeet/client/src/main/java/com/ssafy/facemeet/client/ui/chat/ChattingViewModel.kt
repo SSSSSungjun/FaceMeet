@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 private const val TAG = "ChattingViewModel"
@@ -46,6 +46,7 @@ class ChattingViewModel @Inject constructor(
 ) : ViewModel() {
 
     var currentUserId: Long = 0L
+    var currentRoomId : Long = 0L
 
     private val _messageState = MutableStateFlow(MessageState())
     val messageState: StateFlow<MessageState> = _messageState
@@ -88,8 +89,14 @@ class ChattingViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     fun initializeChat(roomId: Long) {
+        if (currentRoomId == roomId && webSocketManager.connectionState.value == ConnectionState.CONNECTED) {
+            Log.d(TAG, "이미 같은 방에 연결됨: $roomId")
+            return
+        }
+
         webSocketManager.disconnect()
         viewModelScope.launch {
+            currentRoomId=roomId
             _uiState.update { it.copy(isLoading = true) }
 
             loadChatRoomInfo(roomId)
@@ -141,15 +148,25 @@ class ChattingViewModel @Inject constructor(
     }
 
     fun sendMessage() {
+        Log.d(TAG, "sendMessage 호출됨")
+
         val state = _uiState.value
-        if (!state.canSendMessage || currentUserId == 0L) return
+        Log.d(TAG, "canSendMessage: ${state.canSendMessage}, currentUserId: $currentUserId")
+
+        if (!state.canSendMessage || currentUserId == 0L) {
+            Log.w(TAG, "전송 불가 - canSend: ${state.canSendMessage}, userId: $currentUserId")
+            return
+        }
 
         val messageContent = state.messageText.trim()
+        Log.d(TAG, "메시지 내용: '$messageContent'")
+
         val localId = generateLocalId(messageContent)
 
         // 임시 메시지 생성
         val tempMessage = createTempMessage(messageContent, state.roomInfo, localId)
         addTempMessage(tempMessage)
+        Log.d(TAG, "임시 메시지 추가 완료")
 
         // UI 상태 업데이트
         _uiState.update {
@@ -159,6 +176,7 @@ class ChattingViewModel @Inject constructor(
                 scrollState = it.scrollState.copy(isAtBottom = true)
             )
         }
+        Log.d(TAG, "UI 상태 업데이트 완료")
 
         // 자동 스크롤
         triggerScroll(ScrollEvent.ToBottom)
@@ -166,18 +184,24 @@ class ChattingViewModel @Inject constructor(
         // 웹소켓으로 메시지 전송
         viewModelScope.launch {
             try {
+                Log.d(TAG, "웹소켓 메시지 전송 시작")
+                Log.d(TAG, "roomId: ${state.roomInfo.chatRoomID}, senderId: $currentUserId, receiverId: ${state.roomInfo.partnerID}")
+
                 webSocketManager.sendMessage(
                     content = messageContent,
                     roomId = state.roomInfo.chatRoomID,
                     senderId = currentUserId,
-                    receiverId = state.roomInfo.partnerID
+                    receiverId = state.roomInfo.partnerID,
+                    tempId = System.currentTimeMillis()
                 )
+                Log.d(TAG, "웹소켓 메시지 전송 완료")
 
                 // 타임아웃 후 임시 메시지 제거
                 delay(TEMP_MESSAGE_TIMEOUT)
                 removeTempMessageById(localId)
 
             } catch (e: Exception) {
+                Log.e(TAG, "메시지 전송 실패", e)
                 removeTempMessageById(localId)
                 _uiState.update { it.copy(error = e.message) }
             }
@@ -260,7 +284,7 @@ class ChattingViewModel @Inject constructor(
             senderID = currentUserId,
             receiverID = roomInfo.partnerID,
             roomID = roomInfo.chatRoomID,
-            createdAt = ZonedDateTime.now().toString(),
+            createdAt = LocalDateTime.now().toString(),
             isRead = false,
             readAt = ""
         )
@@ -313,7 +337,8 @@ class ChattingViewModel @Inject constructor(
             try {
                 val token = tokenManager.getAccessToken()
                 if (token != null) {
-                    webSocketManager.connect(currentUserId, token)
+                    Log.d(TAG, "connectToChat: $currentRoomId")
+                    webSocketManager.connect(currentUserId, token,currentRoomId)
                 }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {

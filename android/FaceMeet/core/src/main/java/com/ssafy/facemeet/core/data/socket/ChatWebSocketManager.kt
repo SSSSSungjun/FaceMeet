@@ -27,6 +27,7 @@ class ChatWebSocketManager @Inject constructor() {
     val connectionState: LiveData<ConnectionState> = _connectionState
 
     private var currentUserId: Long = 0
+    private var currentRoomId : Long =0
     private var isStompConnected = false
 
     // 새 메시지 콜백 (ChatMessageItem 전달)
@@ -36,8 +37,9 @@ class ChatWebSocketManager @Inject constructor() {
         onNewMessageReceived = callback
     }
 
-    fun connect(userId: Long, token: String) {
+    fun connect(userId: Long, token: String, roomId :Long =0 ) {
         currentUserId = userId
+        currentRoomId= roomId
         Log.d("WebSocket", "WebSocket 연결 시작 - userId: $userId")
         _connectionState.postValue(ConnectionState.CONNECTING)
         tryConnection(token)
@@ -94,7 +96,7 @@ class ChatWebSocketManager @Inject constructor() {
                 Log.d("WebSocket", "🎉 STOMP 연결 완료!")
                 isStompConnected = true
                 sendStompMessage("/pub/chat.connect", currentUserId.toString())
-                subscribeToPrivateChannel("/sub/private/$currentUserId")
+                subscribeToPrivateChannel("/sub/private/$currentRoomId")
             }
 
             message.startsWith("MESSAGE") -> {
@@ -120,22 +122,20 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     private fun subscribeToPrivateChannel(destination: String) {
-        val subscribeFrame = "SUBSCRIBE\nid:sub-$currentUserId\ndestination:$destination\n\n\u0000"
+        val subscribeFrame = "SUBSCRIBE\nid:sub-$currentRoomId\ndestination:$destination\n\n\u0000"
         webSocket?.send(subscribeFrame)
         Log.d("WebSocket", "📡 구독: $destination")
     }
 
-    // 메시지 전송 (tempId 추가)
     fun sendMessage(content: String, roomId: Long, senderId: Long, receiverId: Long, tempId: Long? = null) {
         val messageRequest = mapOf(
             "roomId" to roomId,
             "senderId" to senderId,
             "receiverId" to receiverId,
             "content" to content,
-            "tempId" to tempId // 클라이언트 임시 ID
         )
         sendStompMessage("/pub/chat.private", gson.toJson(messageRequest))
-        Log.d("WebSocket", "메시지 전송 완료 - tempId: $tempId")
+        Log.d("WebSocket", "메시지 전송 완료 - tempId: ${gson.toJson(messageRequest)}")
     }
 
     fun markAsRead(roomId: String, userId: Long, senderId: Long) {
@@ -156,14 +156,20 @@ class ChatWebSocketManager @Inject constructor() {
                 .joinToString("\n")
                 .replace("\u0000", "")
 
+            // ✨ 여기에 로그를 추가하여 서버로부터 받은 메시지 바디를 확인
+            Log.d("WebSocket", "수신된 메시지 바디: [$body]")
+
             try {
                 if (body.startsWith("{")) {
                     val messageResponse = gson.fromJson(body, ChatElement::class.java)
+                    Log.d("WebSocket", "파싱 성공: $messageResponse")
                     handleChatMessage(messageResponse)
                 }
             } catch (e: Exception) {
                 Log.e("WebSocket", "메시지 파싱 오류: ${e.message}")
             }
+        } else {
+            Log.w("WebSocket", "메시지 바디가 올바르지 않음: $message")
         }
     }
 

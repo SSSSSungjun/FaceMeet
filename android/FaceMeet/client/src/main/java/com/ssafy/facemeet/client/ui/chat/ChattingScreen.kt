@@ -199,8 +199,7 @@ fun ChattingScreen(
                 items(
                     count = liveMessages.size,
                     key = { index ->
-                        val message = liveMessages[index]
-                        "${message.chatElement.senderID}_${message.chatElement.roomID}_${message.chatElement.content.hashCode()}_${message.chatElement.createdAt.hashCode()}"
+                       liveMessages[index].chatElement.generateKey()
                     }
                 ) { index ->
                     val message = liveMessages[index]
