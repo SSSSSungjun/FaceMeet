@@ -16,4 +16,6 @@ data class ChatElement(
 
     val isRead: Boolean,
     val readAt: String
-)
+){
+    fun generateKey(): String = "${senderID}_${roomID}_${createdAt}_${content.hashCode()}"
+}

@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.client.navigation.bottom
 
-import androidx.compose.foundation.background
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -19,6 +20,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
@@ -28,17 +30,18 @@ import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreenWithBottomNav(
     mainNavController: NavHostController,
-    bottomNavController: NavHostController,
+    //bottomNavController: NavHostController,
     initialTab: String = BottomNavRoutes.Home.route
 ) {
-
+    val bottomNavController = rememberNavController()
     Scaffold(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF4F3ED)),
+            .fillMaxSize(),
+        containerColor = Color(0xFFF4F3ED),
         bottomBar = {
             BottomNavigationBar(navController = bottomNavController)
         }

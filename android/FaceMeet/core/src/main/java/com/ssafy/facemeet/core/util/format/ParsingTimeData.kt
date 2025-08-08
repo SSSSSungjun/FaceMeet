@@ -1,27 +1,33 @@
 package com.ssafy.facemeet.core.util.format
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
-
 @RequiresApi(Build.VERSION_CODES.O)
 object ParsingTimeData {
 
+    private const val TAG = "ParsingTimeData"
+
     fun String.formatSmartDate(): String {
+        Log.d(TAG, "formatSmartDate() 시작 - 입력값: '$this'")
         return try {
-            val utcZonedDateTime = ZonedDateTime.parse(this)
+            // Instant.parse()를 사용해서 ISO 8601 형식을 더 정확하게 파싱
+            val instant = Instant.parse(this)
+            val localDateTime = instant.atZone(ZoneId.systemDefault())
             val now = ZonedDateTime.now(ZoneId.systemDefault())
 
-            val localDateTime = utcZonedDateTime.withZoneSameInstant(ZoneId.systemDefault())
             val inputDate = localDateTime.toLocalDate()
             val today = now.toLocalDate()
             val yesterday = today.minusDays(1)
 
-            when (inputDate) {
+            val result = when (inputDate) {
                 today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
                 yesterday -> "어제"
                 else -> {
@@ -32,105 +38,221 @@ object ParsingTimeData {
                     }
                 }
             }
+            Log.d(TAG, "formatSmartDate() 성공 - 결과: '$result'")
+            result
         } catch (e: DateTimeParseException) {
-            // 파싱 실패 시 parseFlexibleDateTime으로 재시도
-            parseFlexibleDateTime()?.let { zonedDateTime ->
-                formatSmartDateSafe(zonedDateTime)
-            } ?: this
+            Log.w(TAG, "formatSmartDate() Instant.parse() 실패 - 두 번째 시도", e)
+            try {
+                // 두 번째 시도: ZonedDateTime으로 파싱
+                val utcZonedDateTime = ZonedDateTime.parse(this)
+                val localDateTime = utcZonedDateTime.withZoneSameInstant(ZoneId.systemDefault())
+                val now = ZonedDateTime.now(ZoneId.systemDefault())
+
+                val inputDate = localDateTime.toLocalDate()
+                val today = now.toLocalDate()
+                val yesterday = today.minusDays(1)
+
+                val result = when (inputDate) {
+                    today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    yesterday -> "어제"
+                    else -> {
+                        if (inputDate.year == today.year) {
+                            localDateTime.format(DateTimeFormatter.ofPattern("MM월 dd일"))
+                        } else {
+                            localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                        }
+                    }
+                }
+                Log.d(TAG, "formatSmartDate() ZonedDateTime.parse() 성공 - 결과: '$result'")
+                result
+            } catch (e2: DateTimeParseException) {
+                Log.w(TAG, "formatSmartDate() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
+                // 마지막 시도: parseFlexibleDateTime으로 재시도
+                parseFlexibleDateTime()?.let { zonedDateTime ->
+                    val result = formatSmartDateSafe(zonedDateTime)
+                    Log.d(TAG, "formatSmartDate() parseFlexibleDateTime 성공 - 결과: '$result'")
+                    result
+                } ?: run {
+                    Log.e(TAG, "formatSmartDate() 모든 시도 실패 - 원본 반환: '$this'")
+                    this
+                }
+            }
         } catch (e: Exception) {
+            Log.e(TAG, "formatSmartDate() 예상치 못한 오류", e)
             this
         }
     }
 
     fun String.toHourMinuteString(): String {
+        Log.d(TAG, "toHourMinuteString() 시작 - 입력값: '$this'")
         return try {
-            ZonedDateTime.parse(this)
-                .withZoneSameInstant(ZoneId.systemDefault())
+            // Instant.parse() 우선 시도
+            val result = Instant.parse(this)
+                .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("HH:mm"))
+            Log.d(TAG, "toHourMinuteString() Instant.parse() 성공 - 결과: '$result'")
+            result
         } catch (e: DateTimeParseException) {
-            // 파싱 실패 시 parseFlexibleDateTime으로 재시도
-            parseFlexibleDateTime()
-                ?.withZoneSameInstant(ZoneId.systemDefault())
-                ?.format(DateTimeFormatter.ofPattern("HH:mm"))
-                ?: "--:--"
+            Log.w(TAG, "toHourMinuteString() Instant.parse() 실패 - ZonedDateTime 시도", e)
+            try {
+                // ZonedDateTime.parse() 재시도
+                val result = ZonedDateTime.parse(this)
+                    .withZoneSameInstant(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("HH:mm"))
+                Log.d(TAG, "toHourMinuteString() ZonedDateTime.parse() 성공 - 결과: '$result'")
+                result
+            } catch (e2: DateTimeParseException) {
+                Log.w(TAG, "toHourMinuteString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
+                // 파싱 실패 시 parseFlexibleDateTime으로 재시도
+                parseFlexibleDateTime()
+                    ?.withZoneSameInstant(ZoneId.systemDefault())
+                    ?.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    ?.also { result ->
+                        Log.d(TAG, "toHourMinuteString() parseFlexibleDateTime 성공 - 결과: '$result'")
+                    }
+                    ?: run {
+                        Log.e(TAG, "toHourMinuteString() 모든 시도 실패 - 기본값 반환")
+                        "--:--"
+                    }
+            }
         } catch (e: Exception) {
+            Log.e(TAG, "toHourMinuteString() 예상치 못한 오류", e)
             "--:--"
         }
     }
 
     fun String.toFullDateString(): String {
+        Log.d(TAG, "toFullDateString() 시작 - 입력값: '$this'")
         return try {
-            ZonedDateTime.parse(this)
-                .withZoneSameInstant(ZoneId.systemDefault())
+            // Instant.parse() 우선 시도
+            val result = Instant.parse(this)
+                .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+            Log.d(TAG, "toFullDateString() Instant.parse() 성공 - 결과: '$result'")
+            result
         } catch (e: DateTimeParseException) {
-            // 파싱 실패 시 parseFlexibleDateTime으로 재시도
-            parseFlexibleDateTime()
-                ?.withZoneSameInstant(ZoneId.systemDefault())
-                ?.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-                ?: "날짜 오류"
+            Log.w(TAG, "toFullDateString() Instant.parse() 실패 - ZonedDateTime 시도", e)
+            try {
+                // ZonedDateTime.parse() 재시도
+                val result = ZonedDateTime.parse(this)
+                    .withZoneSameInstant(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                Log.d(TAG, "toFullDateString() ZonedDateTime.parse() 성공 - 결과: '$result'")
+                result
+            } catch (e2: DateTimeParseException) {
+                Log.w(TAG, "toFullDateString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
+                // 파싱 실패 시 parseFlexibleDateTime으로 재시도
+                parseFlexibleDateTime()
+                    ?.withZoneSameInstant(ZoneId.systemDefault())
+                    ?.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                    ?.also { result ->
+                        Log.d(TAG, "toFullDateString() parseFlexibleDateTime 성공 - 결과: '$result'")
+                    }
+                    ?: run {
+                        Log.e(TAG, "toFullDateString() 모든 시도 실패 - 기본값 반환")
+                        "날짜 오류"
+                    }
+            }
         } catch (e: Exception) {
+            Log.e(TAG, "toFullDateString() 예상치 못한 오류", e)
             "날짜 오류"
         }
     }
 
-    // 수정된 parseFlexibleDateTime - 더 정확한 패턴 순서
+    // 2025-08-06T06:08:03.375Z 형식에 최적화된 parseFlexibleDateTime
     fun String.parseFlexibleDateTime(): ZonedDateTime? {
-        // 먼저 기본 ISO 파서로 시도 (가장 표준적인 방법)
+        Log.d(TAG, "parseFlexibleDateTime() 시작 - 입력값: '$this'")
+
+        // 1. Instant.parse() - 가장 표준적이고 확실한 방법 (2025-08-06T06:08:03.375Z에 최적)
         try {
-            return ZonedDateTime.parse(this)
+            val result = Instant.parse(this).atZone(ZoneId.systemDefault())
+            Log.d(TAG, "parseFlexibleDateTime() Instant.parse() 성공")
+            return result
         } catch (e: DateTimeParseException) {
-            // 기본 파서 실패 시 커스텀 패턴들 시도
+            Log.d(TAG, "parseFlexibleDateTime() Instant.parse() 실패 - 다음 방법 시도")
         }
 
+        // 2. 기본 ZonedDateTime.parse() 시도
+        try {
+            val result = ZonedDateTime.parse(this)
+            Log.d(TAG, "parseFlexibleDateTime() ZonedDateTime.parse() 성공")
+            return result
+        } catch (e: DateTimeParseException) {
+            Log.d(TAG, "parseFlexibleDateTime() ZonedDateTime.parse() 실패 - 커스텀 패턴 시도")
+        }
+
+        // 3. 커스텀 패턴들로 시도 (우선순위 높은 것부터)
         val patterns = listOf(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",     // 밀리초 3자리 (일반적)
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",     // 2025-08-06T06:08:03.375Z (3자리 밀리초)
             "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",  // 마이크로초 6자리
+            "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",      // 밀리초 2자리
+            "yyyy-MM-dd'T'HH:mm:ss.S'Z'",       // 밀리초 1자리
             "yyyy-MM-dd'T'HH:mm:ss'Z'",         // 초 단위
             "yyyy-MM-dd'T'HH:mm:ssXXX",         // 타임존 포함
             "yyyy-MM-dd'T'HH:mm:ss",            // 로컬 시간
-            "yyyy-MM-dd'T'HH:mm:ss.S'Z'",       // 밀리초 1자리
-            "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",      // 밀리초 2자리
         )
 
-        for (pattern in patterns) {
+        for ((index, pattern) in patterns.withIndex()) {
             try {
+                Log.d(TAG, "parseFlexibleDateTime() 패턴 시도 #${index + 1}: '$pattern'")
                 val formatter = DateTimeFormatter.ofPattern(pattern)
-                return ZonedDateTime.parse(this, formatter.withZone(ZoneId.of("UTC")))
+                val result = if (pattern.endsWith("'Z'")) {
+                    // UTC 시간으로 파싱 후 시스템 시간대로 변환
+                    LocalDateTime.parse(this, formatter).atZone(ZoneId.of("UTC"))
+                } else {
+                    // 다른 형식들
+                    ZonedDateTime.parse(this, formatter.withZone(ZoneId.of("UTC")))
+                }
+                Log.d(TAG, "parseFlexibleDateTime() 패턴 #${index + 1} 성공")
+                return result
             } catch (e: DateTimeParseException) {
+                Log.d(TAG, "parseFlexibleDateTime() 패턴 #${index + 1} 실패: ${e.message}")
                 continue
             }
         }
 
+        Log.e(TAG, "parseFlexibleDateTime() 모든 패턴 실패 - null 반환")
         return null
     }
 
     // 안전한 확장 함수들
     fun String.toHourMinuteStringSafe(): String? {
+        Log.d(TAG, "toHourMinuteStringSafe() 호출 - 입력값: '$this'")
         return parseFlexibleDateTime()
             ?.withZoneSameInstant(ZoneId.systemDefault())
             ?.format(DateTimeFormatter.ofPattern("HH:mm"))
+            ?.also { result ->
+                Log.d(TAG, "toHourMinuteStringSafe() 성공 - 결과: '$result'")
+            }
     }
 
     fun String.toFullDateStringSafe(): String? {
+        Log.d(TAG, "toFullDateStringSafe() 호출 - 입력값: '$this'")
         return parseFlexibleDateTime()
             ?.withZoneSameInstant(ZoneId.systemDefault())
             ?.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+            ?.also { result ->
+                Log.d(TAG, "toFullDateStringSafe() 성공 - 결과: '$result'")
+            }
     }
 
     fun String.formatSmartDateSafe(): String? {
+        Log.d(TAG, "formatSmartDateSafe() 호출 - 입력값: '$this'")
         val zonedDateTime = parseFlexibleDateTime() ?: return null
-        return formatSmartDateSafe(zonedDateTime)
+        val result = formatSmartDateSafe(zonedDateTime)
+        Log.d(TAG, "formatSmartDateSafe() 성공 - 결과: '$result'")
+        return result
     }
 
     private fun formatSmartDateSafe(zonedDateTime: ZonedDateTime): String {
+        Log.d(TAG, "formatSmartDateSafe() 내부 함수 호출")
         val now = ZonedDateTime.now(ZoneId.systemDefault())
         val localDateTime = zonedDateTime.withZoneSameInstant(ZoneId.systemDefault())
         val inputDate = localDateTime.toLocalDate()
         val today = now.toLocalDate()
         val yesterday = today.minusDays(1)
 
-        return when (inputDate) {
+        val result = when (inputDate) {
             today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
             yesterday -> "어제"
             else -> {
@@ -141,14 +263,34 @@ object ParsingTimeData {
                 }
             }
         }
+        Log.d(TAG, "formatSmartDateSafe() 내부 함수 완료 - 결과: '$result'")
+        return result
     }
 
-    // 테스트용 함수 (개발 중에만 사용)
+    // 테스트용 함수 - 2025-08-06T06:08:03.375Z 형식으로 업데이트
     fun testParsing() {
-        val testDate = "2025-07-31T11:59:49.654Z"
-        println("Original: $testDate")
-        println("Smart Date: ${testDate.formatSmartDate()}")
-        println("Hour Minute: ${testDate.toHourMinuteString()}")
-        println("Full Date: ${testDate.toFullDateString()}")
+        val testDate = "2025-08-06T06:08:03.375Z"
+        Log.d(TAG, "=== testParsing() 시작 ===")
+        Log.d(TAG, "Original: $testDate")
+
+        Log.d(TAG, "Smart Date 테스트 시작")
+        val smartDate = testDate.formatSmartDate()
+        Log.d(TAG, "Smart Date 완료: $smartDate")
+
+        Log.d(TAG, "Hour Minute 테스트 시작")
+        val hourMinute = testDate.toHourMinuteString()
+        Log.d(TAG, "Hour Minute 완료: $hourMinute")
+
+        Log.d(TAG, "Full Date 테스트 시작")
+        val fullDate = testDate.toFullDateString()
+        Log.d(TAG, "Full Date 완료: $fullDate")
+
+        // 추가 테스트
+        Log.d(TAG, "=== Additional Tests ===")
+        Log.d(TAG, "Safe Smart Date: ${testDate.formatSmartDateSafe()}")
+        Log.d(TAG, "Safe Hour Minute: ${testDate.toHourMinuteStringSafe()}")
+        Log.d(TAG, "Safe Full Date: ${testDate.toFullDateStringSafe()}")
+
+        Log.d(TAG, "=== testParsing() 완료 ===")
     }
 }

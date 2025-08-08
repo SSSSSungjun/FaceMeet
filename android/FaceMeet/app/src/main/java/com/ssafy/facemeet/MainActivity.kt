@@ -1,11 +1,13 @@
 package com.ssafy.facemeet
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -21,11 +23,15 @@ class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { mainViewModel.isLoading.value }
 
         super.onCreate(savedInstanceState)
+
+        // FCM 딥링크 처리
+        handleNotificationIntent(intent)
 
         // 오프라인 처리를 위해 필요
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
@@ -36,10 +42,23 @@ class MainActivity : ComponentActivity() {
             FacemeetTheme {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
                 if (isLoggedIn != null)
-                    AppNavHost(isLoggedIn == true)
+                    AppNavHost(isLoggedIn == true,mainViewModel)
             }
         }
+    }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent) {
+        val deepLink = intent.getStringExtra("deep_link")
+        val roomId = intent.getLongExtra("roomId", -1L)
+
+        if (deepLink == "chat" && roomId != -1L) {
+            mainViewModel.setPendingNavigation("chatList", roomId)
+        }
     }
 
 }

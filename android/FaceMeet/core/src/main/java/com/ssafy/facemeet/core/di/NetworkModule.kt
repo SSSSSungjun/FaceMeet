@@ -57,7 +57,6 @@ object NetworkModule {
             .build()
     }
 
-
     @Provides
     @Singleton
     @RequiresApi(Build.VERSION_CODES.O)
@@ -68,7 +67,9 @@ object NetworkModule {
     @RequiresApi(Build.VERSION_CODES.O)
     @Provides
     @Singleton
-    fun provideSystemMessageManager(): SystemMessageManager = SystemMessageManager()
+    fun provideSystemMessageManager(chatWebSocketManager: ChatWebSocketManager): SystemMessageManager {
+        return SystemMessageManager(chatWebSocketManager)
+    }
 
 
     @Provides

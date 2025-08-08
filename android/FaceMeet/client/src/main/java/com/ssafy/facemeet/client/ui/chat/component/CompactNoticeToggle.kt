@@ -49,7 +49,7 @@ fun CompactNoticeToggle(
     similar: Int = 89
 ) {
     Box(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.wrapContentSize()
     ) {
         AnimatedContent(
             targetState = isNoticeOpen,

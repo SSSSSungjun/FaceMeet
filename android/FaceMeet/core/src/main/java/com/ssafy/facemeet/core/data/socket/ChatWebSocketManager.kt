@@ -17,6 +17,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+
 @RequiresApi(Build.VERSION_CODES.O)
 class ChatWebSocketManager @Inject constructor() {
 
@@ -27,6 +28,7 @@ class ChatWebSocketManager @Inject constructor() {
     val connectionState: LiveData<ConnectionState> = _connectionState
 
     private var currentUserId: Long = 0
+    private var currentRoomId: Long = 0
     private var isStompConnected = false
 
     // 새 메시지 콜백 (ChatMessageItem 전달)
@@ -36,8 +38,9 @@ class ChatWebSocketManager @Inject constructor() {
         onNewMessageReceived = callback
     }
 
-    fun connect(userId: Long, token: String) {
+    fun connect(userId: Long, token: String, roomId: Long = 0) {
         currentUserId = userId
+        currentRoomId = roomId
         Log.d("WebSocket", "WebSocket 연결 시작 - userId: $userId")
         _connectionState.postValue(ConnectionState.CONNECTING)
         tryConnection(token)
@@ -47,10 +50,11 @@ class ChatWebSocketManager @Inject constructor() {
         val websocketUrl = "wss://i13d201.p.ssafy.io/api/v1/websocket?token=$token"
 
         val wsClient = OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .pingInterval(30, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .pingInterval(20, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
 
         val request = Request.Builder()
@@ -114,7 +118,8 @@ class ChatWebSocketManager @Inject constructor() {
             return
         }
 
-        val frame = "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        val frame =
+            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
         webSocket?.send(frame)
         Log.d("WebSocket", "📤 메시지 전송: $destination")
     }
@@ -125,17 +130,21 @@ class ChatWebSocketManager @Inject constructor() {
         Log.d("WebSocket", "📡 구독: $destination")
     }
 
-    // 메시지 전송 (tempId 추가)
-    fun sendMessage(content: String, roomId: Long, senderId: Long, receiverId: Long, tempId: Long? = null) {
+    fun sendMessage(
+        content: String,
+        roomId: Long,
+        senderId: Long,
+        receiverId: Long,
+        tempId: Long? = null
+    ) {
         val messageRequest = mapOf(
             "roomId" to roomId,
             "senderId" to senderId,
             "receiverId" to receiverId,
             "content" to content,
-            "tempId" to tempId // 클라이언트 임시 ID
         )
         sendStompMessage("/pub/chat.private", gson.toJson(messageRequest))
-        Log.d("WebSocket", "메시지 전송 완료 - tempId: $tempId")
+        Log.d("WebSocket", "메시지 전송 완료 - tempId: ${gson.toJson(messageRequest)}")
     }
 
     fun markAsRead(roomId: String, userId: Long, senderId: Long) {
@@ -156,14 +165,19 @@ class ChatWebSocketManager @Inject constructor() {
                 .joinToString("\n")
                 .replace("\u0000", "")
 
+            Log.d("WebSocket", "수신된 메시지 바디: [$body]")
+
             try {
                 if (body.startsWith("{")) {
                     val messageResponse = gson.fromJson(body, ChatElement::class.java)
+                    Log.d("WebSocket", "파싱 성공: $messageResponse")
                     handleChatMessage(messageResponse)
                 }
             } catch (e: Exception) {
                 Log.e("WebSocket", "메시지 파싱 오류: ${e.message}")
             }
+        } else {
+            Log.w("WebSocket", "메시지 바디가 올바르지 않음: $message")
         }
     }
 

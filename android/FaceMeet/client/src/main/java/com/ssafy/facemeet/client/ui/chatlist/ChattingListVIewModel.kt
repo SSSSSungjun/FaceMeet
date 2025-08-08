@@ -37,4 +37,5 @@ class ChattingListViewModel @Inject constructor(
         }
     }
 
+
 }

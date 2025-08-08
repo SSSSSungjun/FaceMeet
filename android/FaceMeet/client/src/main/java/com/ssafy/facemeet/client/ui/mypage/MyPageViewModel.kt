@@ -40,7 +40,10 @@ class MyPageViewModel @Inject constructor(
     fun navigateToLogout() {
         viewModelScope.launch {
             val success = logout()
-            if (success) _naviEvent.emit(MyPageNaviEvent.ToLogout)
+            if (success){
+                Log.d(TAG, "navigateToLogout: 로그 아웃")
+                _naviEvent.emit(MyPageNaviEvent.ToLogout)
+            }
 
         }
     }
@@ -54,7 +57,10 @@ class MyPageViewModel @Inject constructor(
     fun navigateToWithdraw() {
         viewModelScope.launch {
             val success = withdraw()
-            if (success) _naviEvent.emit(MyPageNaviEvent.ToWithdraw)
+            if (success){
+                Log.d(TAG, "navigateToWithdraw: 회원 탈퇴")
+                _naviEvent.emit(MyPageNaviEvent.ToWithdraw)
+            }
         }
     }
 

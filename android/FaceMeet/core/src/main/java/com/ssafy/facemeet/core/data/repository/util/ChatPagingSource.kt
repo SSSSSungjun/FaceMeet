@@ -13,15 +13,16 @@ class ChatPagingSource(
 ) : PagingSource<Int, ChatMessageItem>() {
 
     override val jumpingSupported: Boolean = true
+    override val keyReuseSupported: Boolean = true
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ChatMessageItem> {
         return try {
             val response = if (params.key == null) {
                 Log.d("ChatPagingSource", "초기 로딩: Last API 사용")
-                chatRepository.getChattingMessagesLast(roomId, 20)
+                chatRepository.getChattingMessagesCurrent(roomId, 30, 0)
             } else {
 
-                val page = params.key ?:0
+                val page = params.key ?: 0
                 Log.d("ChatPagingSource", "페이징 로딩: Current API 사용 - page: $page")
                 chatRepository.getChattingMessagesCurrent(roomId, params.loadSize, page)
             }
@@ -39,11 +40,13 @@ class ChatPagingSource(
                     val currentPage = chattingAllResponse.messages.currentPage.toInt()
                     val totalPages = chattingAllResponse.messages.totalPages.toInt()
 
-                    Log.d("ChatPagingSource", "현재 페이지: $currentPage, 전체 페이지: $totalPages")
+                    Log.d(
+                        "ChatPagingSource",
+                        "현재 페이지: $currentPage, 전체 페이지: $totalPages, size : ${messages.size}"
+                    )
 
-
-                    val prevKey = if (currentPage < totalPages - 1) currentPage + 1 else null
-                    val nextKey = if (currentPage > 0) currentPage - 1 else null
+                    val prevKey = if (currentPage > 0) currentPage - 1 else null
+                    val nextKey = if (currentPage < totalPages - 1) currentPage + 1 else null
 
                     LoadResult.Page(
                         data = messages,
@@ -64,9 +67,6 @@ class ChatPagingSource(
 
     override fun getRefreshKey(state: PagingState<Int, ChatMessageItem>): Int? {
         Log.d("ChatPagingSource", "getRefreshKey 호출")
-        return state.anchorPosition?.let { anchorPosition ->
-            val closestPage = state.closestPageToPosition(anchorPosition)
-            closestPage?.nextKey
-        }
+        return 0
     }
 }
