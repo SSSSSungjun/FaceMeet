@@ -131,6 +131,7 @@ class ChattingViewModel @Inject constructor(
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
             if(newMessage.chatElement.roomID!=currentRoomId)return@launch
+            if(_realtimeMessages.value.any { it.chatElement.generateKey() == newMessage.chatElement.generateKey() }) return@launch
 
             Log.d(TAG, "📩 메시지 처리 시작: ${newMessage.chatElement.content}")
 

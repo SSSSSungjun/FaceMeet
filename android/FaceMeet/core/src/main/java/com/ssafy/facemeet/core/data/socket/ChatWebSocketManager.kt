@@ -51,7 +51,7 @@ class ChatWebSocketManager @Inject constructor() {
 
         val wsClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
             .pingInterval(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)

@@ -208,7 +208,11 @@ fun ChattingScreen(
                 items(
                     count = liveMessages.size,
                     key = { index ->
-                        "live_${index}_${liveMessages[index].chatElement.generateKey()}"
+                        if (index < liveMessages.size) {
+                            liveMessages[index].chatElement.generateKey()
+                        } else {
+                            "fallback_$index"
+                        }
                     }
                 ) { index ->
                     if (index < liveMessages.size) {
