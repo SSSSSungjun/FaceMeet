@@ -164,7 +164,7 @@ fun EnhancedCompactNoticeButton(
     )
 
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.wrapContentSize(),
         contentAlignment = Alignment.CenterEnd
     ) {
         Card(

@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class MatchingResponse (
+data class MatchingResponse(
     val id: Long,
     val user1: MatchingUserResponse,
     val user2: MatchingUserResponse,
@@ -26,11 +26,12 @@ data class MatchingResponse (
 
 @Serializable
 enum class RoomStringID(val value: String) {
-    @SerialName("string") RoomStringIDString("string");
+    @SerialName("string")
+    RoomStringIDString("string");
 }
 
 @Serializable
-data class MatchingUserResponse (
+data class MatchingUserResponse(
     val id: Long,
     val email: RoomStringID,
     val name: RoomStringID,
@@ -55,7 +56,7 @@ data class MatchingUserResponse (
 )
 
 @Serializable
-data class FaceResponse (
+data class FaceResponse(
     val id: Long,
     val img: RoomStringID,
     val faceShape: FaceShape,
@@ -72,7 +73,7 @@ data class FaceResponse (
 )
 
 @Serializable
-data class ChinCombResponse (
+data class ChinCombResponse(
     val id: Long,
     val chinParts1: ChinParts1Response,
     val chinParts2: ChinParts1Response,
@@ -80,14 +81,14 @@ data class ChinCombResponse (
 )
 
 @Serializable
-data class ChinParts1Response (
+data class ChinParts1Response(
     val id: Long,
     val keyword: RoomStringID,
     val desc: RoomStringID
 )
 
 @Serializable
-data class EyeCombResponse (
+data class EyeCombResponse(
     val id: Long,
     val eyeParts1: ChinParts1Response,
     val eyeParts2: ChinParts1Response,
@@ -96,7 +97,7 @@ data class EyeCombResponse (
 )
 
 @Serializable
-data class EyebrowCombResponse (
+data class EyebrowCombResponse(
     val id: Long,
     val eyebrowParts1: ChinParts1Response,
     val eyebrowParts2: ChinParts1Response,
@@ -109,7 +110,7 @@ data class EyebrowCombResponse (
 class FaceShape()
 
 @Serializable
-data class MouthCombResponse (
+data class MouthCombResponse(
     val id: Long,
     val mouthParts1: ChinParts1Response,
     val mouthParts2: ChinParts1Response,
@@ -118,7 +119,7 @@ data class MouthCombResponse (
 )
 
 @Serializable
-data class NoseCombResponse (
+data class NoseCombResponse(
     val id: Long,
     val noseParts1: ChinParts1Response,
     val noseParts2: ChinParts1Response,

@@ -70,22 +70,37 @@ fun ChattingListScreen(
         }
     }
 
-    DisposableEffect(context) {
+    DisposableEffect(Unit) { // context 대신 Unit 사용
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                Log.d("ChatListScreen", "📥 브로드캐스트 수신!")
-                if (intent?.action == "ACTION_REFRESH_CHAT_LIST") {
-                    Log.d("ChatListScreen", "채팅 리스트 갱신 요청")
-                    viewModel.loadChattingList()
+                Log.d("ChatListScreen", "📥 브로드캐스트 수신! action=${intent?.action}")
+                when (intent?.action) {
+                    "ACTION_REFRESH_CHAT_LIST" -> {
+                        Log.d("ChatListScreen", "채팅 리스트 갱신 요청")
+                        viewModel.loadChattingList()
+                    }
                 }
             }
         }
 
-        LocalBroadcastManager.getInstance(context)
-            .registerReceiver(receiver, IntentFilter("ACTION_REFRESH_CHAT_LIST"))
-
+        val filter = IntentFilter().apply {
+            addAction("ACTION_REFRESH_CHAT_LIST")
+        }
+        try {
+            LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter)
+            context.registerReceiver(receiver, filter)
+            Log.d("ChatListScreen", "브로드캐스트 리시버 등록 완료")
+        } catch (e: Exception) {
+            Log.e("ChatListScreen", "브로드캐스트 리시버 등록 실패", e)
+        }
         onDispose {
-            LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
+            try {
+                LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
+                context.unregisterReceiver(receiver)
+                Log.d("ChatListScreen", "브로드캐스트 리시버 해제 완료")
+            } catch (e: Exception) {
+                Log.e("ChatListScreen", "브로드캐스트 리시버 해제 실패 (정상적인 경우일 수 있음)", e)
+            }
         }
     }
 

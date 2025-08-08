@@ -3,7 +3,11 @@ package com.ssafy.facemeet.client.ui.profile.partner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.remote.api.UserApiService
+import com.ssafy.facemeet.core.data.remote.dto.request.ReportRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.ReportCategoryResponse
+import com.ssafy.facemeet.core.data.repository.ReportRepositoryImpl
+import com.ssafy.facemeet.core.domain.usecase.PostBlockUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +17,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PartnerProfileViewModel @Inject constructor(
-    private val userApiService: UserApiService
+    private val userApiService: UserApiService,
+    private val reportRepository: ReportRepositoryImpl,
+    private val postBlockUserUseCase: PostBlockUserUseCase
 ) : ViewModel() {
 
     private val _partnerFaceInfo = MutableStateFlow<PartnerFaceInfoResponse?>(null)
@@ -24,6 +30,15 @@ class PartnerProfileViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _categories = MutableStateFlow<List<ReportCategoryResponse>>(emptyList())
+    val categories: StateFlow<List<ReportCategoryResponse>> = _categories
+
+    private val _reportResult = MutableStateFlow<Result<Unit>?>(null)
+    val reportResult: StateFlow<Result<Unit>?> = _reportResult
+
+    private val _blockResult = MutableStateFlow(false)
+    val blockResult: StateFlow<Boolean> = _blockResult
 
     fun loadPartnerFaceInfo(partnerId: Long) {
         viewModelScope.launch {
@@ -44,4 +59,44 @@ class PartnerProfileViewModel @Inject constructor(
             }
         }
     }
+
+    //블랙리스트 요청
+    fun requestBlockUser(partnerId: Long) {
+        viewModelScope.launch {
+            postBlockUserUseCase.invoke(partnerId).onSuccess {
+                _blockResult.value = true
+            }.onFailure {
+                _blockResult.value = false
+            }
+        }
+    }
+
+    fun fetchCategories() {
+        viewModelScope.launch {
+            reportRepository.getReportCategories()
+                .onSuccess { _categories.value = it }
+        }
+    }
+
+    fun sendReport(
+        roomId: Long,
+        categoryId: Int,
+        reportedId: Long,
+        reason: String,
+        img: String = ""
+    ) {
+        viewModelScope.launch {
+            val request = ReportRequest(
+                roomId = roomId,
+                categoryId = categoryId.toLong(),
+                reportedId = reportedId,
+                reason = reason,
+                img = img
+            )
+            val result = reportRepository.reportUser(request)
+            _reportResult.value = result
+        }
+    }
+
+
 }
