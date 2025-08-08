@@ -495,8 +495,10 @@ object FcmAlarmHandler {
         }
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti).setContentTitle(title)
-            .setContentText(body).setAutoCancel(true).setContentIntent(pendingIntent)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 

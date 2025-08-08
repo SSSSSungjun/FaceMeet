@@ -34,6 +34,8 @@ class UserRemoteDataSource @Inject constructor(
         return userApiService.getPartnerFaceInfo(partnerId)
     }
 
+    suspend fun getHomeInfo() = userApiService.getHomeInfo()
+
     // 필요 시 주석 해제
 //    suspend fun getUserStatus(): Response<AuthResponse<Unit>> {
 //        return userApiService.getUserStatus()

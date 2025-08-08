@@ -3,6 +3,7 @@ package com.ssafy.facemeet.core.domain.usecase
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
+import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.mapper.toDomain
 import com.ssafy.facemeet.core.domain.model.UserInfo
@@ -58,4 +59,10 @@ class GetPartnerFaceInfoUseCase @Inject constructor(
     suspend operator fun invoke(partnerId: Long): Result<PartnerFaceInfoResponse> {
         return userRepository.getPartnerFaceInfo(partnerId)
     }
+}
+
+class GetHomeInfoUseCase @Inject constructor(
+    private val userRepository: UserRepository
+) {
+    suspend operator fun invoke(): Result<HomeInfoResponse> = userRepository.getHomeInfo()
 }
