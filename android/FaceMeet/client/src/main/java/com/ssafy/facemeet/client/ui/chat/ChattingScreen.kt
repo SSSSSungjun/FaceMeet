@@ -35,6 +35,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -80,8 +81,6 @@ import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.util.AppStateManager
 import kotlinx.coroutines.delay
 
-private const val TAG = "ChattingScreen"
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChattingScreen(
@@ -96,7 +95,7 @@ fun ChattingScreen(
     val connectionState by viewModel.connectionState.observeAsState(ConnectionState.DISCONNECTED)
 
     val pagedMessages = messageState.pagedMessages.collectAsLazyPagingItems()
-    val liveMessages by viewModel.liveMessages.collectAsState()
+    val unifiedMessages by viewModel.unifiedMessages.collectAsState() // 새로 추가된 상태
 
     val listState = rememberLazyListState()
 
@@ -107,7 +106,7 @@ fun ChattingScreen(
         listState.isScrollInProgress,
         listState.firstVisibleItemIndex
     ) {
-        val totalItemCount = liveMessages.size + pagedMessages.itemCount
+        val totalItemCount = unifiedMessages.size + pagedMessages.itemCount
         viewModel.onScrollStateChanged(
             isScrolling = listState.isScrollInProgress,
             firstVisibleItemIndex = listState.firstVisibleItemIndex,
@@ -121,7 +120,6 @@ fun ChattingScreen(
                 is ScrollEvent.ToBottom -> {
                     listState.scrollToItem(0)
                 }
-
                 is ScrollEvent.WithKeyboard -> {
                     listState.scrollToItem(0)
                 }
@@ -156,6 +154,7 @@ fun ChattingScreen(
     LaunchedEffect(roomId) {
         viewModel.initializeChat(roomId)
         AppStateManager.setCurrentScreen("ChattingScreen", roomId)
+        Log.d("FCM", "ChattingScreen:${AppStateManager.getCurrentScreen()} ")
     }
 
     DisposableEffect(Unit) {
@@ -189,6 +188,7 @@ fun ChattingScreen(
             onBack = viewModel::navigateToBack,
             onPartnerProfile = viewModel::navigateToProfile,
         )
+
         CompactNoticeToggle(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             isNoticeOpen = uiState.isNoticeOpen,
@@ -205,24 +205,27 @@ fun ChattingScreen(
                 contentPadding = PaddingValues(bottom = 4.dp),
                 reverseLayout = true
             ) {
+                // 1. 실시간 메시지 렌더링 (통합된 메시지 상태 사용)
                 items(
-                    count = liveMessages.size,
+                    count = unifiedMessages.size,
                     key = { index ->
-                        if (index < liveMessages.size) {
-                            liveMessages[index].chatElement.generateKey()
+                        if (index < unifiedMessages.size) {
+                            val messageItem = unifiedMessages[index]
+                            // localId가 있으면 그것을 키로, 없으면 일반 키 사용
+                            messageItem.localId ?: generateMessageKey(messageItem.chatMessage.chatElement, index)
                         } else {
-                            "fallback_$index"
+                            "unified_fallback_$index"
                         }
                     }
                 ) { index ->
-                    if (index < liveMessages.size) {
-                        val message = liveMessages[index]
-                        Log.d("DEBUG_RENDER", "실시간 메시지 렌더링: index=$index, content=${message.chatElement.content}")
+                    if (index < unifiedMessages.size) {
+                        val messageItem = unifiedMessages[index]
+                        Log.d("DEBUG_RENDER", "통합 메시지 렌더링: index=$index, status=${messageItem.status}, content=${messageItem.chatMessage.chatElement.content}")
 
                         RenderMessage(
-                            message = message,
-                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                            isTemporary = false
+                            message = messageItem.chatMessage,
+                            isMyMessage = messageItem.chatMessage.chatElement.senderID == viewModel.currentUserId,
+                            messageStatus = messageItem.status
                         )
                     }
                 }
@@ -231,13 +234,14 @@ fun ChattingScreen(
                 items(
                     count = pagedMessages.itemCount,
                     key = { index ->
-                        "paged_${index}_${pagedMessages.peek(index)?.chatElement?.generateKey() ?: "fallback_$index"}"
+                        "paged_${index}_${pagedMessages.peek(index)?.chatElement?.let { generateMessageKey(it, index) } ?: "fallback_$index"}"
                     }
                 ) { index ->
                     pagedMessages[index]?.let { message ->
-                        // 실시간 메시지와 중복인지 체크 (더 정확한 비교)
-                        val isDuplicate = liveMessages.any { liveMsg ->
-                            liveMsg.chatElement.generateKey() == message.chatElement.generateKey()
+                        // 통합 메시지와 중복인지 체크
+                        val messageKey = generateMessageKey(message.chatElement, index)
+                        val isDuplicate = unifiedMessages.any { unifiedItem ->
+                            generateMessageKey(unifiedItem.chatMessage.chatElement, -1) == messageKey
                         }
 
                         if (!isDuplicate) {
@@ -245,14 +249,13 @@ fun ChattingScreen(
                             RenderMessage(
                                 message = message,
                                 isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                                isTemporary = false
+                                messageStatus = ChattingViewModel.MessageStatus.RECEIVED
                             )
                         } else {
                             Log.d("DEBUG_RENDER", "중복 메시지 스킵: index=$index, content=${message.chatElement.content}")
                         }
                     }
                 }
-
 
                 // 로딩 상태
                 when (pagedMessages.loadState.append) {
@@ -267,17 +270,14 @@ fun ChattingScreen(
                             }
                         }
                     }
-
                     is LoadState.Error -> {
                         item {
                             Text("메시지를 불러오는데 실패했습니다")
                         }
                     }
-
                     else -> {}
                 }
             }
-
 
             if (!uiState.scrollState.isAtBottom) {
                 FloatingActionButton(
@@ -288,8 +288,8 @@ fun ChattingScreen(
                         .size(48.dp),
                     containerColor = Color.White.copy(alpha = 0.8f),
                     elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 1.dp, // 기본 그림자 크기
-                        pressedElevation = 4.dp  // 눌렀을 때 그림자 크기
+                        defaultElevation = 1.dp,
+                        pressedElevation = 4.dp
                     )
                 ) {
                     Icon(
@@ -320,72 +320,115 @@ fun ChattingScreen(
     }
 }
 
+// 메시지 키 생성 함수
+private fun generateMessageKey(chatElement: ChatElement, index: Int): String {
+    return "${chatElement.senderID}_${chatElement.roomID}_${chatElement.content}_${chatElement.createdAt}_$index"
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun RenderMessage(
     message: ChatMessageItem,
     isMyMessage: Boolean,
-    isTemporary: Boolean
+    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED
 ) {
     when (message.messageType) {
         MessageType.TEXT -> {
             ChatMessageBubble(
                 message = message.chatElement,
                 isMyMessage = isMyMessage,
-                isTemporary = isTemporary
+                messageStatus = messageStatus
             )
         }
-
         MessageType.DATE -> {
             DateSeparator(date = message.chatElement.content.toString())
         }
-
         MessageType.CHAT_END -> {
             ChatEndMessage(message.chatElement.content)
         }
-
         MessageType.SYSTEM -> {
             // 시스템 메시지 처리
         }
     }
 }
 
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChatMessageBubble(
     message: ChatElement,
     isMyMessage: Boolean,
-    isTemporary: Boolean = false
+    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED
 ) {
+    val isPending = messageStatus == ChattingViewModel.MessageStatus.PENDING
+    val isFailed = messageStatus == ChattingViewModel.MessageStatus.FAILED
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
-            .alpha(if (isTemporary) 0.6f else 1f)
-
+            .alpha(
+                when (messageStatus) {
+                    ChattingViewModel.MessageStatus.PENDING -> 0.7f
+                    ChattingViewModel.MessageStatus.FAILED -> 0.5f
+                    else -> 1f
+                }
+            )
     ) {
         if (isMyMessage) {
-            // 내 메시지: 읽음/시간 - 메시지 (우측 정렬)
+            // 내 메시지: 상태 표시 - 메시지 (우측 정렬)
             Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 verticalAlignment = Alignment.Bottom
             ) {
-                // 임시 메시지 상태 표시
-                if (isTemporary) {
-                    Text(
-                        text = "전송중...",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
+                // 메시지 상태 표시
+                when (messageStatus) {
+                    ChattingViewModel.MessageStatus.PENDING -> {
+                        Text(
+                            text = "전송중...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                    }
+                    ChattingViewModel.MessageStatus.FAILED -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error, // 기본 에러 아이콘 사용
+                                contentDescription = "전송 실패",
+                                tint = Color.Red,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "실패",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Red,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                        }
+                    }
+                    ChattingViewModel.MessageStatus.SENT -> {
+                        Text(
+                            text = "전송됨",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                    }
+                    else -> {
+                        // RECEIVED 상태에서는 아무것도 표시하지 않음
+                    }
                 }
 
                 Card(
                     modifier = Modifier.widthIn(max = 240.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF824946)
+                        containerColor = when (messageStatus) {
+                            ChattingViewModel.MessageStatus.FAILED -> Color(0xFFFFCDD2) // 연한 빨강
+                            else -> Color(0xFF824946)
+                        }
                     ),
                     shape = RoundedCornerShape(
                         topStart = 12.dp,
@@ -396,13 +439,14 @@ fun ChatMessageBubble(
                 ) {
                     Text(
                         text = message.content.toString(),
-                        color = Color.White,
+                        color = if (isFailed) Color.Black else Color.White,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         fontSize = 15.sp
                     )
                 }
             }
         } else {
+            // 상대방 메시지
             Row(
                 modifier = Modifier.align(Alignment.CenterStart),
                 verticalAlignment = Alignment.Bottom
@@ -626,5 +670,4 @@ fun ChattingScreenPreview() {
         ChatEndMessage("채팅을 할 수 가 없다")
         DateSeparator("2020-01-01")
     }
-
 }

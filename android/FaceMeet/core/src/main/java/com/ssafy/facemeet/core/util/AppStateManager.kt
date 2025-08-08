@@ -5,7 +5,7 @@ import android.util.Log
 object AppStateManager {
     private var _currentScreen: String? = null
     private var _currentRoomId: Long? = null
-    
+
     fun setCurrentScreen(screenName: String, roomId: Long? = null) {
         _currentScreen = screenName
         _currentRoomId = roomId
@@ -13,10 +13,10 @@ object AppStateManager {
     }
 
     fun getCurrentScreen(): String? = _currentScreen // 추가
-    
+
     fun isInChatRoom(roomId: Long): Boolean {
         return _currentScreen == "ChattingScreen" && _currentRoomId == roomId
     }
-    
+
     fun getCurrentRoomId(): Long? = _currentRoomId
 }

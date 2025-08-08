@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -109,7 +110,12 @@ fun MyPageScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        WithdrawSection(viewModel::navigateToWithdraw)
+        WithdrawSection(
+            viewModel::navigateToWithdraw,
+            viewModel::clickWithdrawBtn,
+            viewModel::dismissWithdrawDialog,
+            uiState.isWithdrawBtnClicked
+        )
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
@@ -296,9 +302,14 @@ fun MyInfoSection(
 }
 
 @Composable
-fun WithdrawSection(onWithdraw: () -> Unit) {
+fun WithdrawSection(
+    onWithdraw: () -> Unit,
+    onClick: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+    isShowDialog: Boolean
+) {
     OutlinedButton(
-        onClick = { },
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
@@ -312,7 +323,16 @@ fun WithdrawSection(onWithdraw: () -> Unit) {
         Text(
             text = "탈퇴하기",
             fontSize = 14.sp,
-            modifier = Modifier.clickable { onWithdraw() }
+        )
+    }
+
+    if (isShowDialog) {
+        WithdrawConfirmDialog(
+            onConfirm = {
+                onWithdraw()
+                onDismiss()
+            },
+            onDismiss = onDismiss
         )
     }
 }
@@ -341,7 +361,8 @@ fun ProfileInfoRow(
             color = Color.Gray,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 250.dp)
+            modifier = Modifier.widthIn(max = 250.dp),
+            textAlign = TextAlign.End
         )
 
     }

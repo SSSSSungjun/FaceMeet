@@ -67,6 +67,10 @@ class MyPageViewModel @Inject constructor(
     fun setMarketingAlarm(enabled: Boolean) =
         _uiState.update { it.copy(marketingAlarmEnabled = enabled) }
 
+
+    fun clickWithdrawBtn() = _uiState.update { it.copy(isWithdrawBtnClicked = true) }
+    fun dismissWithdrawDialog() = _uiState.update { it.copy(isWithdrawBtnClicked = false) }
+
     fun loadUserProfile() = viewModelScope.launch {
         userInfoUserUseCase()
             .onSuccess { user ->

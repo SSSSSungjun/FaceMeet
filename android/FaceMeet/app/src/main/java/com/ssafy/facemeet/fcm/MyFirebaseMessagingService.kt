@@ -67,8 +67,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         fcmService.registerDevice(request).enqueue(object : Callback<FcmTokenResponse?> {
             override fun onResponse(
-                call: Call<FcmTokenResponse?>,
-                response: Response<FcmTokenResponse?>
+                call: Call<FcmTokenResponse?>, response: Response<FcmTokenResponse?>
             ) {
                 Log.d("FCM", "토큰 등록 성공: ${response.body()}")
             }
@@ -86,23 +85,19 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (remoteMessage.data.isNotEmpty()) {
             when (remoteMessage.data["type"]) {
                 "SCHEDULED_EVENT" -> handleScheduledEvent(
-                    remoteMessage.notification,
-                    remoteMessage.data
+                    remoteMessage.notification, remoteMessage.data
                 )
 
                 "IMMEDIATE_EVENT" -> handleImmediateEvent(
-                    remoteMessage.notification,
-                    remoteMessage.data
+                    remoteMessage.notification, remoteMessage.data
                 )
 
                 "CHAT" -> handleChatNotification(
-                    remoteMessage.notification,
-                    remoteMessage.data
+                    remoteMessage.notification, remoteMessage.data
                 )
 
                 "PRE_MESSAGE" -> handleImmediateEvent(
-                    remoteMessage.notification,
-                    remoteMessage.data
+                    remoteMessage.notification, remoteMessage.data
                 )
 
                 else -> {
@@ -119,8 +114,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun handleScheduledEvent(
-        notification: RemoteMessage.Notification?,
-        data: Map<String, String>
+        notification: RemoteMessage.Notification?, data: Map<String, String>
     ) {
 
         Log.d("FCM", "data: ${data.keys}")
@@ -144,8 +138,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 "현재 시간: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(now)}"
             )
             Log.d(
-                "FCM",
-                "트리거 시간: ${
+                "FCM", "트리거 시간: ${
                     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(triggerTime)
                 }"
             )
@@ -182,8 +175,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
     private fun handleImmediateEvent(
-        notification: RemoteMessage.Notification?,
-        data: Map<String, String>
+        notification: RemoteMessage.Notification?, data: Map<String, String>
     ) {
         Log.d("FCM", "handleImmediateEvent: ${data.entries}")
         val title = data["title"] ?: notification?.title ?: "없음"
@@ -193,16 +185,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun handleChatNotification(
-        notification: RemoteMessage.Notification?,
-        data: Map<String, String>
+        notification: RemoteMessage.Notification?, data: Map<String, String>
     ) {
         val roomId = data["roomId"]?.toLongOrNull()
         val title = notification?.title ?: "채팅 알림"
         val body = notification?.body ?: ""
 
-        Log.d("FCM", "handleChatNotification: ${roomId}")
-        // 현재 해당 채팅방에 있으면 알림 스킵
-        if (roomId != null && AppStateManager.isInChatRoom(roomId)) {
+        Log.d("FCM", "handleChatNotification: $roomId")
+        Log.d("FCM", "handleChatNotification: ${AppStateManager.getCurrentScreen()}")
+        if (roomId != null && AppStateManager.getCurrentScreen() == "ChattingScreen" && AppStateManager.isInChatRoom(
+                roomId
+            )
+        ) {
             Log.d("FCM", "현재 채팅방($roomId)에 있어서 알림 스킵")
 
             // 화면 갱신만
@@ -238,10 +232,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -251,13 +242,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
+            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti).setContentTitle(title)
+            .setContentText(body).setAutoCancel(true)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
 
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, builder.build())
@@ -279,18 +267,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            roomId?.toInt() ?: 0, // 각 채팅방마다 다른 ID 사용
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this, roomId?.toInt() ?: 0, // 각 채팅방마다 다른 ID 사용
+            intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // 채널 설정 강화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId,
-                "채팅 알림",
-                NotificationManager.IMPORTANCE_HIGH
+                channelId, "채팅 알림", NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "채팅 메시지 알림"
                 enableLights(true)
@@ -301,18 +285,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // 중요도 높음
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // 소리, 진동, LED 모두
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE) // 메시지 카테고리
-            .setContentIntent(pendingIntent)
+            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti).setContentTitle(title)
+            .setContentText(body).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE).setContentIntent(pendingIntent)
 
         notificationManager.notify(
-            roomId?.toInt() ?: System.currentTimeMillis().toInt(),
-            builder.build()
+            roomId?.toInt() ?: System.currentTimeMillis().toInt(), builder.build()
         )
     }
 
@@ -351,11 +330,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
     private fun storeEvent(
-        settingId: String,
-        triggerTime: Date,
-        eventDataStr: String,
-        title: String?,
-        body: String?
+        settingId: String, triggerTime: Date, eventDataStr: String, title: String?, body: String?
     ) {
         val eventInfo = mapOf(
             "settingId" to settingId,
@@ -378,8 +353,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             for (key in keys) {
                 val json = sharedPreferences.getString(key, null) ?: continue
                 val eventInfo = Gson().fromJson<Map<String, String>>(
-                    json,
-                    object : TypeToken<Map<String, String>>() {}.type
+                    json, object : TypeToken<Map<String, String>>() {}.type
                 )
                 val settingId = eventInfo["settingId"] ?: continue
                 val triggerTime =
@@ -410,10 +384,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun saveNotificationToRoom(title: String, body: String, triggerTime: Long) {
         CoroutineScope(Dispatchers.IO).launch {
             val notification = NotificationEntity(
-                title = title,
-                body = body,
-                triggerTime = triggerTime,
-                type = "ticket"
+                title = title, body = body, triggerTime = triggerTime, type = "ticket"
             )
             notificationDao.insert(notification)
         }
@@ -448,9 +419,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (alarmManager.canScheduleExactAlarms()) {
                     alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        triggerTime.time,
-                        pendingIntent
+                        AlarmManager.RTC_WAKEUP, triggerTime.time, pendingIntent
                     )
                 } else {
                     Log.e("FCM", "정확한 알람 권한이 없어 예약 실패: SCHEDULE_EXACT_ALARM 필요")
@@ -460,9 +429,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             } else {
                 // Android 11 이하에서는 바로 호출 가능
                 alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerTime.time,
-                    pendingIntent
+                    AlarmManager.RTC_WAKEUP, triggerTime.time, pendingIntent
                 )
             }
 
@@ -518,8 +485,7 @@ object FcmAlarmHandler {
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            context, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -540,18 +506,12 @@ object FcmAlarmHandler {
     }
 
     private fun saveNotificationToRoom(
-        dao: NotificationDao,
-        title: String,
-        body: String,
-        time: Long
+        dao: NotificationDao, title: String, body: String, time: Long
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             dao.insert(
                 NotificationEntity(
-                    title = title,
-                    body = body,
-                    triggerTime = time,
-                    type = "ticket"
+                    title = title, body = body, triggerTime = time, type = "ticket"
                 )
             )
         }

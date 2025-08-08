@@ -30,10 +30,8 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        // FCM 딥링크 처리
         handleNotificationIntent(intent)
 
-        // 오프라인 처리를 위해 필요
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
         startService(serviceIntent)
 

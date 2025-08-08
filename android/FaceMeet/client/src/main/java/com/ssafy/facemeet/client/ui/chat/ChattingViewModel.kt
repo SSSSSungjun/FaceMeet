@@ -24,17 +24,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
-
-private const val TAG = "ChattingViewModel"
-private const val TEMP_MESSAGE_TIMEOUT = 10000L
-private const val REALTIME_MESSAGE_LIMIT = 50
-
 
 @HiltViewModel
 @RequiresApi(Build.VERSION_CODES.O)
@@ -61,34 +56,34 @@ class ChattingViewModel @Inject constructor(
     val scrollEvent: SharedFlow<ScrollEvent> = _scrollEvent.asSharedFlow()
 
     val connectionState: LiveData<ConnectionState> = webSocketManager.connectionState
-    private val _isInitialLoadCompleted = MutableStateFlow(false)
 
-    // 임시 메시지 관리
-    private data class TempMessage(
-        val message: ChatMessageItem,
-        val localId: String,
+    // 단일 메시지 상태로 통합 - 메시지 상태를 enum으로 관리
+    enum class MessageStatus { PENDING, SENT, FAILED, RECEIVED }
+
+    data class MessageItem(
+        val chatMessage: ChatMessageItem,
+        val status: MessageStatus = MessageStatus.RECEIVED,
+        val localId: String? = null,
         val timestamp: Long = System.currentTimeMillis()
     )
 
-    private val _tempMessages = MutableStateFlow<List<TempMessage>>(emptyList())
+    // 통합된 메시지 리스트 - 하나의 StateFlow로 관리
+    private val _unifiedMessages = MutableStateFlow<List<MessageItem>>(emptyList())
+
+    val liveMessages: StateFlow<List<ChatMessageItem>> = _unifiedMessages
+        .map { items ->
+            items.map { it.chatMessage } // 정렬 제거 - 이미 올바른 순서로 추가됨
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+
+    // UI에서 메시지 상태를 확인할 수 있도록 unifiedMessages도 노출
+    val unifiedMessages: StateFlow<List<MessageItem>> = _unifiedMessages
 
     init {
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
         }
     }
-
-    private val _realtimeMessages = MutableStateFlow<List<ChatMessageItem>>(emptyList())
-
-    val liveMessages: StateFlow<List<ChatMessageItem>> = combine(
-        _tempMessages,
-        _realtimeMessages
-    ) { tempMessages, realtimeMessages ->
-        Log.d(TAG, "🔄 liveMessages 업데이트: 임시=${tempMessages.size}, 실시간=${realtimeMessages.size}")
-        (tempMessages.map { it.message } + realtimeMessages)
-            .sortedByDescending { it.chatElement.createdAt }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
-
 
     fun initializeChat(roomId: Long) {
         webSocketManager.disconnect()
@@ -112,9 +107,9 @@ class ChattingViewModel @Inject constructor(
             _messageState.update {
                 it.copy(pagedMessages = pagingFlow)
             }
-            // 실시간 메시지와 임시 메시지 초기화
-            _tempMessages.value = emptyList()
-            _realtimeMessages.value = emptyList()
+
+            // 통합 메시지 리스트 초기화
+            _unifiedMessages.value = emptyList()
 
             Log.d(TAG, "초기 메시지 로드 완료")
         }
@@ -127,24 +122,32 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
-            if(newMessage.chatElement.roomID!=currentRoomId)return@launch
-            if(_realtimeMessages.value.any { it.chatElement.generateKey() == newMessage.chatElement.generateKey() }) return@launch
+            if (newMessage.chatElement.roomID != currentRoomId) return@launch
 
-            Log.d(TAG, "📩 메시지 처리 시작: ${newMessage.chatElement.content}")
+            // 중복 체크를 더 안정적으로
+            val messageKey = generateMessageKey(newMessage.chatElement)
+            val isDuplicate = _unifiedMessages.value.any {
+                generateMessageKey(it.chatMessage.chatElement) == messageKey
+            }
 
+            if (isDuplicate) {
+                Log.d(TAG, "중복 메시지 무시: $messageKey")
+                return@launch
+            }
+
+            Log.d(TAG, "📩 새 메시지 처리: ${newMessage.chatElement.content}")
+
+            // 내가 보낸 메시지인 경우 PENDING 상태의 메시지를 SENT로 변경
             if (newMessage.chatElement.senderID == currentUserId) {
-                removeTempMessage(newMessage)
+                updatePendingMessageToSent(newMessage)
+            } else {
+                // 상대방 메시지는 바로 추가
+                addNewMessage(newMessage, MessageStatus.RECEIVED)
             }
 
-            val beforeCount = _realtimeMessages.value.size
-            _realtimeMessages.update { currentList ->
-                currentList + newMessage
-            }
-            Log.d(TAG, "✅ 실시간 메시지 추가: $beforeCount -> ${_realtimeMessages.value.size}")
-
+            // 자동 스크롤
             if (_uiState.value.scrollState.isAtBottom) {
                 triggerScroll(ScrollEvent.ToBottom)
             }
@@ -152,25 +155,17 @@ class ChattingViewModel @Inject constructor(
     }
 
     fun sendMessage() {
-        Log.d(TAG, "sendMessage 호출됨")
-
         val state = _uiState.value
-        Log.d(TAG, "canSendMessage: ${state.canSendMessage}, currentUserId: $currentUserId")
-
-        if (!state.canSendMessage || currentUserId == 0L) {
-            Log.w(TAG, "전송 불가 - canSend: ${state.canSendMessage}, userId: $currentUserId")
-            return
-        }
+        if (!state.canSendMessage || currentUserId == 0L) return
 
         val messageContent = state.messageText.trim()
-        Log.d(TAG, "메시지 내용: '$messageContent'")
+        if (messageContent.isBlank()) return
 
         val localId = generateLocalId(messageContent)
 
-        // 임시 메시지 생성
-        val tempMessage = createTempMessage(messageContent, state.roomInfo, localId)
-        addTempMessage(tempMessage)
-        Log.d(TAG, "임시 메시지 추가 완료")
+        // 즉시 PENDING 상태로 메시지 추가
+        val pendingMessage = createPendingMessage(messageContent, state.roomInfo, localId)
+        addNewMessage(pendingMessage.chatMessage, MessageStatus.PENDING, localId)
 
         // UI 상태 업데이트
         _uiState.update {
@@ -180,20 +175,13 @@ class ChattingViewModel @Inject constructor(
                 scrollState = it.scrollState.copy(isAtBottom = true)
             )
         }
-        Log.d(TAG, "UI 상태 업데이트 완료")
 
         // 자동 스크롤
         triggerScroll(ScrollEvent.ToBottom)
 
-        // 웹소켓으로 메시지 전송
+        // 웹소켓으로 전송
         viewModelScope.launch {
             try {
-                Log.d(TAG, "웹소켓 메시지 전송 시작")
-                Log.d(
-                    TAG,
-                    "roomId: ${state.roomInfo.chatRoomID}, senderId: $currentUserId, receiverId: ${state.roomInfo.partnerID}"
-                )
-
                 webSocketManager.sendMessage(
                     content = messageContent,
                     roomId = state.roomInfo.chatRoomID,
@@ -201,28 +189,117 @@ class ChattingViewModel @Inject constructor(
                     receiverId = state.roomInfo.partnerID,
                     tempId = System.currentTimeMillis()
                 )
-                Log.d(TAG, "웹소켓 메시지 전송 완료")
 
-                // 타임아웃 후 임시 메시지 제거
+                // 타임아웃 처리
                 delay(TEMP_MESSAGE_TIMEOUT)
-                removeTempMessageById(localId)
+                markMessageAsFailed(localId)
 
             } catch (e: Exception) {
                 Log.e(TAG, "메시지 전송 실패", e)
-                removeTempMessageById(localId)
+                markMessageAsFailed(localId)
                 _uiState.update { it.copy(error = e.message) }
             }
         }
     }
 
-    // 스크롤 관련 메서드들
+    // 통합된 메시지 관리 메서드들
+    private fun addNewMessage(
+        message: ChatMessageItem,
+        status: MessageStatus,
+        localId: String? = null
+    ) {
+        _unifiedMessages.update { current ->
+            val newItem = MessageItem(
+                chatMessage = message,
+                status = status,
+                localId = localId
+            )
+
+            // reverseLayout이므로 최신 메시지를 맨 앞에 추가
+            val updated = listOf(newItem) + current
+
+            // 메시지 수 제한
+            if (updated.size > REALTIME_MESSAGE_LIMIT) {
+                updated.take(REALTIME_MESSAGE_LIMIT) // 앞에서부터 제한
+            } else {
+                updated
+            }
+        }
+    }
+
+    private fun updatePendingMessageToSent(sentMessage: ChatMessageItem) {
+        _unifiedMessages.update { current ->
+            current.map { item ->
+                if (item.status == MessageStatus.PENDING &&
+                    item.chatMessage.chatElement.content.trim() == sentMessage.chatElement.content.trim() &&
+                    item.chatMessage.chatElement.senderID == sentMessage.chatElement.senderID) {
+                    // PENDING 메시지를 실제 메시지로 교체
+                    item.copy(
+                        chatMessage = sentMessage,
+                        status = MessageStatus.SENT
+                    )
+                } else {
+                    item
+                }
+            }
+        }
+    }
+
+    private fun markMessageAsFailed(localId: String) {
+        _unifiedMessages.update { current ->
+            current.map { item ->
+                if (item.localId == localId && item.status == MessageStatus.PENDING) {
+                    item.copy(status = MessageStatus.FAILED)
+                } else {
+                    item
+                }
+            }
+        }
+    }
+
+    // 유틸리티 메서드들
+    private fun generateMessageKey(chatElement: ChatElement): String {
+        return "${chatElement.senderID}_${chatElement.roomID}_${chatElement.content}_${chatElement.createdAt}"
+    }
+
+    private fun generateLocalId(content: String): String {
+        return "local_${currentUserId}_${System.currentTimeMillis()}_${content.hashCode()}"
+    }
+
+    private fun createPendingMessage(
+        content: String,
+        roomInfo: ChatRoom,
+        localId: String
+    ): MessageItem {
+        val chatElement = ChatElement(
+            content = content,
+            senderID = currentUserId,
+            receiverID = roomInfo.partnerID,
+            roomID = roomInfo.chatRoomID,
+            createdAt = LocalDateTime.now().toString(),
+            isRead = false,
+            readAt = ""
+        )
+
+        val messageItem = ChatMessageItem(
+            chatElement = chatElement,
+            messageType = MessageType.TEXT
+        )
+
+        return MessageItem(
+            chatMessage = messageItem,
+            status = MessageStatus.PENDING,
+            localId = localId
+        )
+    }
+
+    // 스크롤 관련 메서드들 (기존과 동일)
     fun onScrollStateChanged(
         isScrolling: Boolean,
         firstVisibleItemIndex: Int,
         totalItemCount: Int
     ) {
         val isAtBottom = firstVisibleItemIndex <= 2
-
         _uiState.update {
             it.copy(
                 scrollState = it.scrollState.copy(
@@ -256,98 +333,11 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    private fun cleanupMessagesIfNeeded() {
-        val currentCount = _realtimeMessages.value.size
-        if (currentCount > REALTIME_MESSAGE_LIMIT) {
-            Log.d(TAG, "메시지 정리 시작: ${currentCount}개")
-            _realtimeMessages.update { currentList ->
-                currentList.sortedBy { it.chatElement.createdAt }
-                    .takeLast(REALTIME_MESSAGE_LIMIT)
-            }
-            Log.d(TAG, "메시지 정리 완료, 남은 개수: ${_realtimeMessages.value.size}개")
-        }
-    }
-
-    fun refreshMessages() {
-        viewModelScope.launch {
-            val currentRoomId = _uiState.value.roomInfo.chatRoomID
-            if (currentRoomId != 0L) {
-                val newPagingFlow = getChattingMessagesCurrentUseCase.invoke(currentRoomId)
-                    .cachedIn(viewModelScope)
-
-                _messageState.update {
-                    it.copy(pagedMessages = newPagingFlow)
-                }
-
-                cleanupMessagesIfNeeded()
-            }
-        }
-    }
-
-    // 유틸리티 메서드들
-    private fun generateLocalId(content: String): String {
-        return "${currentUserId}_${System.currentTimeMillis()}_${content.hashCode()}"
-    }
-
-    private fun createTempMessage(
-        content: String,
-        roomInfo: ChatRoom,
-        localId: String
-    ): TempMessage {
-        val chatElement = ChatElement(
-            content = content,
-            senderID = currentUserId,
-            receiverID = roomInfo.partnerID,
-            roomID = roomInfo.chatRoomID,
-            createdAt = LocalDateTime.now().toString(),
-            isRead = false,
-            readAt = ""
-        )
-
-        val messageItem = ChatMessageItem(
-            chatElement = chatElement,
-            messageType = MessageType.TEXT
-        )
-
-        return TempMessage(
-            message = messageItem,
-            localId = localId
-        )
-    }
-
-    private fun addTempMessage(tempMessage: TempMessage) {
-        _tempMessages.update { current -> current + tempMessage }
-    }
-
-    private fun removeTempMessage(realMessage: ChatMessageItem) {
-        _tempMessages.update { currentList ->
-            val beforeCount = currentList.size
-            val afterList = currentList.filter { temp ->
-                val isSameMessage = temp.message.chatElement.content.trim() == realMessage.chatElement.content.trim() &&
-                        temp.message.chatElement.senderID == realMessage.chatElement.senderID &&
-                        temp.message.chatElement.roomID == realMessage.chatElement.roomID
-
-                !isSameMessage // 같은 메시지가 아닌 것만 남김
-            }
-
-            Log.d(TAG, "임시 메시지 제거: $beforeCount -> ${afterList.size}")
-            afterList
-        }
-    }
-
-
-    private fun removeTempMessageById(localId: String) {
-        _tempMessages.update { current ->
-            current.filter { it.localId != localId }
-        }
-    }
-
-    //notice
+    // 나머지 메서드들은 기존과 동일하게 유지...
     fun toggleNotice() {
         _uiState.update { it.copy(isNoticeOpen = !it.isNoticeOpen) }
     }
 
-    // 기타 메서드들
     suspend fun loadChatRoomInfo(roomId: Long) {
         getChattingMessagesLastUseCase.invoke(roomId, 30).onSuccess { chattingAll ->
             _uiState.update { it.copy(roomInfo = chattingAll.chatRoom) }
@@ -359,7 +349,6 @@ class ChattingViewModel @Inject constructor(
             try {
                 val token = tokenManager.getAccessToken()
                 if (token != null) {
-                    Log.d(TAG, "connectToChat: $currentRoomId")
                     webSocketManager.connect(currentUserId, token, currentRoomId)
                 }
                 _uiState.update { it.copy(isLoading = false) }
@@ -379,17 +368,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    fun markAsRead() {
-        val state = _uiState.value
-        if (currentUserId != 0L && state.roomInfo.chatRoomID != 0L) {
-            webSocketManager.markAsRead(
-                roomId = state.roomInfo.chatRoomID.toString(),
-                userId = currentUserId,
-                senderId = state.roomInfo.partnerID
-            )
-        }
-    }
-
     fun updateConnectionState(connectionState: ConnectionState) {
         _uiState.update { currentState ->
             currentState.copy(
@@ -402,8 +380,7 @@ class ChattingViewModel @Inject constructor(
 
     fun endChatRoom() {
         webSocketManager.disconnect()
-        _tempMessages.value = emptyList()
-        _realtimeMessages.value = emptyList()
+        _unifiedMessages.value = emptyList()
     }
 
     fun clearError() {
@@ -425,5 +402,11 @@ class ChattingViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         endChatRoom()
+    }
+
+    companion object {
+        private const val TAG = "ChattingViewModel"
+        private const val TEMP_MESSAGE_TIMEOUT = 10000L
+        private const val REALTIME_MESSAGE_LIMIT = 50
     }
 }

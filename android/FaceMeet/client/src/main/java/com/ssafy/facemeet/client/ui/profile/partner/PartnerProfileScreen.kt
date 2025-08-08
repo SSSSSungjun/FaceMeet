@@ -25,18 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,19 +49,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.google.gson.Gson
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.DetailItem
 import com.ssafy.facemeet.client.ui.profile.PersonalityDetail
+import com.ssafy.facemeet.client.ui.profile.partner.dialog.BlockedDialog
+import com.ssafy.facemeet.client.ui.profile.partner.dialog.ReportDialog
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
-import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
-import com.ssafy.facemeet.client.ui.theme.Roboto
 import com.ssafy.facemeet.core.data.remote.dto.response.ErrorResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
-import com.ssafy.facemeet.core.data.remote.dto.response.ReportCategoryResponse
 import com.ssafy.facemeet.core.util.constant.CommonColor
 import retrofit2.HttpException
 
@@ -80,7 +70,7 @@ fun PartnerProfileScreen(
     onBack: () -> Unit,
     viewModel: PartnerProfileViewModel = hiltViewModel()
 ) {
-    Log.d("PartnerProfileScreen", "partnerId: ${partnerId}")
+    Log.d("PartnerProfileScreen", "partnerId: $partnerId")
 
 
     val partnerFaceInfo by viewModel.partnerFaceInfo.collectAsState()
@@ -100,7 +90,7 @@ fun PartnerProfileScreen(
 
         error != null -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("에러: ${error}")
+                Text("에러: $error")
             }
         }
 
@@ -115,12 +105,13 @@ fun PartnerProfileScreen(
 fun PartnerProfileContent(
     result: PartnerFaceInfoResponse,
     onBack: () -> Unit,
-    viewModel: ReportViewModel = hiltViewModel(),
+    viewModel: PartnerProfileViewModel = hiltViewModel(),
     roomId: Long,
     partnerId: Long
 ) {
     val context = LocalContext.current
     var showReportDialog by remember { mutableStateOf(false) }
+    var showBlockedDialog by remember { mutableStateOf(false) }
 
     val reportResult by viewModel.reportResult.collectAsState()
 
@@ -158,6 +149,15 @@ fun PartnerProfileContent(
                 reason = reason
             )
             showReportDialog = false
+        }
+    )
+
+    BlockedDialog(
+        showDialog = showBlockedDialog,
+        onDismiss = { showBlockedDialog = false },
+        onConfirm = {
+            viewModel.requestBlockUser(partnerId)
+            Toast.makeText(context, "차단 요청 완료!!", Toast.LENGTH_SHORT).show()
         }
     )
 
@@ -302,7 +302,11 @@ fun PartnerProfileContent(
         Spacer(modifier = Modifier.height(15.dp))
 
 
-        BlockAndReportButtons({}, {}, onShowReportDialog = { showReportDialog = true })
+        BlockAndReportButtons(
+            onBlock = { showBlockedDialog = true },
+            {},
+            onShowReportDialog = { showReportDialog = true },
+            onExit = {})
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -395,6 +399,7 @@ fun PartnerProfileContent(
 fun BlockAndReportButtons(
     onBlock: () -> Unit,
     onReport: () -> Unit,
+    onExit: () -> Unit,
     onShowReportDialog: () -> Unit // 다이얼로그 상태 변경
 ) {
     Column(
@@ -409,6 +414,31 @@ fun BlockAndReportButtons(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
+
+            //채팅나가기
+            Column(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onExit() }
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_exit_room), // ⛔ 아이콘 리소스
+                    contentDescription = "채팅나가기",
+                    tint = Color(0xFF666666),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "채팅나가기",
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
             // 차단하기
             Column(
                 modifier = Modifier
@@ -463,6 +493,12 @@ fun BlockAndReportButtons(
 
 @Preview(showBackground = true)
 @Composable
+fun PreviewReport() {
+    ReportDialog(showDialog = true, onDismiss = {}, onReportSubmit = { _, _ -> })
+}
+
+@Preview(showBackground = true)
+@Composable
 fun PartnerProfilePreview() {
     val dummy = PartnerFaceInfoResponse(
         nickname = "소윤",
@@ -491,198 +527,4 @@ fun PartnerProfilePreview() {
         roomId = 0,
         partnerId = 0
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewReport() {
-    ReportDialog(showDialog = true, onDismiss = {}, onReportSubmit = { _, _ -> })
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ReportDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onReportSubmit: (categoryId: Int, reason: String) -> Unit,
-    viewModel: ReportViewModel = hiltViewModel()
-) {
-    if (!showDialog) return
-
-    val categories by viewModel.categories.collectAsState()
-
-    LaunchedEffect(showDialog) {
-        viewModel.fetchCategories()
-    }
-
-    var expanded by remember { mutableStateOf(false) }
-    var selectedCategory: ReportCategoryResponse? by remember { mutableStateOf(null) }
-    var reason by remember { mutableStateOf("") }
-
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White),
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
-                    .fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_siren), // 🚨 아이콘 리소스
-                        contentDescription = "신고하기",
-                        tint = CommonColor.Orange, // 빨간색
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "신고하기",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        fontFamily = ChosunSeirf,
-                        color = CommonColor.Orange
-                    )
-                }
-
-
-                Spacer(modifier = Modifier.height(30.dp))
-
-                Text(
-                    "신고 유형",
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = Roboto,
-                    color = CommonColor.Gray900
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // 드롭다운
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                ) {
-                    OutlinedTextField(
-                        value = selectedCategory?.name ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        placeholder = {
-                            Text(
-                                "카테고리를 선택하세요",
-                                color = CommonColor.Gray300,
-                                fontFamily = Roboto
-                            )
-                        },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = CommonColor.Gray300,
-                            focusedBorderColor = CommonColor.Brown500,
-                        ),
-                        shape = RoundedCornerShape(6.dp),
-                        textStyle = TextStyle.Default.copy(fontFamily = Roboto)
-                    )
-
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier
-                            .background(Color.White)
-                            .exposedDropdownSize()
-
-                    ) {
-                        categories.forEachIndexed { index, category ->
-                            DropdownMenuItem(
-                                text = { Text(category.name) },
-                                onClick = {
-                                    selectedCategory = category
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-
-
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    "상세 사유",
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = Roboto,
-                    color = CommonColor.Gray900
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                OutlinedTextField(
-                    value = reason,
-                    onValueChange = { reason = it },
-                    placeholder = {
-                        Text(
-                            "상세 내용을 입력해주세요",
-                            color = CommonColor.Gray300,
-                            fontFamily = Roboto
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = CommonColor.Gray300,
-
-                        focusedBorderColor = CommonColor.Brown500
-                    ),
-
-                    shape = RoundedCornerShape(6.dp),
-                    textStyle = TextStyle.Default.copy(
-                        fontFamily = Roboto,
-                        color = CommonColor.Gray900
-                    )
-
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("취소", color = CommonColor.Gray500)
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    val selectedId = categories.indexOf(selectedCategory)
-                    val enabled = selectedId >= 0 && reason.isNotBlank()
-
-                    TextButton(
-                        onClick = {
-                            onReportSubmit(selectedId, reason)
-                            onDismiss()
-                        },
-                        enabled = enabled
-                    ) {
-                        Text(
-                            "신고하기",
-                            color = if (enabled) CommonColor.Orange else CommonColor.Gray300
-                        )
-                    }
-                }
-            }
-        }
-    }
 }
