@@ -141,7 +141,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             )
             Log.d("FCM", "시간 차이 (분): ${(triggerTime.time - now.time) / (1000 * 60)}")
 
-            // 1분 이상의 여유를 두고 판단 (네트워크 지연 등을 고려)
             val bufferTime = 60 * 1000L // 1분
             if (triggerTime.time < (now.time + bufferTime)) {
                 Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
