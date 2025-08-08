@@ -65,17 +65,18 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun ProfileScreen(
-    viewModel: FaceInfoViewModel = hiltViewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),
     onHome: () -> Unit,
     onMatching: () -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
 ) {
     val faceInfo by viewModel.faceInfo.collectAsState()
     val isLoading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val tickets by viewModel.remainingMatchTickets.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.loadFaceInfo()
+        viewModel.loadProfileData()
     }
 
     when {
@@ -88,7 +89,7 @@ fun ProfileScreen(
         }
 
         faceInfo != null -> {
-            ProfileScreenContent(onHome, onMatching, onRetry, faceInfo!!)
+            ProfileScreenContent(onHome, onMatching, onRetry, faceInfo!!, tickets = tickets)
 
         }
     }
@@ -99,7 +100,8 @@ fun ProfileScreenContent(
     onHome: () -> Unit,
     onMatching: () -> Unit,
     onRetry: () -> Unit,
-    result: FaceInfoResponse
+    result: FaceInfoResponse,
+    tickets: Int?
 ) {
     Column(
         modifier = Modifier
@@ -280,7 +282,7 @@ fun ProfileScreenContent(
         )
 
         Spacer(modifier = Modifier.height(20.dp))
-        MatchingStartButton(onMatching = onMatching, buttonText = "매칭 시작하기")
+        MatchingStartButton(onMatching = onMatching, buttonText = "매칭 시작하기", tickets = tickets)
 
 
     }
@@ -361,8 +363,10 @@ fun PersonalityDetail(title: String, desc: String) {
             lineHeight = 22.sp
         )
         Spacer(modifier = Modifier.height(10.dp))
-        Text(text = desc, fontSize = 13.sp, color = CommonColor.Gray900,
-            lineHeight = 20.sp,)
+        Text(
+            text = desc, fontSize = 13.sp, color = CommonColor.Gray900,
+            lineHeight = 20.sp,
+        )
     }
 }
 
@@ -531,13 +535,20 @@ fun ProfileScreenPreview() {
                 interpersonalRelationships = "",
                 lifeDirection = "",
                 summaryAnalysis = "",
-            )
+            ), 2
         )
     }
 }
 
+
 @Composable
-fun MatchingStartButton(onMatching: () -> Unit, buttonText: String) {
+fun MatchingStartButton(
+    onMatching: () -> Unit,
+    buttonText: String,
+    tickets: Int?
+) {
+    val isDisabled = (tickets ?: 0) <= 0
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -550,21 +561,23 @@ fun MatchingStartButton(onMatching: () -> Unit, buttonText: String) {
             )
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(Color(0xFFD2691E), Color(0xFFE88D4C))
+                    colors = if (isDisabled) {
+                        listOf(Color(0xFFBDBDBD), Color(0xFF9E9E9E)) // 회색
+                    } else {
+                        listOf(Color(0xFFD2691E), Color(0xFFE88D4C)) // 오렌지
+                    }
                 ),
                 shape = RoundedCornerShape(20.dp)
             )
             .height(64.dp)
-            .clickable {
+            .clickable(enabled = !isDisabled) {
                 onMatching()
             },
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_heart), // 아이콘 리소스 등록 필요
+                painter = painterResource(id = R.drawable.ic_heart),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier
@@ -575,7 +588,7 @@ fun MatchingStartButton(onMatching: () -> Unit, buttonText: String) {
                 text = buttonText,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = if (isDisabled) Color(0xFFEEEEEE) else Color.White
             )
         }
     }
