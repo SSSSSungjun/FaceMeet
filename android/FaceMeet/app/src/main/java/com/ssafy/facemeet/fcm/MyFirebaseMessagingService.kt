@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.fcm
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -23,6 +24,7 @@ import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
 import com.ssafy.facemeet.core.data.remote.api.FcmService
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.fcm.FcmTokenResponse
+import com.ssafy.facemeet.fcm.FcmAlarmHandler.triggerEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -91,6 +93,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     remoteMessage.data
                 )
 
+                "PRE_MESSAGE" -> handleImmediateEvent(
+                    remoteMessage.notification,
+                    remoteMessage.data
+                )
+
                 else -> {
                     val title = remoteMessage.data["title"] ?: "알림"
                     val body = remoteMessage.data["body"] ?: ""
@@ -108,6 +115,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notification: RemoteMessage.Notification?,
         data: Map<String, String>
     ) {
+
+        Log.d("FCM", "data: ${data.keys}")
+
         try {
             val settingId = data["settingId"] ?: return
             val triggerTimeStr = data["triggerTime"] ?: return
@@ -138,16 +148,26 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val bufferTime = 60 * 1000L // 1분
             if (triggerTime.time < (now.time + bufferTime)) {
                 Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
-                triggerEvent(settingId, eventDataStr, notification?.title, notification?.body)
+                triggerEvent(
+                    context = this,
+                    dao = notificationDao,
+                    settingId = settingId,
+                    eventDataStr = eventDataStr,
+                    title = data["title"],
+                    body = data["body"]
+                )
+
             } else {
                 Log.d("FCM", "예약 실행: 트리거 시간까지 대기")
                 scheduleLocalEvent(
-                    settingId,
-                    triggerTime,
-                    eventDataStr,
-                    notification?.title,
-                    notification?.body
+                    context = this, // `MyFirebaseMessagingService`는 Context 상속받음
+                    settingId = settingId,
+                    triggerTime = triggerTime,
+                    eventDataStr = eventDataStr,
+                    title = data["title"],
+                    body = data["body"]
                 )
+
             }
         } catch (e: Exception) {
             Log.e("FCM", "예약 이벤트 처리 오류", e)
@@ -158,76 +178,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notification: RemoteMessage.Notification?,
         data: Map<String, String>
     ) {
+        Log.d("FCM", "handleImmediateEvent: ${data.entries}")
         val title = data["title"] ?: notification?.title ?: "없음"
         val body = data["body"] ?: notification?.body ?: "없음"
         sendNotification(title, body)
         saveNotificationToRoom(title, body, System.currentTimeMillis())
     }
 
-    private fun scheduleLocalEvent(
-        settingId: String,
-        triggerTime: Date,
-        eventDataStr: String,
-        title: String?,
-        body: String?
-    ) {
-        val delay = triggerTime.time - System.currentTimeMillis()
 
-        Log.d("FCM", "예약 설정 - ID: $settingId, 지연시간: ${delay}ms (${delay / 1000 / 60}분)")
-
-        if (delay <= 0) {
-            Log.w("FCM", "지연시간이 0 이하입니다. 즉시 실행")
-            triggerEvent(settingId, eventDataStr, title, body)
-            return
-        }
-
-        // 기존 예약이 있다면 취소
-        scheduledEvents[settingId]?.let {
-            handler.removeCallbacks(it)
-            Log.d("FCM", "기존 예약 취소: $settingId")
-        }
-
-        val runnable = Runnable {
-            Log.d("FCM", "예약된 이벤트 실행: $settingId")
-            triggerEvent(settingId, eventDataStr, title, body)
-            scheduledEvents.remove(settingId)
-            removeStoredEvent(settingId)
-        }
-
-        handler.postDelayed(runnable, delay)
-        scheduledEvents[settingId] = runnable
-        storeEvent(settingId, triggerTime, eventDataStr, title, body)
-
-        Log.d(
-            "FCM",
-            "예약 완료: $settingId, 실행 예정 시간: ${
-                SimpleDateFormat(
-                    "yyyy-MM-dd HH:mm:ss",
-                    Locale.getDefault()
-                ).format(triggerTime)
-            }"
-        )
-    }
-
-    private fun triggerEvent(
-        settingId: String,
-        eventDataStr: String,
-        title: String?,
-        body: String?
-    ) {
-        try {
-            val eventData = parseEventData(eventDataStr)
-            val finalTitle = title ?: "없음"
-            val finalBody = body ?: "없음"
-
-            sendNotification(finalTitle, finalBody)
-            saveNotificationToRoom(finalTitle, finalBody, System.currentTimeMillis())
-        } catch (e: Exception) {
-            Log.e("FCM", "이벤트 실행 중 오류", e)
-        }
-    }
-
-    private fun sendNotification(title: String, body: String) {
+    fun sendNotification(title: String, body: String) {
         val channelId = "ticket_channel"
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -294,14 +253,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         return null
     }
 
-    private fun parseEventData(eventDataStr: String): Map<String, Any> {
-        return try {
-            Gson().fromJson(eventDataStr, object : TypeToken<Map<String, Any>>() {}.type)
-        } catch (e: Exception) {
-            Log.e("FCM", "이벤트 데이터 파싱 실패", e)
-            emptyMap()
-        }
-    }
 
     private fun storeEvent(
         settingId: String,
@@ -342,7 +293,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 val body = eventInfo["body"]
 
                 if (triggerTime.time > System.currentTimeMillis()) {
-                    scheduleLocalEvent(settingId, triggerTime, eventDataStr, title, body)
+                    scheduleLocalEvent(
+                        context = this, // ✅ 요놈 추가하셈 돌대가리야
+                        settingId = settingId,
+                        triggerTime = triggerTime,
+                        eventDataStr = eventDataStr,
+                        title = title,
+                        body = body
+                    )
                 } else {
                     removeStoredEvent(settingId)
                 }
@@ -351,6 +309,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.e("FCM", "저장된 예약 복원 실패", e)
         }
     }
+
 
     private fun saveNotificationToRoom(title: String, body: String, triggerTime: Long) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -361,6 +320,145 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 type = "ticket"
             )
             notificationDao.insert(notification)
+        }
+    }
+
+    private fun scheduleLocalEvent(
+        context: Context,
+        settingId: String,
+        triggerTime: Date,
+        eventDataStr: String,
+        title: String?,
+        body: String?
+    ) {
+        Log.d("FCM", "scheduleLocalEvent: title ${title} body: ${body}")
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val intent = Intent(context, com.ssafy.facemeet.AlarmReceiver::class.java).apply {
+            putExtra("settingId", settingId)
+            putExtra("eventDataStr", eventDataStr)
+            putExtra("title", title)
+            putExtra("body", body)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            settingId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerTime.time,
+                        pendingIntent
+                    )
+                } else {
+                    Log.e("FCM", "정확한 알람 권한이 없어 예약 실패: SCHEDULE_EXACT_ALARM 필요")
+                    // TODO: 유저에게 설정 권한 유도하거나 fallback 로직 넣기
+                    return
+                }
+            } else {
+                // Android 11 이하에서는 바로 호출 가능
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime.time,
+                    pendingIntent
+                )
+            }
+
+            storeEvent(settingId, triggerTime, eventDataStr, title, body)
+            Log.d("FCM", "알람 예약 성공: $settingId")
+        } catch (e: SecurityException) {
+            Log.e("FCM", "알람 예약 중 SecurityException 발생", e)
+        } catch (e: Exception) {
+            Log.e("FCM", "알람 예약 중 알 수 없는 예외 발생", e)
+        }
+    }
+
+
+}
+
+
+fun parseEventData(eventDataStr: String): Map<String, Any> {
+    return try {
+        Gson().fromJson(eventDataStr, object : TypeToken<Map<String, Any>>() {}.type)
+    } catch (e: Exception) {
+        Log.e("FCM", "이벤트 데이터 파싱 실패", e)
+        emptyMap()
+    }
+}
+
+object FcmAlarmHandler {
+
+    fun triggerEvent(
+        context: Context,
+        dao: NotificationDao,
+        settingId: String,
+        eventDataStr: String,
+        title: String?,
+        body: String?
+    ) {
+        try {
+            val finalTitle = title ?: "없음"
+            val finalBody = body ?: "없음"
+
+            sendNotification(context, finalTitle, finalBody)
+            saveNotificationToRoom(dao, finalTitle, finalBody, System.currentTimeMillis())
+        } catch (e: Exception) {
+            Log.e("FCM", "외부 알람 실행 중 오류", e)
+        }
+    }
+
+    private fun sendNotification(context: Context, title: String, body: String) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "ticket_channel"
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel =
+                NotificationChannel(channelId, "티켓 알림", NotificationManager.IMPORTANCE_HIGH)
+            manager.createNotificationChannel(channel)
+        }
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+
+        manager.notify(System.currentTimeMillis().toInt(), builder.build())
+    }
+
+    private fun saveNotificationToRoom(
+        dao: NotificationDao,
+        title: String,
+        body: String,
+        time: Long
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dao.insert(
+                NotificationEntity(
+                    title = title,
+                    body = body,
+                    triggerTime = time,
+                    type = "ticket"
+                )
+            )
         }
     }
 }
