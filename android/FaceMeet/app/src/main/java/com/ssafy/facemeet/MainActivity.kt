@@ -30,6 +30,9 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
+        // FCM 딥링크 처리
+        handleNotificationIntent(intent)
+
         // 오프라인 처리를 위해 필요
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
         startService(serviceIntent)
@@ -39,10 +42,23 @@ class MainActivity : ComponentActivity() {
             FacemeetTheme {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
                 if (isLoggedIn != null)
-                    AppNavHost(isLoggedIn == true)
+                    AppNavHost(isLoggedIn == true,mainViewModel)
             }
         }
+    }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent) {
+        val deepLink = intent.getStringExtra("deep_link")
+        val roomId = intent.getLongExtra("roomId", -1L)
+
+        if (deepLink == "chat" && roomId != -1L) {
+            mainViewModel.setPendingNavigation("chatList", roomId)
+        }
     }
 
 }

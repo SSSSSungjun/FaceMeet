@@ -1,7 +1,6 @@
 package com.ssafy.facemeet.core.domain.model
 
 import com.google.gson.annotations.SerializedName
-import java.util.UUID
 
 data class ChatElement(
     val content: String,
@@ -18,5 +17,5 @@ data class ChatElement(
     val isRead: Boolean,
     val readAt: String
 ){
-    fun generateKey(): String = UUID.randomUUID().toString()
+    fun generateKey(): String = "${senderID}_${roomID}_${createdAt}_${content.hashCode()}"
 }

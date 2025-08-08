@@ -46,7 +46,7 @@ class ChattingViewModel @Inject constructor(
 ) : ViewModel() {
 
     var currentUserId: Long = 0L
-    var currentRoomId : Long = 0L
+    var currentRoomId: Long = 0L
 
     private val _messageState = MutableStateFlow(MessageState())
     val messageState: StateFlow<MessageState> = _messageState
@@ -84,21 +84,17 @@ class ChattingViewModel @Inject constructor(
         _tempMessages,
         _realtimeMessages
     ) { tempMessages, realtimeMessages ->
+        Log.d(TAG, "🔄 liveMessages 업데이트: 임시=${tempMessages.size}, 실시간=${realtimeMessages.size}")
         (tempMessages.map { it.message } + realtimeMessages)
-            .sortedByDescending { it.chatElement.createdAt } // 최신순 정렬
+            .sortedByDescending { it.chatElement.createdAt }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
-    fun initializeChat(roomId: Long) {
-        if (currentRoomId == roomId && webSocketManager.connectionState.value == ConnectionState.CONNECTED) {
-            Log.d(TAG, "이미 같은 방에 연결됨: $roomId")
-            return
-        }
 
+    fun initializeChat(roomId: Long) {
         webSocketManager.disconnect()
         viewModelScope.launch {
-            currentRoomId=roomId
+            currentRoomId = roomId
             _uiState.update { it.copy(isLoading = true) }
-
             loadChatRoomInfo(roomId)
             loadInitialMessages(roomId)
             setupWebSocketCallbacks()
@@ -108,12 +104,15 @@ class ChattingViewModel @Inject constructor(
 
     private fun loadInitialMessages(roomId: Long) {
         viewModelScope.launch {
+            Log.d(TAG, "초기 메시지 로드 시작: roomId=$roomId")
+
             val pagingFlow = getChattingMessagesCurrentUseCase.invoke(roomId)
                 .cachedIn(viewModelScope)
 
             _messageState.update {
                 it.copy(pagedMessages = pagingFlow)
             }
+            // 실시간 메시지와 임시 메시지 초기화
             _tempMessages.value = emptyList()
             _realtimeMessages.value = emptyList()
 
@@ -123,27 +122,31 @@ class ChattingViewModel @Inject constructor(
 
     private fun setupWebSocketCallbacks() {
         webSocketManager.setOnNewMessageCallback { newMessage ->
+            Log.d(TAG, "🔴 WebSocket 메시지 수신: ${newMessage.chatElement.content}")
             handleNewMessage(newMessage)
         }
     }
 
+
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
+            if(newMessage.chatElement.roomID!=currentRoomId)return@launch
+
+            Log.d(TAG, "📩 메시지 처리 시작: ${newMessage.chatElement.content}")
+
             if (newMessage.chatElement.senderID == currentUserId) {
                 removeTempMessage(newMessage)
             }
 
+            val beforeCount = _realtimeMessages.value.size
             _realtimeMessages.update { currentList ->
                 currentList + newMessage
             }
+            Log.d(TAG, "✅ 실시간 메시지 추가: $beforeCount -> ${_realtimeMessages.value.size}")
 
             if (_uiState.value.scrollState.isAtBottom) {
                 triggerScroll(ScrollEvent.ToBottom)
             }
-
-            cleanupMessagesIfNeeded()
-
-            Log.d(TAG, "새 메시지 처리 완료: ${newMessage.chatElement.content}")
         }
     }
 
@@ -185,7 +188,10 @@ class ChattingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 Log.d(TAG, "웹소켓 메시지 전송 시작")
-                Log.d(TAG, "roomId: ${state.roomInfo.chatRoomID}, senderId: $currentUserId, receiverId: ${state.roomInfo.partnerID}")
+                Log.d(
+                    TAG,
+                    "roomId: ${state.roomInfo.chatRoomID}, senderId: $currentUserId, receiverId: ${state.roomInfo.partnerID}"
+                )
 
                 webSocketManager.sendMessage(
                     content = messageContent,
@@ -249,12 +255,15 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 메시지 정리
     private fun cleanupMessagesIfNeeded() {
         val currentCount = _realtimeMessages.value.size
         if (currentCount > REALTIME_MESSAGE_LIMIT) {
             Log.d(TAG, "메시지 정리 시작: ${currentCount}개")
-            refreshMessages()
+            _realtimeMessages.update { currentList ->
+                currentList.sortedBy { it.chatElement.createdAt }
+                    .takeLast(REALTIME_MESSAGE_LIMIT)
+            }
+            Log.d(TAG, "메시지 정리 완료, 남은 개수: ${_realtimeMessages.value.size}개")
         }
     }
 
@@ -268,7 +277,8 @@ class ChattingViewModel @Inject constructor(
                 _messageState.update {
                     it.copy(pagedMessages = newPagingFlow)
                 }
-                _realtimeMessages.value = emptyList()
+
+                cleanupMessagesIfNeeded()
             }
         }
     }
@@ -278,7 +288,11 @@ class ChattingViewModel @Inject constructor(
         return "${currentUserId}_${System.currentTimeMillis()}_${content.hashCode()}"
     }
 
-    private fun createTempMessage(content: String, roomInfo: ChatRoom, localId: String): TempMessage {
+    private fun createTempMessage(
+        content: String,
+        roomInfo: ChatRoom,
+        localId: String
+    ): TempMessage {
         val chatElement = ChatElement(
             content = content,
             senderID = currentUserId,
@@ -306,13 +320,20 @@ class ChattingViewModel @Inject constructor(
 
     private fun removeTempMessage(realMessage: ChatMessageItem) {
         _tempMessages.update { currentList ->
-            currentList.filter { temp ->
-                !(temp.message.chatElement.content.trim() == realMessage.chatElement.content.trim() &&
+            val beforeCount = currentList.size
+            val afterList = currentList.filter { temp ->
+                val isSameMessage = temp.message.chatElement.content.trim() == realMessage.chatElement.content.trim() &&
                         temp.message.chatElement.senderID == realMessage.chatElement.senderID &&
-                        temp.message.chatElement.roomID == realMessage.chatElement.roomID)
+                        temp.message.chatElement.roomID == realMessage.chatElement.roomID
+
+                !isSameMessage // 같은 메시지가 아닌 것만 남김
             }
+
+            Log.d(TAG, "임시 메시지 제거: $beforeCount -> ${afterList.size}")
+            afterList
         }
     }
+
 
     private fun removeTempMessageById(localId: String) {
         _tempMessages.update { current ->
@@ -338,7 +359,7 @@ class ChattingViewModel @Inject constructor(
                 val token = tokenManager.getAccessToken()
                 if (token != null) {
                     Log.d(TAG, "connectToChat: $currentRoomId")
-                    webSocketManager.connect(currentUserId, token,currentRoomId)
+                    webSocketManager.connect(currentUserId, token, currentRoomId)
                 }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
@@ -395,7 +416,7 @@ class ChattingViewModel @Inject constructor(
     }
 
     fun navigateToProfile() {
-        viewModelScope.launch{
+        viewModelScope.launch {
             _naviEvent.emit(ChatNaviEvent.ToProfile)
         }
     }

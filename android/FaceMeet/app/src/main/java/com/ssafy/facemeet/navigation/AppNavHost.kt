@@ -5,12 +5,14 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.ssafy.facemeet.MainViewModel
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.client.clientNavHost
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
@@ -24,7 +26,10 @@ private const val TAG = "MainNavHost"
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppNavHost(isLoggedIn: Boolean) {
+fun AppNavHost(
+    isLoggedIn: Boolean,
+    mainViewModel: MainViewModel
+) {
 
     val navController = rememberNavController()
     val bottomNavController = rememberNavController()
@@ -34,10 +39,24 @@ fun AppNavHost(isLoggedIn: Boolean) {
     val cameraVM: CameraShotViewModel = hiltViewModel()
     val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
+    LaunchedEffect(Unit) {
+        Log.d("AppNavHost", "🎯 pendingNavigation 구독 시작")
+        mainViewModel.pendingNavigation.collect { navigation ->
+            navigation?.let { (screen, roomId) ->
+                Log.d("AppNavHost", "📥 네비게이션 이벤트 수신: $screen, $roomId")
+                if (screen == "chatList" && roomId != null) {
+                    Log.d("AppNavHost", "🚀 채팅방 이동 실행")
+                    navController.navigate(ClientRoutes.Chat.createRoute(roomId))
+                    mainViewModel.clearPendingNavigation()
+                }
+            }
+        }
+    }
     NavHost(
         navController = navController,
         startDestination = startDestination,
     ) {
+
         Log.d(TAG, "AppNavHost: start")
         // 로그인 화면
         composable(AppRoutes.Start.route) {

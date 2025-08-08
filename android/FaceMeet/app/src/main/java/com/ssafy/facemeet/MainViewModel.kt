@@ -1,5 +1,6 @@
 package com.ssafy.facemeet
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.datastore.TokenManager
@@ -25,6 +26,19 @@ class MainViewModel @Inject constructor(
     val isLoggedIn: StateFlow<Boolean?> = tokenManager.isLoggedInFlow()
         .onEach { _isLoading.value = false }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+
+    private val _pendingNavigation = MutableStateFlow<Pair<String, Long?>?>(null)
+    val pendingNavigation: StateFlow<Pair<String, Long?>?> = _pendingNavigation.asStateFlow()
+
+    fun setPendingNavigation(screen: String, roomId: Long?) {
+        Log.d("MainViewModel", "✅ setPendingNavigation: $screen, $roomId")
+        _pendingNavigation.value = screen to roomId
+    }
+
+    fun clearPendingNavigation() {
+        _pendingNavigation.value = null
+    }
 
 }
 

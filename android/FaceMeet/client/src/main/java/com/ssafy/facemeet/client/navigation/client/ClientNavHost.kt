@@ -26,7 +26,7 @@ fun NavGraphBuilder.clientNavHost(
     composable(ClientRoutes.MainMenu.route) {
         MainScreenWithBottomNav(
             mainNavController = navController,
-            bottomNavController = bottomNavController
+            //bottomNavController = bottomNavController
         )
     }
 
@@ -84,7 +84,12 @@ fun NavGraphBuilder.clientNavHost(
         ChattingScreen(
             roomId = roomId,
             onBackClick = {
-                navController.popBackStack()
+               // navController.popBackStack()
+                navController.navigate(BottomNavRoutes.ChattingList.route) {
+                    popUpTo(ClientRoutes.Chat.route) {
+                        inclusive = true
+                    }
+                }
             },
             onPartnerProfile = { partnerId ->
                 navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId, roomId))

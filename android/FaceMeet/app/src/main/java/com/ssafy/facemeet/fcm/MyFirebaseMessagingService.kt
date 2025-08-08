@@ -13,6 +13,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
@@ -23,6 +24,7 @@ import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
 import com.ssafy.facemeet.core.data.remote.api.FcmService
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.fcm.FcmTokenResponse
+import com.ssafy.facemeet.core.util.AppStateManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -91,6 +93,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     remoteMessage.data
                 )
 
+                "CHAT" -> handleChatNotification(
+                    remoteMessage.notification,
+                    remoteMessage.data
+                )
+
                 else -> {
                     val title = remoteMessage.data["title"] ?: "알림"
                     val body = remoteMessage.data["body"] ?: ""
@@ -154,6 +161,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+
     private fun handleImmediateEvent(
         notification: RemoteMessage.Notification?,
         data: Map<String, String>
@@ -162,6 +170,41 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val body = data["body"] ?: notification?.body ?: "없음"
         sendNotification(title, body)
         saveNotificationToRoom(title, body, System.currentTimeMillis())
+    }
+
+    private fun handleChatNotification(
+        notification: RemoteMessage.Notification?,
+        data: Map<String, String>
+    ) {
+        val roomId = data["roomId"]?.toLongOrNull()
+        val title = notification?.title ?: "채팅 알림"
+        val body = notification?.body ?: ""
+
+        Log.d("FCM", "handleChatNotification: ${roomId}")
+        // 현재 해당 채팅방에 있으면 알림 스킵
+        if (roomId != null && AppStateManager.isInChatRoom(roomId)) {
+            Log.d("FCM", "현재 채팅방($roomId)에 있어서 알림 스킵")
+
+            // 화면 갱신만
+            sendBroadcast(Intent("ACTION_REFRESH_CHAT").apply {
+                putExtra("roomId", roomId)
+            })
+            return
+        }
+
+        if (AppStateManager.getCurrentScreen() == "ChatListScreen") {
+            Log.d("FCM", "✅ 채팅 리스트 화면 감지됨")
+            Log.d("FCM", "📡 브로드캐스트 발송 중...")
+
+            val intent = Intent("ACTION_REFRESH_CHAT_LIST")
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+
+            Log.d("FCM", "📡 브로드캐스트 발송 완료")
+            return
+        }
+
+        // 채팅방으로 이동하는 알림 생성
+        sendNotification(title, body, roomId)
     }
 
     private fun scheduleLocalEvent(
@@ -261,6 +304,56 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, builder.build())
     }
+
+    // 방 드가는 버전
+    private fun sendNotification(title: String, body: String, roomId: Long? = null) {
+        val channelId = "ticket_channel"
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            // 채팅 알림인 경우에만 딥링크 정보 추가
+            roomId?.let {
+                putExtra("deep_link", "chat")
+                putExtra("roomId", it)
+            }
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            roomId?.toInt() ?: 0, // 각 채팅방마다 다른 ID 사용
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 채널 설정 강화
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "채팅 알림",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "채팅 메시지 알림"
+                enableLights(true)
+                enableVibration(true)
+                setShowBadge(true)
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // 중요도 높음
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // 소리, 진동, LED 모두
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE) // 메시지 카테고리
+            .setContentIntent(pendingIntent)
+
+        notificationManager.notify(roomId?.toInt() ?: System.currentTimeMillis().toInt(), builder.build())
+    }
+
 
     private fun parseDateTime(dateTimeStr: String): Date? {
         // ISO 8601 형식과 다양한 형식 지원
@@ -363,4 +456,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationDao.insert(notification)
         }
     }
+
+
 }

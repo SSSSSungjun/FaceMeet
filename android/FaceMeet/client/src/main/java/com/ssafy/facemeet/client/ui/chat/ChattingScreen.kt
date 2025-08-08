@@ -46,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -76,6 +77,7 @@ import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
+import com.ssafy.facemeet.core.util.AppStateManager
 import kotlinx.coroutines.delay
 
 private const val TAG = "ChattingScreen"
@@ -153,6 +155,13 @@ fun ChattingScreen(
 
     LaunchedEffect(roomId) {
         viewModel.initializeChat(roomId)
+        AppStateManager.setCurrentScreen("ChattingScreen", roomId)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            AppStateManager.setCurrentScreen("", null)
+        }
     }
 
     LaunchedEffect(connectionState) {
@@ -199,36 +208,47 @@ fun ChattingScreen(
                 items(
                     count = liveMessages.size,
                     key = { index ->
-                       liveMessages[index].chatElement.generateKey()
+                        "live_${index}_${liveMessages[index].chatElement.generateKey()}"
                     }
                 ) { index ->
-                    val message = liveMessages[index]
-                    Log.d("DEBUG_RENDER", "실시간 메시지 렌더링: index=$index, 총=${liveMessages.size}")
-                    RenderMessage(
-                        message = message,
-                        isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                        isTemporary = false
-                    )
+                    if (index < liveMessages.size) {
+                        val message = liveMessages[index]
+                        Log.d("DEBUG_RENDER", "실시간 메시지 렌더링: index=$index, content=${message.chatElement.content}")
+
+                        RenderMessage(
+                            message = message,
+                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
+                            isTemporary = false
+                        )
+                    }
                 }
 
-                items(pagedMessages.itemCount) { index ->
+                // 2. 페이징 메시지 렌더링 (중복 체크 개선)
+                items(
+                    count = pagedMessages.itemCount,
+                    key = { index ->
+                        "paged_${index}_${pagedMessages.peek(index)?.chatElement?.generateKey() ?: "fallback_$index"}"
+                    }
+                ) { index ->
                     pagedMessages[index]?.let { message ->
-                        Log.d("DEBUG_RENDER", "페이징 메시지 렌더링: index=$index, 총=${pagedMessages.itemCount}")
+                        // 실시간 메시지와 중복인지 체크 (더 정확한 비교)
                         val isDuplicate = liveMessages.any { liveMsg ->
-                            liveMsg.chatElement.content == message.chatElement.content &&
-                                    liveMsg.chatElement.senderID == message.chatElement.senderID &&
-                                    liveMsg.chatElement.createdAt == message.chatElement.createdAt
+                            liveMsg.chatElement.generateKey() == message.chatElement.generateKey()
                         }
 
                         if (!isDuplicate) {
+                            Log.d("DEBUG_RENDER", "페이징 메시지 렌더링: index=$index, content=${message.chatElement.content}")
                             RenderMessage(
                                 message = message,
                                 isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
                                 isTemporary = false
                             )
+                        } else {
+                            Log.d("DEBUG_RENDER", "중복 메시지 스킵: index=$index, content=${message.chatElement.content}")
                         }
                     }
                 }
+
 
                 // 로딩 상태
                 when (pagedMessages.loadState.append) {

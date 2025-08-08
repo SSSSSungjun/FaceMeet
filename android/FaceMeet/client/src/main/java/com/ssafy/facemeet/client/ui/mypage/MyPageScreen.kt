@@ -109,7 +109,7 @@ fun MyPageScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        LogoutSection(viewModel::navigateToWithdraw)
+        WithdrawSection(viewModel::navigateToWithdraw)
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
@@ -296,7 +296,7 @@ fun MyInfoSection(
 }
 
 @Composable
-fun LogoutSection(onWithdraw: () -> Unit) {
+fun WithdrawSection(onWithdraw: () -> Unit) {
     OutlinedButton(
         onClick = { },
         modifier = Modifier

@@ -1,5 +1,12 @@
 package com.ssafy.facemeet.client.ui.chatlist
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,11 +28,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,21 +43,50 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.core.domain.model.ChatListItem
+import com.ssafy.facemeet.core.util.AppStateManager
 
 private const val TAG = "ChattingListScreen"
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChattingListScreen(
     onItemClick: (ChatListItem) -> Unit = {},
     viewModel: ChattingListViewModel = hiltViewModel()
 ) {
-
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadChattingList()
+        AppStateManager.setCurrentScreen("ChatListScreen")
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            AppStateManager.setCurrentScreen("", null)
+        }
+    }
+
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.d("ChatListScreen", "📥 브로드캐스트 수신!")
+                if (intent?.action == "ACTION_REFRESH_CHAT_LIST") {
+                    Log.d("ChatListScreen", "채팅 리스트 갱신 요청")
+                    viewModel.loadChattingList()
+                }
+            }
+        }
+
+        LocalBroadcastManager.getInstance(context)
+            .registerReceiver(receiver, IntentFilter("ACTION_REFRESH_CHAT_LIST"))
+
+        onDispose {
+            LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
+        }
     }
 
     Column(
