@@ -3,6 +3,7 @@ package com.ssafy.facemeet.core.data.repository
 import android.util.Log
 import com.ssafy.facemeet.core.data.remote.datasource.UserRemoteDataSource
 import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
+import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
 import com.ssafy.facemeet.core.domain.repository.UserRepository
@@ -73,5 +74,17 @@ class UserRepositoryImpl @Inject constructor(
                 Log.e("UserRepository", "getPartnerFaceInfo error", it)
             }
 
+    // core/data/repository/UserRepositoryImpl.kt
+    override suspend fun getHomeInfo(): Result<HomeInfoResponse> = try {
+        val res = userDataRemoteDataSource.getHomeInfo()
+        if (res.isSuccessful) {
+            res.body()?.let { Result.success(it) }
+                ?: Result.failure(IllegalStateException("Empty body"))
+        } else {
+            Result.failure(IllegalStateException("HTTP ${res.code()}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
 }

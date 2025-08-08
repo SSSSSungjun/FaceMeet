@@ -529,7 +529,6 @@ object FcmAlarmHandler {
         }
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
