@@ -12,6 +12,7 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".FaceMeetApplication"
@@ -62,6 +63,12 @@
         <service
             android:name=".service.OfflineNotifyService"
             android:exported="false" />
+
+
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="false" />
+
 
     </application>
 
