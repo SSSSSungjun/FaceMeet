@@ -30,12 +30,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +51,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
@@ -60,7 +65,7 @@ private const val TAG = "MainMenuScreen"
 
 @Composable
 fun MainMenuScreen(
-    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {}
+    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -76,6 +81,7 @@ fun MainMenuScreen(
             }
         }
     }
+
 
     Column(
         modifier = Modifier
@@ -148,7 +154,12 @@ fun MainMenuScreen(
                             ), // 연한 핑크 배경
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("💕", fontSize = 24.sp)
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_heart_pink),
+                            contentDescription = "인연 찾기",
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.Unspecified
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -191,7 +202,12 @@ fun MainMenuScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("💬", fontSize = 24.sp)
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_chat),
+                            contentDescription = "채팅",
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.Unspecified
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -214,135 +230,161 @@ fun MainMenuScreen(
 @Composable
 fun ProfileCardWithBackground(
     onProfile: () -> Unit,
+    viewModel: MainMenuViewModel = hiltViewModel()
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .clip(RoundedCornerShape(16.dp))
-    ) {
-        // 배경 이미지
-        Image(
-            painter = painterResource(id = R.drawable.bg_face), // ← 여기에 직접 넣은 이미지 파일 리소스 사용
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.matchParentSize()
-        )
 
-        // 카드 내용
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            modifier = Modifier
-                .fillMaxWidth()
+    val ui by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.loadHome() }
+
+    when {
+        ui.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+
+        ui.error != null -> Column(
+            Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Text("불러오기에 실패했어요.\n${ui.error}")
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = { viewModel.loadHome() }) { Text("다시 시도") }
+        }
+
+        else -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .clip(RoundedCornerShape(16.dp))
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onProfile() }
-                        .padding(horizontal = 32.dp, vertical = 40.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(260.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.temp_face), // ← 여기에 실제 리소스 ID 입력
-                            contentDescription = "사용자 얼굴",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        "김철수",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        fontFamily = ChosunCentennial,
-                        color = CommonColor.BrownGray900
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        "알 수 없상",
-                        fontSize = 16.sp,
-                        color = CommonColor.BrownGray600,
-                        fontFamily = ChosunSeirf
-                    )
-                }
-
-                Divider(
-                    color = CommonColor.Gray200, modifier = Modifier.padding(horizontal = 20.dp)
+                // 배경 이미지
+                Image(
+                    painter = painterResource(id = R.drawable.bg_face),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
                 )
 
-                Row(
+                // 카드 내용
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
-                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 매칭권 3 영역 (weight 1f)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(top = 12.dp, bottom = 22.dp)
-                            .clickable {},
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onProfile() }
+                                .padding(horizontal = 32.dp, vertical = 40.dp)
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(260.dp)
+                            ) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = ui.img), // ← 여기에 실제 리소스 ID 입력
+                                    contentDescription = "사용자 얼굴",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
                             Text(
-                                text = "매칭권 ",
+                                text = ui.nickname,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = CommonColor.BrownGray600
+                                fontSize = 28.sp,
+                                fontFamily = ChosunCentennial,
+                                color = CommonColor.BrownGray900
                             )
-                            Spacer(modifier = Modifier.width(2.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+
                             Text(
-                                text = "3",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = CommonColor.BrownGray600
+                                text = ui.title,
+                                fontSize = 16.sp,
+                                color = CommonColor.BrownGray600,
+                                fontFamily = ChosunSeirf
                             )
                         }
-                    }
 
-                    // 세로선
-                    Divider(
-                        color = CommonColor.Gray200,
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(top = 12.dp, bottom = 22.dp)
-                            .width(1.dp)
-                    )
-
-                    // 내 정보 보기 영역 (weight 1f)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(top = 12.dp, bottom = 22.dp)
-                            .clickable { onProfile() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "내 관상 보기",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = CommonColor.BrownGray600
+                        Divider(
+                            color = CommonColor.Gray200,
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 매칭권 3 영역 (weight 1f)
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable {}
+                                    .padding(top = 12.dp, bottom = 22.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "매칭권 ",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = CommonColor.BrownGray600
+                                    )
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Text(
+                                        text = ui.remainingMatchTickets.toString(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = CommonColor.BrownGray600
+                                    )
+                                }
+                            }
+
+                            // 세로선
+                            Divider(
+                                color = CommonColor.Gray200,
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .padding(top = 12.dp, bottom = 22.dp)
+                                    .width(1.dp)
+                            )
+
+                            // 내 정보 보기 영역 (weight 1f)
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable { onProfile() }
+                                    .padding(top = 12.dp, bottom = 22.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "내 관상 보기",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = CommonColor.BrownGray600
+                                )
+                            }
+                        }
                     }
                 }
-
-
             }
         }
     }
