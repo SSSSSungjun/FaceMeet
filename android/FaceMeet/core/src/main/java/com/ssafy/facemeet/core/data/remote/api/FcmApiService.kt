@@ -26,10 +26,10 @@ interface FcmApiService {
     suspend fun deleteDevice(deviceToken: String) : Response<Unit>
 
     @POST("/api/v1/fcm/topics/{topicId}/subscriptions")
-    suspend fun postSubscription(@Path("topicId") topicId: String) : Response<TopicSubscriptionRequest>
+    suspend fun postSubscription(@Path("topicId") topicId: Long) : Response<TopicSubscriptionRequest>
 
     @DELETE("/api/v1/fcm/topics/{topicId}/subscriptions")
-    suspend fun deleteSubscription(@Path("topicId") topicId: String) : Response<Unit>
+    suspend fun deleteSubscription(@Path("topicId") topicId: Long) : Response<Unit>
 
     @GET("/api/v1/fcm/topics/subscriptions")
     suspend fun getSubscriptions() : Response<TopicSubscriptionResponse>

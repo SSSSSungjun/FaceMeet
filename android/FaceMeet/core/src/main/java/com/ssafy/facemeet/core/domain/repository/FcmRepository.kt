@@ -7,7 +7,7 @@ interface FcmRepository {
     suspend fun getDeviceTokens(): Result<List<FcmToken>>
     suspend fun registerDevice(request: FcmTokenRequest): Result<FcmToken>
     suspend fun deleteDevice(deviceToken: String): Result<Unit>
-    suspend fun postSubscription(topicId: String): Result<Unit>
-    suspend fun deleteSubscription(topicId: String): Result<Unit>
+    suspend fun postSubscription(topicId: Long): Result<Unit>
+    suspend fun deleteSubscription(topicId: Long): Result<Unit>
     suspend fun getSubscriptions(): Result<TopicSubscription>
 }

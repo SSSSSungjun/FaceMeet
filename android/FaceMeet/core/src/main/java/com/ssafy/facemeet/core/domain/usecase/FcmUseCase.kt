@@ -34,7 +34,7 @@ class DeleteDeviceUseCase @Inject constructor(
 class PostSubscriptionUseCase @Inject constructor(
     private val fcmRepository: FcmRepository
 ) {
-    suspend operator fun invoke(topicId: String): Result<Unit> {
+    suspend operator fun invoke(topicId: Long): Result<Unit> {
         return fcmRepository.postSubscription(topicId)
     }
 }
@@ -42,7 +42,7 @@ class PostSubscriptionUseCase @Inject constructor(
 class DeleteSubscriptionUseCase @Inject constructor(
     private val fcmRepository: FcmRepository
 ) {
-    suspend operator fun invoke(topicId: String): Result<Unit> {
+    suspend operator fun invoke(topicId: Long): Result<Unit> {
         return fcmRepository.deleteSubscription(topicId)
     }
 }

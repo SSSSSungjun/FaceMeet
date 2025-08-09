@@ -39,7 +39,7 @@ class FcmRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun postSubscription(topicId: String): Result<Unit> = runCatching {
+    override suspend fun postSubscription(topicId: Long): Result<Unit> = runCatching {
         val response = remoteDataSource.postSubscription(topicId)
         if (response.isSuccessful) {
             response.body()
@@ -48,7 +48,7 @@ class FcmRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteSubscription(topicId: String): Result<Unit> = runCatching {
+    override suspend fun deleteSubscription(topicId: Long): Result<Unit> = runCatching {
         val response = remoteDataSource.deleteSubscription(topicId)
         if (response.isSuccessful) {
             response.body()
