@@ -60,7 +60,7 @@ fun RoomExitDialog(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "채팅방을 나가면 다시는 상대와 만날 수 없습니다.\n  정말 나가시겠습니까?",
+                    text = "채팅방을 나가면 다시는 상대와 만날 수 \n없습니다. 정말 나가시겠습니까?",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center

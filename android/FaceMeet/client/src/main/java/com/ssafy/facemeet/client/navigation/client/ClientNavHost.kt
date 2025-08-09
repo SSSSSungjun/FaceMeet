@@ -7,6 +7,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.ssafy.facemeet.client.navigation.CurrentBottomNavState
+import com.ssafy.facemeet.client.navigation.bottom.BottomNavRoutes
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
@@ -109,6 +111,7 @@ fun NavGraphBuilder.clientNavHost(
             roomId = roomId,
             onExitRoom = {
                 navController.navigate(ClientRoutes.MainMenu.route) {
+                    CurrentBottomNavState.currentBottomTab= BottomNavRoutes.ChattingList.route
                     popUpTo(BottomNavRoutes.ChattingList.route) { inclusive = false }
                     launchSingleTop = true
                 }

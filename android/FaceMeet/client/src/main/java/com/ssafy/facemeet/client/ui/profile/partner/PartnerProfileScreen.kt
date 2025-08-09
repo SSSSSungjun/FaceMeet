@@ -1,7 +1,9 @@
 package com.ssafy.facemeet.client.ui.profile.partner
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -65,12 +67,13 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 import kotlinx.coroutines.flow.collectLatest
 import retrofit2.HttpException
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PartnerProfileScreen(
     roomId: Long,
     partnerId: Long,
     onBack: () -> Unit,
-    onExitRoom :() -> Unit,
+    onExitRoom: () -> Unit,
     viewModel: PartnerProfileViewModel = hiltViewModel()
 ) {
     Log.d("PartnerProfileScreen", "partnerId: $partnerId")
@@ -109,6 +112,7 @@ fun PartnerProfileScreen(
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PartnerProfileContent(
     result: PartnerFaceInfoResponse,
@@ -169,7 +173,7 @@ fun PartnerProfileContent(
         }
     )
 
-    RoomExitDialog (
+    RoomExitDialog(
         showDialog = showExitDialog,
         onDismiss = { showExitDialog = false },
         onConfirm = {
@@ -320,9 +324,9 @@ fun PartnerProfileContent(
 
         BlockAndReportButtons(
             onBlock = { showBlockedDialog = true },
-            {},
+            onExit = { showExitDialog = true },
             onShowReportDialog = { showReportDialog = true },
-            onExit = {})
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -414,7 +418,6 @@ fun PartnerProfileContent(
 @Composable
 fun BlockAndReportButtons(
     onBlock: () -> Unit,
-    onReport: () -> Unit,
     onExit: () -> Unit,
     onShowReportDialog: () -> Unit // 다이얼로그 상태 변경
 ) {

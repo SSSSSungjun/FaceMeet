@@ -26,7 +26,7 @@ class ChattingListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             getChattingListUseCase().onSuccess { chatList ->
-                Log.d(TAG, "loadChattingList: 로드 성공")
+                Log.d(TAG, "loadChattingList: 로드 성공 $chatList")
                 _uiState.value = _uiState.value.copy(
                     chatList = chatList,
                     isLoading = false

@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.client.navigation.bottom
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,23 +12,28 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.navigation.CurrentBottomNavState
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
+import com.ssafy.facemeet.core.util.Animation.NavigationAnimations
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -35,21 +41,30 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 fun MainScreenWithBottomNav(
     mainNavController: NavHostController,
     //bottomNavController: NavHostController,
-    initialTab: String = BottomNavRoutes.Home.route
+    initialTab: String = CurrentBottomNavState.currentBottomTab
 ) {
     val bottomNavController = rememberNavController()
+    var animationDirection by rememberSaveable { mutableStateOf("left") }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize(),
         containerColor = Color(0xFFF4F3ED),
         bottomBar = {
-            BottomNavigationBar(navController = bottomNavController)
+            BottomNavigationBar(
+                navController = bottomNavController,
+                onDirectionChange = { direction ->
+                    animationDirection = direction
+                }
+            )
         }
     ) { paddingValues ->
         NavHost(
             navController = bottomNavController,
             startDestination = initialTab,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            enterTransition = NavigationAnimations.getBottomNavEnterTransition(animationDirection),
+            exitTransition = NavigationAnimations.getBottomNavExitTransition(animationDirection)
         ) {
             composable(BottomNavRoutes.Home.route) {
                 MainMenuScreen(
@@ -108,7 +123,10 @@ fun MainScreenWithBottomNav(
 
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
+fun BottomNavigationBar(
+    navController: NavHostController,
+    onDirectionChange: (String) -> Unit
+) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     val items = remember {
@@ -140,19 +158,25 @@ fun BottomNavigationBar(navController: NavHostController) {
         )
     }
 
+    val currentIndex = items.indexOfFirst { it.route == currentRoute }.takeIf { it >= 0 } ?: 0
+
     NavigationBar(
         containerColor = CommonColor.Beige100
     ) {
-        items.forEach { item ->
+        items.forEachIndexed { index, item ->
             val selected = currentRoute == item.route
 
             NavigationBarItem(
-                selected = selected,
+                selected= currentRoute == item.route,
                 onClick = {
-                    if (!selected) {
+                    if (currentRoute != item.route) {
+                        // 방향 계산 후 상태 저장
+                        val direction = if (index > currentIndex) "left" else "right"
+                        Log.d("direction ", "BottomNavigationBar: ${direction}")
+                        onDirectionChange(direction)
                         navController.navigate(item.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = false
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
                             }
                             launchSingleTop = true
                             restoreState = true

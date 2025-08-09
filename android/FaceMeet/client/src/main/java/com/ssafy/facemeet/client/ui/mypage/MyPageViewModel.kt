@@ -50,9 +50,9 @@ class MyPageViewModel @Inject constructor(
                 val androidToken = tokenInfo.firstOrNull { it.deviceType == "android" }
                 if (androidToken != null) {
                     fcmTokenId = androidToken.tokenId
-                    Log.d("FCM", "단일 Android 토큰: $fcmTokenId")
+                    Log.d(TAG, "단일 Android 토큰: $fcmTokenId")
                 } else {
-                    Log.e("FCM", "Android 토큰을 찾을 수 없습니다.")
+                    Log.e(TAG, "Android 토큰을 찾을 수 없습니다.")
                 }
             }.onFailure {
                 Log.d(TAG, "fcm: ${it.message} ")

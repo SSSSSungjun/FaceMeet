@@ -19,6 +19,7 @@ import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.navigation.setting.settingNavHost
 import com.ssafy.facemeet.client.ui.camera.CameraShotViewModel
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
+import com.ssafy.facemeet.core.util.Animation.NavigationAnimations
 import com.ssafy.facemeet.ui.web.SocialProvider
 import com.ssafy.facemeet.ui.web.WebLoginScreen
 
@@ -28,7 +29,7 @@ private const val TAG = "MainNavHost"
 @Composable
 fun AppNavHost(
     isLoggedIn: Boolean,
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
 ) {
 
     val navController = rememberNavController()
@@ -55,6 +56,10 @@ fun AppNavHost(
     NavHost(
         navController = navController,
         startDestination = startDestination,
+        enterTransition = NavigationAnimations.defaultEnterTransition(),
+        exitTransition = NavigationAnimations.defaultExitTransition(),
+        popEnterTransition = NavigationAnimations.defaultEnterTransition(),
+        popExitTransition = NavigationAnimations.defaultExitTransition()
     ) {
 
         Log.d(TAG, "AppNavHost: start")
