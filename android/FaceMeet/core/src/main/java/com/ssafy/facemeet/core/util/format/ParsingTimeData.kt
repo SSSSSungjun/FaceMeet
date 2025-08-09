@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -18,10 +19,8 @@ object ParsingTimeData {
     fun String.formatSmartDate(): String {
         Log.d(TAG, "formatSmartDate() 시작 - 입력값: '$this'")
         return try {
-            // Instant.parse()를 사용해서 ISO 8601 형식을 더 정확하게 파싱
-            val instant = Instant.parse(this)
-            val localDateTime = instant.atZone(ZoneId.systemDefault())
-            val now = ZonedDateTime.now(ZoneId.systemDefault())
+            val localDateTime = LocalDateTime.parse(this.replace("Z", "").replace("+09:00", ""))
+            val now = LocalDateTime.now()
 
             val inputDate = localDateTime.toLocalDate()
             val today = now.toLocalDate()
@@ -41,18 +40,19 @@ object ParsingTimeData {
             Log.d(TAG, "formatSmartDate() 성공 - 결과: '$result'")
             result
         } catch (e: DateTimeParseException) {
-            Log.w(TAG, "formatSmartDate() Instant.parse() 실패 - 두 번째 시도", e)
+            Log.w(TAG, "formatSmartDate() LocalDateTime.parse() 실패", e)
             try {
-                // 두 번째 시도: ZonedDateTime으로 파싱
-                val utcZonedDateTime = ZonedDateTime.parse(this)
-                val localDateTime = utcZonedDateTime.withZoneSameInstant(ZoneId.systemDefault())
-                val now = ZonedDateTime.now(ZoneId.systemDefault())
+                // ISO 8601 형식이라면 시간대 변환
+                val instant = Instant.parse(this)
+                val localDateTime = instant.atOffset(ZoneOffset.ofHours(9)).toLocalDateTime() // UTC+9 (한국)
+                val now = LocalDateTime.now()
 
+                // 위와 동일한 로직
                 val inputDate = localDateTime.toLocalDate()
                 val today = now.toLocalDate()
                 val yesterday = today.minusDays(1)
 
-                val result = when (inputDate) {
+                when (inputDate) {
                     today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
                     yesterday -> "어제"
                     else -> {
@@ -63,26 +63,12 @@ object ParsingTimeData {
                         }
                     }
                 }
-                Log.d(TAG, "formatSmartDate() ZonedDateTime.parse() 성공 - 결과: '$result'")
-                result
-            } catch (e2: DateTimeParseException) {
-                Log.w(TAG, "formatSmartDate() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
-                // 마지막 시도: parseFlexibleDateTime으로 재시도
-                parseFlexibleDateTime()?.let { zonedDateTime ->
-                    val result = formatSmartDateSafe(zonedDateTime)
-                    Log.d(TAG, "formatSmartDate() parseFlexibleDateTime 성공 - 결과: '$result'")
-                    result
-                } ?: run {
-                    Log.e(TAG, "formatSmartDate() 모든 시도 실패 - 원본 반환: '$this'")
-                    this
-                }
+            } catch (e2: Exception) {
+                Log.e(TAG, "formatSmartDate() 모든 시도 실패", e2)
+                this
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "formatSmartDate() 예상치 못한 오류", e)
-            this
         }
     }
-
     fun String.toHourMinuteString(): String {
         Log.d(TAG, "toHourMinuteString() 시작 - 입력값: '$this'")
         return try {

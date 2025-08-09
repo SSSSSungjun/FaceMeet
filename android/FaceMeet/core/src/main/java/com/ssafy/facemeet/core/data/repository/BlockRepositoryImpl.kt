@@ -37,7 +37,9 @@ class BlockRepositoryImpl @Inject constructor(
         val response = remoteDataSource.deleteBlockUser(blockedId)
         if (response.isSuccessful) {
             response.body()
+            Log.d("BlockRepositoryImpl", "invoke: ${response.body()}")
         } else {
+            Log.e("BlockRepositoryImpl", "${response.code()} - ${response.message()}")
             throw Exception("Failed to delete block: ${response.code()} - ${response.message()}")
         }
     }

@@ -50,6 +50,7 @@ fun RegisterScreen(
     toMap: () -> Unit = {},
     viewModel: RegisterViewModel = hiltViewModel(),
 ) {
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
     LaunchedEffect(Unit) {

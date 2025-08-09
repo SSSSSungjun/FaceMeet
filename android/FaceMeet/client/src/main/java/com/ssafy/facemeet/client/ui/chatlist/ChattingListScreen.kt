@@ -171,7 +171,7 @@ fun ChatListElementItem(
         ) {
 
             Image(
-                painter = rememberAsyncImagePainter(model = item.nickName),
+                painter = rememberAsyncImagePainter(model = item.imgUrl),
                 contentDescription = "프로필",
                 modifier = Modifier
                     .size(50.dp)
@@ -247,6 +247,7 @@ fun ChatListPreview() {
                 nickName = "윤성준",
                 lastActivatedTime = "ㅇㅇ",
                 isOnline = true,
+                imgUrl = "",
                 chatRoomId = 7,
                 chatRoomStringId = "7",
                 lastMessage = "dfs\nsfsf\nsfs",

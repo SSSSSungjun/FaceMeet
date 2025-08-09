@@ -5,6 +5,7 @@ data class ChatListItem(
     val nickName: String,
     val lastActivatedTime: String?,
     val isOnline: Boolean,
+    val imgUrl : String,
     val chatRoomId: Long,
     val chatRoomStringId: String,
     val lastMessage: String,

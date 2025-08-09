@@ -62,13 +62,17 @@ fun NavGraphBuilder.clientNavHost(
 //                }
 
                 // 2. 그 다음 Chat 진입
-                navController.navigate(ClientRoutes.Chat.createRoute(matchedChatRoomId)) {
-                    popUpTo(ClientRoutes.MatchingLoading.route) { inclusive = true } // 로딩까지 제거
+//                navController.navigate(ClientRoutes.Chat.createRoute(matchedChatRoomId)) {
+//                    popUpTo(ClientRoutes.MatchingLoading.route) { inclusive = true } // 로딩까지 제거
+//                    launchSingleTop = true
+//                }
+
+                navController.navigate(ClientRoutes.MainMenu.route) {
+                    CurrentBottomNavState.currentBottomTab = BottomNavRoutes.ChattingList.route
+                    popUpTo(BottomNavRoutes.ChattingList.route) { inclusive = false }
                     launchSingleTop = true
-                }
+                } //이걸로 하면 될거같은데 매칭권 다 씀
             }
-
-
         )
     }
 
