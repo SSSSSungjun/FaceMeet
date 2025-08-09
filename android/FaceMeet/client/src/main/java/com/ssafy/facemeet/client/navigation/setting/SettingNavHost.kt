@@ -24,7 +24,7 @@ private const val TAG = "SettingNavHost"
 fun NavGraphBuilder.settingNavHost(
     navController: NavHostController,
     cameraVM: CameraShotViewModel,
-    analyzeVM: FaceAnalyzeViewModel
+    analyzeVM: FaceAnalyzeViewModel,
 ) {
 
     composable(

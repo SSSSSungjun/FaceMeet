@@ -205,13 +205,11 @@ fun ChattingScreen(
                 contentPadding = PaddingValues(bottom = 4.dp),
                 reverseLayout = true
             ) {
-                // 1. 실시간 메시지 렌더링 (통합된 메시지 상태 사용)
                 items(
                     count = unifiedMessages.size,
                     key = { index ->
                         if (index < unifiedMessages.size) {
                             val messageItem = unifiedMessages[index]
-                            // localId가 있으면 그것을 키로, 없으면 일반 키 사용
                             messageItem.localId ?: generateMessageKey(messageItem.chatMessage.chatElement, index)
                         } else {
                             "unified_fallback_$index"
@@ -230,7 +228,6 @@ fun ChattingScreen(
                     }
                 }
 
-                // 2. 페이징 메시지 렌더링 (중복 체크 개선)
                 items(
                     count = pagedMessages.itemCount,
                     key = { index ->
@@ -238,7 +235,6 @@ fun ChattingScreen(
                     }
                 ) { index ->
                     pagedMessages[index]?.let { message ->
-                        // 통합 메시지와 중복인지 체크
                         val messageKey = generateMessageKey(message.chatElement, index)
                         val isDuplicate = unifiedMessages.any { unifiedItem ->
                             generateMessageKey(unifiedItem.chatMessage.chatElement, -1) == messageKey
@@ -257,7 +253,6 @@ fun ChattingScreen(
                     }
                 }
 
-                // 로딩 상태
                 when (pagedMessages.loadState.append) {
                     is LoadState.Loading -> {
                         item {

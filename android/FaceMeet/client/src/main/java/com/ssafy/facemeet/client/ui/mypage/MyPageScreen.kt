@@ -101,9 +101,11 @@ fun MyPageScreen(
 //        ProfileImageSection()
         Spacer(modifier = Modifier.height(40.dp))
 
-        PushNotificationSection(uiState.marketingAlarmEnabled) {
-            viewModel::setMarketingAlarm
-        }
+        PushNotificationSection(
+            enabled = uiState.marketingAlarmEnabled,
+            onToggle = viewModel::setMarketingAlarm
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         MyInfoSection(

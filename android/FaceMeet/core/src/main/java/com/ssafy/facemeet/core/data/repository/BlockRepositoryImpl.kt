@@ -36,7 +36,7 @@ class BlockRepositoryImpl @Inject constructor(
     override suspend fun deleteBlockUser(blockedId: Long): Result<Unit> = runCatching {
         val response = remoteDataSource.deleteBlockUser(blockedId)
         if (response.isSuccessful) {
-            response.body() // 성공 시 Unit 반환
+            response.body()
         } else {
             throw Exception("Failed to delete block: ${response.code()} - ${response.message()}")
         }

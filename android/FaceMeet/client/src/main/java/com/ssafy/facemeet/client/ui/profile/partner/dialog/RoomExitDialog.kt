@@ -22,7 +22,7 @@ import com.ssafy.facemeet.client.ui.theme.ChosunGongseo
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
-fun BlockedDialog(
+fun RoomExitDialog(
     showDialog: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -40,7 +40,7 @@ fun BlockedDialog(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "차단하기",
+                    text = "채팅나가기",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ChosunGongseo,
@@ -60,7 +60,7 @@ fun BlockedDialog(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "차단 시, 상대방은 채팅을 보낼 수 없습니다.\n내 차단 목록에서 해제할 수 있습니다.",
+                    text = "채팅방을 나가면 다시는 상대와 만날 수 \n없습니다. 정말 나가시겠습니까?",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
@@ -95,6 +95,6 @@ fun BlockedDialog(
 
 @Preview(showBackground = true)
 @Composable
-fun blockedPreview() {
-    BlockedDialog(false, { }, { })
+fun RoomExitPreview() {
+    RoomExitDialog(false, { }, { })
 }

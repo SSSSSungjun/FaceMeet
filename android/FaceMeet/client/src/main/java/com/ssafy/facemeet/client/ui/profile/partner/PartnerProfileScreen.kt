@@ -1,7 +1,9 @@
 package com.ssafy.facemeet.client.ui.profile.partner
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -57,17 +59,21 @@ import com.ssafy.facemeet.client.ui.profile.DetailItem
 import com.ssafy.facemeet.client.ui.profile.PersonalityDetail
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.BlockedDialog
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.ReportDialog
+import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.data.remote.dto.response.ErrorResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.util.constant.CommonColor
+import kotlinx.coroutines.flow.collectLatest
 import retrofit2.HttpException
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PartnerProfileScreen(
     roomId: Long,
     partnerId: Long,
     onBack: () -> Unit,
+    onExitRoom: () -> Unit,
     viewModel: PartnerProfileViewModel = hiltViewModel()
 ) {
     Log.d("PartnerProfileScreen", "partnerId: $partnerId")
@@ -77,6 +83,11 @@ fun PartnerProfileScreen(
     val isLoading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.exitRoomEvent.collectLatest {
+            onExitRoom()
+        }
+    }
     LaunchedEffect(partnerId) {
         viewModel.loadPartnerFaceInfo(partnerId)
     }
@@ -101,6 +112,7 @@ fun PartnerProfileScreen(
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PartnerProfileContent(
     result: PartnerFaceInfoResponse,
@@ -112,6 +124,7 @@ fun PartnerProfileContent(
     val context = LocalContext.current
     var showReportDialog by remember { mutableStateOf(false) }
     var showBlockedDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
 
     val reportResult by viewModel.reportResult.collectAsState()
 
@@ -157,7 +170,14 @@ fun PartnerProfileContent(
         onDismiss = { showBlockedDialog = false },
         onConfirm = {
             viewModel.requestBlockUser(partnerId)
-            Toast.makeText(context, "차단 요청 완료!!", Toast.LENGTH_SHORT).show()
+        }
+    )
+
+    RoomExitDialog(
+        showDialog = showExitDialog,
+        onDismiss = { showExitDialog = false },
+        onConfirm = {
+            viewModel.exitChatRoom(roomId)
         }
     )
 
@@ -304,9 +324,9 @@ fun PartnerProfileContent(
 
         BlockAndReportButtons(
             onBlock = { showBlockedDialog = true },
-            {},
+            onExit = { showExitDialog = true },
             onShowReportDialog = { showReportDialog = true },
-            onExit = {})
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -398,7 +418,6 @@ fun PartnerProfileContent(
 @Composable
 fun BlockAndReportButtons(
     onBlock: () -> Unit,
-    onReport: () -> Unit,
     onExit: () -> Unit,
     onShowReportDialog: () -> Unit // 다이얼로그 상태 변경
 ) {
