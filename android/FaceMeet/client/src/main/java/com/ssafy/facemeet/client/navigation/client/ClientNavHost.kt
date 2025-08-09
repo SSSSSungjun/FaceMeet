@@ -7,7 +7,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.ssafy.facemeet.client.navigation.bottom.BottomNavRoutes
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
@@ -52,13 +51,14 @@ fun NavGraphBuilder.clientNavHost(
             onCancel = { navController.popBackStack() },
             onMatchFound = { matchedChatRoomId ->
 
-                // 2. 채팅리스트 밑에 깔고,
-                bottomNavController.navigate(BottomNavRoutes.ChattingList.route) {
-                    popUpTo(BottomNavRoutes.Matching.route) { inclusive = true }
-                    launchSingleTop = true
-                }
+//                // 1. 채팅리스트 밑에 깔고 -> 오류원인을 찾기 전까지 주석처리해놓을게요
+                //Navigation graph has not been set for NavController androidx.navigation.internal.NavControllerImpl
+//                bottomNavController.navigate(BottomNavRoutes.ChattingList.route) {
+//                    popUpTo(BottomNavRoutes.Matching.route) { inclusive = true }
+//                    launchSingleTop = true
+//                }
 
-                // 3. 그 다음 Chat 진입
+                // 2. 그 다음 Chat 진입
                 navController.navigate(ClientRoutes.Chat.createRoute(matchedChatRoomId)) {
                     popUpTo(ClientRoutes.MatchingLoading.route) { inclusive = true } // 로딩까지 제거
                     launchSingleTop = true
@@ -84,12 +84,8 @@ fun NavGraphBuilder.clientNavHost(
         ChattingScreen(
             roomId = roomId,
             onBackClick = {
-               // navController.popBackStack()
-                navController.navigate(BottomNavRoutes.ChattingList.route) {
-                    popUpTo(ClientRoutes.Chat.route) {
-                        inclusive = true
-                    }
-                }
+                navController.popBackStack()
+//                navController.navigate(Bottom--
             },
             onPartnerProfile = { partnerId ->
                 navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId, roomId))

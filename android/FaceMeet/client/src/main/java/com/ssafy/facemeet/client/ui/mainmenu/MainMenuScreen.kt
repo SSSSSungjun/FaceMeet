@@ -87,7 +87,7 @@ fun MainMenuScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(Color(0xFFF8F2E9))  // 배경색 비슷하게 조정
+            .background(CommonColor.Beige100)  // 배경색 비슷하게 조정
             .padding(start = 16.dp, end = 16.dp, bottom = 40.dp)
     ) {
         Row(
@@ -187,7 +187,7 @@ fun MainMenuScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -259,7 +259,7 @@ fun ProfileCardWithBackground(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(12.dp))
             ) {
                 // 배경 이미지
                 Image(
@@ -271,7 +271,7 @@ fun ProfileCardWithBackground(
 
                 // 카드 내용
                 Card(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier
                         .fillMaxWidth()

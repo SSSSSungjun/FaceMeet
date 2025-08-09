@@ -20,15 +20,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -51,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.ui.mypage.model.MyPageNaviEvent
 import com.ssafy.facemeet.core.domain.model.UserInfo
+import com.ssafy.facemeet.core.util.constant.CommonColor
 
 private const val TAG = "MyPageScreen"
 
@@ -59,12 +59,14 @@ fun MyPageScreen(
     viewModel: MyPageViewModel = hiltViewModel(),
     onLogout: () -> Unit,
     onWithdraw: () -> Unit,
-    onModify: () -> Unit
-) {
+    onModify: () -> Unit,
+    onOpenBlocked: () -> Unit,
+
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(CommonColor.Beige100)
             .verticalScroll(rememberScrollState())
     ) {
 
@@ -95,9 +97,9 @@ fun MyPageScreen(
             }
         }
 
-        TopBarSection(viewModel::navigateToLogout)
-        ProfileImageSection()
-        Spacer(modifier = Modifier.height(16.dp))
+//        TopBarSection(viewModel::navigateToLogout)
+//        ProfileImageSection()
+        Spacer(modifier = Modifier.height(40.dp))
 
         PushNotificationSection(
             enabled = uiState.marketingAlarmEnabled,
@@ -112,12 +114,24 @@ fun MyPageScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        WithdrawSection(
-            viewModel::navigateToWithdraw,
-            viewModel::clickWithdrawBtn,
-            viewModel::dismissWithdrawDialog,
-            uiState.isWithdrawBtnClicked
+        ImportantSection(
+            onBlockList = onOpenBlocked,
+            onLogout = onLogout,
+            onWithdraw = onWithdraw,
+            onClickWithdraw = viewModel::clickWithdrawBtn,
+            isShowDialog = uiState.isWithdrawBtnClicked,
+            onDismissDialog = viewModel::dismissWithdrawDialog
         )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+
+//        WithdrawSection(
+//            viewModel::navigateToWithdraw,
+//            viewModel::clickWithdrawBtn,
+//            viewModel::dismissWithdrawDialog,
+//            uiState.isWithdrawBtnClicked
+//        )
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
@@ -274,11 +288,12 @@ fun MyInfoSection(
 
                 Text(
                     text = "수정하기",
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
+                    color = CommonColor.Gray500,
                     modifier = Modifier
-                        .padding(16.dp, 16.dp, 16.dp, 8.dp)
                         .clickable { onModify() }
+                        .padding(16.dp, 16.dp, 16.dp, 8.dp)
                 )
             }
 
@@ -308,25 +323,27 @@ fun WithdrawSection(
     onWithdraw: () -> Unit,
     onClick: () -> Unit = {},
     onDismiss: () -> Unit = {},
-    isShowDialog: Boolean
+    isShowDialog: Boolean,
+    label: String,
 ) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .height(48.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.White,
-            contentColor = Color.Gray
-        )
-    ) {
-        Text(
-            text = "탈퇴하기",
-            fontSize = 14.sp,
-        )
-    }
+//    OutlinedButton(
+//        onClick = onClick,
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 16.dp)
+//            .height(48.dp),
+//        shape = RoundedCornerShape(12.dp),
+//        colors = ButtonDefaults.outlinedButtonColors(
+//            containerColor = Color.White,
+//            contentColor = Color.Gray
+//        )
+//    ) {
+//        Text(
+//            text = "탈퇴하기",
+//            fontSize = 14.sp,
+//        )
+//    }
+
 
     if (isShowDialog) {
         WithdrawConfirmDialog(
@@ -355,12 +372,12 @@ fun ProfileInfoRow(
             text = label,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black
+            color = CommonColor.Gray900
         )
         Text(
             text = value,
             fontSize = 14.sp,
-            color = Color.Gray,
+            color = CommonColor.Gray300,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = 250.dp),
@@ -370,6 +387,89 @@ fun ProfileInfoRow(
     }
 }
 
+@Composable
+fun ImportantSection(
+    onBlockList: () -> Unit = {},
+    onLogout: () -> Unit,
+    onClickWithdraw: () -> Unit,
+    onWithdraw: () -> Unit,
+    isShowDialog: Boolean,  // 탈퇴 다이얼로그 상태,
+    onDismissDialog: () -> Unit // 다이얼로그 취소 처리
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "계정설정",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 8.dp)
+                )
+
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            ImportantRow(label = "내 차단목록 보기", onClick = onBlockList)
+
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            ImportantRow(label = "로그아웃", onClick = onLogout)
+
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            ImportantRow(label = "탈퇴하기", onClick = onClickWithdraw, color = CommonColor.Orange)
+
+        }
+    }
+
+    if (isShowDialog) {
+        WithdrawConfirmDialog(
+            onConfirm = {
+                onWithdraw()
+                onDismissDialog()
+            },
+            onDismiss = onDismissDialog
+        )
+    }
+}
+
+@Composable
+fun ImportantRow(label: String, onClick: () -> Unit, color: Color = CommonColor.Gray900) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                onClick()
+            }
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = color
+        )
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = Color(0xFFBBBBBB)
+        )
+    }
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun MyPageScreenPreview() {
@@ -377,5 +477,19 @@ fun MyPageScreenPreview() {
         MyInfoSection(
             UserInfo("윤성준", "1__________999@naver.com", "윤성주윤", "남", "ss", "1999-01-31", 2, 2)
         ) {}
+    }
+}
+
+@Preview(showBackground = true, name = "BlockList - no badge")
+@Composable
+fun BlockListSectionPreview_NoCount() {
+    MaterialTheme {
+        ImportantSection(
+            onBlockList = {},
+            onLogout = {},
+            onWithdraw = {},
+            onDismissDialog = {},
+            isShowDialog = false,
+            onClickWithdraw = {})
     }
 }

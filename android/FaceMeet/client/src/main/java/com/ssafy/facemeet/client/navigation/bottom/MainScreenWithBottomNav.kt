@@ -97,6 +97,8 @@ fun MainScreenWithBottomNav(
                     },
                     onModify = {
                         mainNavController.navigate(SettingRoutes.Register.route)
+                    }, onOpenBlocked = {
+                        
                     }
                 )
             }
