@@ -9,4 +9,6 @@ class MatchRemoteDataSource(
     suspend fun getMatch(): MatchResponse {
         return apiService.getMatch()
     }
+
+    suspend fun getMatchRemain() = apiService.getMatchRemain()
 }
