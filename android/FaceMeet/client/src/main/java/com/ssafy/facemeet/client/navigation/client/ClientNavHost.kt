@@ -11,6 +11,7 @@ import com.ssafy.facemeet.client.navigation.CurrentBottomNavState
 import com.ssafy.facemeet.client.navigation.bottom.BottomNavRoutes
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
+import com.ssafy.facemeet.client.ui.block.MyBlockListScreen
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
 import com.ssafy.facemeet.client.ui.matching.MatchingLoadingScreen
 import com.ssafy.facemeet.client.ui.notification.NotificationScreen
@@ -87,7 +88,6 @@ fun NavGraphBuilder.clientNavHost(
             roomId = roomId,
             onBackClick = {
                 navController.popBackStack()
-//                navController.navigate(Bottom--
             },
             onPartnerProfile = { partnerId ->
                 navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId, roomId))
@@ -111,7 +111,7 @@ fun NavGraphBuilder.clientNavHost(
             roomId = roomId,
             onExitRoom = {
                 navController.navigate(ClientRoutes.MainMenu.route) {
-                    CurrentBottomNavState.currentBottomTab= BottomNavRoutes.ChattingList.route
+                    CurrentBottomNavState.currentBottomTab = BottomNavRoutes.ChattingList.route
                     popUpTo(BottomNavRoutes.ChattingList.route) { inclusive = false }
                     launchSingleTop = true
                 }
@@ -120,5 +120,9 @@ fun NavGraphBuilder.clientNavHost(
         )
     }
 
-
+    composable(route = ClientRoutes.BlockList.route) {
+        MyBlockListScreen(onBack = {
+            navController.popBackStack()
+        })
+    }
 }

@@ -113,7 +113,7 @@ fun MainScreenWithBottomNav(
                     onModify = {
                         mainNavController.navigate(SettingRoutes.Register.route)
                     }, onOpenBlocked = {
-                        
+                        mainNavController.navigate(ClientRoutes.BlockList.route)
                     }
                 )
             }
@@ -167,7 +167,7 @@ fun BottomNavigationBar(
             val selected = currentRoute == item.route
 
             NavigationBarItem(
-                selected= currentRoute == item.route,
+                selected = currentRoute == item.route,
                 onClick = {
                     if (currentRoute != item.route) {
                         // 방향 계산 후 상태 저장

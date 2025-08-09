@@ -4,41 +4,32 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -97,8 +88,6 @@ fun MyPageScreen(
             }
         }
 
-//        TopBarSection(viewModel::navigateToLogout)
-//        ProfileImageSection()
         Spacer(modifier = Modifier.height(40.dp))
 
         PushNotificationSection(
@@ -123,85 +112,11 @@ fun MyPageScreen(
             onDismissDialog = viewModel::dismissWithdrawDialog
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(50.dp))
 
-
-//        WithdrawSection(
-//            viewModel::navigateToWithdraw,
-//            viewModel::clickWithdrawBtn,
-//            viewModel::dismissWithdrawDialog,
-//            uiState.isWithdrawBtnClicked
-//        )
-        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBarSection(onLogout: () -> Unit = {}) {
-    TopAppBar(
-        title = {
-            Text(
-                modifier = Modifier.clickable { onLogout() },
-                text = "로그아웃",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-    )
-}
-
-@Composable
-fun ProfileImageSection() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Box {
-                Box(
-                    modifier = Modifier
-                        .size(96.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFF0F0F0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
-                        modifier = Modifier.size(32.dp),
-                        tint = Color.Gray
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset((-4).dp, (-4).dp)
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(Color.Gray),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun PushNotificationSection(
@@ -315,44 +230,6 @@ fun MyInfoSection(
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
             ProfileInfoRow(label = "주소", value = myData?.address ?: "")
         }
-    }
-}
-
-@Composable
-fun WithdrawSection(
-    onWithdraw: () -> Unit,
-    onClick: () -> Unit = {},
-    onDismiss: () -> Unit = {},
-    isShowDialog: Boolean,
-    label: String,
-) {
-//    OutlinedButton(
-//        onClick = onClick,
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(horizontal = 16.dp)
-//            .height(48.dp),
-//        shape = RoundedCornerShape(12.dp),
-//        colors = ButtonDefaults.outlinedButtonColors(
-//            containerColor = Color.White,
-//            contentColor = Color.Gray
-//        )
-//    ) {
-//        Text(
-//            text = "탈퇴하기",
-//            fontSize = 14.sp,
-//        )
-//    }
-
-
-    if (isShowDialog) {
-        WithdrawConfirmDialog(
-            onConfirm = {
-                onWithdraw()
-                onDismiss()
-            },
-            onDismiss = onDismiss
-        )
     }
 }
 
