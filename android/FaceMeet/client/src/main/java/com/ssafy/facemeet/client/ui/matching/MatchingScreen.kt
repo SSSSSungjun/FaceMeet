@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -20,14 +22,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.MatchingStartButton
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun MatchingScreen(
-    onStartMatching: () -> Unit = {}
+    onStartMatching: () -> Unit = {},
+    viewModel: MatchingViewModel = hiltViewModel()
 ) {
+
+    val tickets = viewModel.remainingMatchTickets.collectAsState().value
+
+    LaunchedEffect(Unit) {
+        viewModel.loadRemainingMatchTickets()
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -40,7 +52,8 @@ fun MatchingScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth().padding(top = 40.dp),
+                .fillMaxWidth()
+                .padding(top = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically)
         ) {
@@ -63,15 +76,18 @@ fun MatchingScreen(
             )
 
 
-
         }
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,) {
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             // 매칭권 개수 텍스트
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 24.dp)){
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 24.dp)
+            ) {
                 Text(
-                    text = "매칭권", // 추후 상태 기반으로 교체 가능
+                    text = "매칭권 ", // 추후 상태 기반으로 교체 가능
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = CommonColor.Gray300, // 갈색 계열,
@@ -79,14 +95,14 @@ fun MatchingScreen(
                 )
                 Spacer(modifier = Modifier.padding(2.dp))
                 Text(
-                    text = " 3", // 추후 상태 기반으로 교체 가능
+                    text = tickets?.toString() ?: "불러오는중", // 추후 상태 기반으로 교체 가능
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = CommonColor.Yellow, // 갈색 계열
                 )
             }
             // 매칭 버튼
-            MatchingStartButton(onMatching = onStartMatching, buttonText = "매칭권 사용")
+            MatchingStartButton(onMatching = { onStartMatching() }, buttonText = "매칭권 사용", tickets)
 
         }
 
