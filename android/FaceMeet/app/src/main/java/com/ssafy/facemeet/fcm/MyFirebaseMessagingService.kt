@@ -20,6 +20,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ssafy.facemeet.MainActivity
+import com.ssafy.facemeet.R
 import com.ssafy.facemeet.core.data.database.NotificationDao
 import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
 import com.ssafy.facemeet.core.data.remote.api.FcmService
@@ -495,6 +496,7 @@ object FcmAlarmHandler {
         }
 
         val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.icon_small)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
