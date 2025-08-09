@@ -22,18 +22,15 @@ import com.google.gson.reflect.TypeToken
 import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.core.data.database.NotificationDao
 import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
-import com.ssafy.facemeet.core.data.remote.api.FcmService
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
-import com.ssafy.facemeet.core.data.remote.dto.response.fcm.FcmTokenResponse
+import com.ssafy.facemeet.core.domain.usecase.RegisterDeviceUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
 import com.ssafy.facemeet.fcm.FcmAlarmHandler.triggerEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,8 +39,11 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+//    @Inject
+//    lateinit var fcmService: FcmService
+
     @Inject
-    lateinit var fcmService: FcmService
+    lateinit var registerDeviceUseCase: RegisterDeviceUseCase
 
     @Inject
     lateinit var notificationDao: NotificationDao
@@ -65,17 +65,16 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
         val request = FcmTokenRequest(token, "android", deviceId)
 
-        fcmService.registerDevice(request).enqueue(object : Callback<FcmTokenResponse?> {
-            override fun onResponse(
-                call: Call<FcmTokenResponse?>, response: Response<FcmTokenResponse?>
-            ) {
-                Log.d("FCM", "토큰 등록 성공: ${response.body()}")
-            }
+        GlobalScope.launch(Dispatchers.IO) { //임시
+            registerDeviceUseCase.invoke(request)
+                .onSuccess { fcmTokenResponse ->
+                    Log.d("FCM", "FCM 토큰 등록 성공: $fcmTokenResponse")
+                }
+                .onFailure { t ->
+                    Log.e("FCM", "FCM 토큰 등록 실패", t)
+                }
+        }
 
-            override fun onFailure(call: Call<FcmTokenResponse?>, t: Throwable) {
-                Log.e("FCM", "토큰 등록 실패", t)
-            }
-        })
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
