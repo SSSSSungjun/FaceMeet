@@ -555,7 +555,7 @@ fun MatchingStartButton(
             .padding(bottom = 48.dp) // 그림자 영역 확보
             .shadow(
                 elevation = 24.dp,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(12.dp),
                 ambientColor = Color(0x66D2691E),
                 spotColor = Color(0x66D2691E)
             )

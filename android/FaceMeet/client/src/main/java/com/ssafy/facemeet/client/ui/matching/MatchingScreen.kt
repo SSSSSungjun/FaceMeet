@@ -43,7 +43,7 @@ fun MatchingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = CommonColor.Beige200)
+            .background(color = CommonColor.Beige100)
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
