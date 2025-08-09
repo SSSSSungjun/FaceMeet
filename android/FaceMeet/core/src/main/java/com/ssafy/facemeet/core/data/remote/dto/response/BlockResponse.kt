@@ -6,7 +6,7 @@ data class BlockResponse(
     @SerializedName("userId")
     val userId: Int,
     @SerializedName("nickName")
-    val nickName: String,
+    val nickName: String?,
     @SerializedName("name")
     val name: String,
     @SerializedName("gender")
