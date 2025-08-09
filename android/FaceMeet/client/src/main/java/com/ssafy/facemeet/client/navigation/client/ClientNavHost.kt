@@ -7,7 +7,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.ssafy.facemeet.client.navigation.bottom.BottomNavRoutes
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chat.ChattingScreen
@@ -85,12 +84,8 @@ fun NavGraphBuilder.clientNavHost(
         ChattingScreen(
             roomId = roomId,
             onBackClick = {
-                // navController.popBackStack()
-                navController.navigate(BottomNavRoutes.ChattingList.route) {
-                    popUpTo(ClientRoutes.Chat.route) {
-                        inclusive = true
-                    }
-                }
+                navController.popBackStack()
+//                navController.navigate(Bottom--
             },
             onPartnerProfile = { partnerId ->
                 navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId, roomId))
