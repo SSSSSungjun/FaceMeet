@@ -57,7 +57,6 @@ class ChattingViewModel @Inject constructor(
 
     val connectionState: LiveData<ConnectionState> = webSocketManager.connectionState
 
-    // 단일 메시지 상태로 통합 - 메시지 상태를 enum으로 관리
     enum class MessageStatus { PENDING, SENT, FAILED, RECEIVED }
 
     data class MessageItem(

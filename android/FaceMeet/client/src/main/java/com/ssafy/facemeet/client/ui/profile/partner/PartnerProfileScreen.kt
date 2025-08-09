@@ -57,10 +57,12 @@ import com.ssafy.facemeet.client.ui.profile.DetailItem
 import com.ssafy.facemeet.client.ui.profile.PersonalityDetail
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.BlockedDialog
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.ReportDialog
+import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.data.remote.dto.response.ErrorResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.util.constant.CommonColor
+import kotlinx.coroutines.flow.collectLatest
 import retrofit2.HttpException
 
 @Composable
@@ -68,6 +70,7 @@ fun PartnerProfileScreen(
     roomId: Long,
     partnerId: Long,
     onBack: () -> Unit,
+    onExitRoom :() -> Unit,
     viewModel: PartnerProfileViewModel = hiltViewModel()
 ) {
     Log.d("PartnerProfileScreen", "partnerId: $partnerId")
@@ -77,6 +80,11 @@ fun PartnerProfileScreen(
     val isLoading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.exitRoomEvent.collectLatest {
+            onExitRoom()
+        }
+    }
     LaunchedEffect(partnerId) {
         viewModel.loadPartnerFaceInfo(partnerId)
     }
@@ -112,6 +120,7 @@ fun PartnerProfileContent(
     val context = LocalContext.current
     var showReportDialog by remember { mutableStateOf(false) }
     var showBlockedDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
 
     val reportResult by viewModel.reportResult.collectAsState()
 
@@ -157,7 +166,14 @@ fun PartnerProfileContent(
         onDismiss = { showBlockedDialog = false },
         onConfirm = {
             viewModel.requestBlockUser(partnerId)
-            Toast.makeText(context, "차단 요청 완료!!", Toast.LENGTH_SHORT).show()
+        }
+    )
+
+    RoomExitDialog (
+        showDialog = showExitDialog,
+        onDismiss = { showExitDialog = false },
+        onConfirm = {
+            viewModel.exitChatRoom(roomId)
         }
     )
 

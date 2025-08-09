@@ -111,6 +111,12 @@ fun NavGraphBuilder.clientNavHost(
         PartnerProfileScreen(
             partnerId = partnerId,
             roomId = roomId,
+            onExitRoom = {
+                navController.navigate(ClientRoutes.MainMenu.route) {
+                    popUpTo(BottomNavRoutes.ChattingList.route) { inclusive = false }
+                    launchSingleTop = true
+                }
+            },
             onBack = { navController.popBackStack() }
         )
     }
