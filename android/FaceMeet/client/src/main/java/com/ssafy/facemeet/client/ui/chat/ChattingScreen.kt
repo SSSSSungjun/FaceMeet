@@ -189,11 +189,7 @@ fun ChattingScreen(
             onPartnerProfile = viewModel::navigateToProfile,
         )
 
-        CompactNoticeToggle(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            isNoticeOpen = uiState.isNoticeOpen,
-            onToggleNotice = viewModel::toggleNotice
-        )
+
 
         Box(modifier = Modifier.weight(1f)) {
             LazyColumn(
@@ -274,6 +270,13 @@ fun ChattingScreen(
                 }
             }
 
+            CompactNoticeToggle(
+                modifier = Modifier
+                    .align(Alignment.TopEnd),
+                isNoticeOpen = uiState.isNoticeOpen,
+                onToggleNotice = viewModel::toggleNotice
+            )
+
             if (!uiState.scrollState.isAtBottom) {
                 FloatingActionButton(
                     onClick = viewModel::scrollToBottomManually,
@@ -295,6 +298,8 @@ fun ChattingScreen(
                 }
             }
         }
+
+
 
         MessageInput(
             messageText = uiState.messageText,
