@@ -71,48 +71,23 @@ object ParsingTimeData {
     }
 
     fun String.toHourMinuteString(): String {
-        val TAG = "ParsingTime" // 태그 정의
+        val TAG = "ParsingTime"
         Log.d(TAG, "toHourMinuteString() 시작 - 입력값: '$this'")
 
-        // 한국 시간대 ZoneId 정의
-        val koreaZoneId = ZoneId.of("Asia/Seoul")
-
         return try {
-            // Instant.parse() 우선 시도
-            val result = Instant.parse(this)
-                .atZone(koreaZoneId) // <-- 여기를 수정
-                .format(DateTimeFormatter.ofPattern("HH:mm"))
-            Log.d(TAG, "toHourMinuteString() Instant.parse() 성공 - 결과: '$result'")
-            result
+            // 💡 ISO_LOCAL_DATE_TIME 포맷터를 사용하여 다양한 정밀도의 시간을 처리합니다.
+            val localDateTime = LocalDateTime.parse(this, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+            // 원하는 "HH:mm" 형식으로 포맷팅합니다.
+            val result = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+
+            Log.d(TAG, "toHourMinuteString() 파싱 성공 - 결과: '$result'")
+            return result
         } catch (e: DateTimeParseException) {
-            Log.w(TAG, "toHourMinuteString() Instant.parse() 실패 - ZonedDateTime 시도", e)
-            try {
-                // ZonedDateTime.parse() 재시도
-                val result = ZonedDateTime.parse(this)
-                    .withZoneSameInstant(koreaZoneId) // <-- 여기를 수정
-                    .format(DateTimeFormatter.ofPattern("HH:mm"))
-                Log.d(TAG, "toHourMinuteString() ZonedDateTime.parse() 성공 - 결과: '$result'")
-                result
-            } catch (e2: DateTimeParseException) {
-                Log.w(TAG, "toHourMinuteString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
-                // 파싱 실패 시 parseFlexibleDateTime으로 재시도
-                parseFlexibleDateTime()
-                    ?.withZoneSameInstant(koreaZoneId) // <-- 여기를 수정
-                    ?.format(DateTimeFormatter.ofPattern("HH:mm"))
-                    ?.also { result ->
-                        Log.d(TAG, "toHourMinuteString() parseFlexibleDateTime 성공 - 결과: '$result'")
-                    }
-                    ?: run {
-                        Log.e(TAG, "toHourMinuteString() 모든 시도 실패 - 기본값 반환")
-                        "--:--"
-                    }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "toHourMinuteString() 예상치 못한 오류", e)
-            "--:--"
+            Log.e(TAG, "toHourMinuteString() 파싱 실패", e)
+            return "--:--"
         }
     }
-
 
     fun String.toFullDateString(): String {
         Log.d(TAG, "toFullDateString() 시작 - 입력값: '$this'")
