@@ -50,7 +50,7 @@ fun FaceTestLoadingScreen(
     cameraShotViewModel: CameraShotViewModel,
     analyzeViewModel: FaceAnalyzeViewModel,
     onNavigateToResult: () -> Unit,
-    retry: () -> Unit,
+    onRetry: () -> Unit,
     onCancel: () -> Unit,
 ) {
 
@@ -93,7 +93,7 @@ fun FaceTestLoadingScreen(
             error != null -> {
                 CuteInlineError(
                     errorCode = error,
-                    onRetry = { tryAnalyze() }
+                    onRetry = { onRetry() }
                 )
             }
 
@@ -258,7 +258,7 @@ fun CuteInlineError(
 
         TextButton(onClick = onRetry) {
             Text(
-                text = "다시 시도하기",
+                text = "다시 찍기",
                 color = Color(0xFFFFFFFF),
                 fontSize = 16.sp,
                 style = androidx.compose.ui.text.TextStyle(

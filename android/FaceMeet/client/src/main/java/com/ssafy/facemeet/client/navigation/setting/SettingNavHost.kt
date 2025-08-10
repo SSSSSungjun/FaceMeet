@@ -80,7 +80,7 @@ fun NavGraphBuilder.settingNavHost(
     composable(SettingRoutes.SidePreview.route) {
         ShotPreviewScreen(
             image = cameraVM.side.value?.asImageBitmap(),
-            title = "옆면 사진에 이상 없으면 다음을 눌러주세요.",
+            title = "45도 옆면 사진에 이상 없으면 다음을 눌러주세요.",
             onRetake = {
                 cameraVM.resetSide()
                 navController.popBackStack(SettingRoutes.SideCamera.route, false)
@@ -88,7 +88,7 @@ fun NavGraphBuilder.settingNavHost(
             onConfirm = {
                 if (cameraVM.readyBoth()) {
                     navController.navigate(SettingRoutes.FaceTestLoading.route) {
-                        popUpTo(ClientRoutes.Profile.route) { inclusive = false }
+                        popUpTo(SettingRoutes.CameraStart.route) { inclusive = false }
                     }
                 }
             }
@@ -114,10 +114,14 @@ fun NavGraphBuilder.settingNavHost(
                 }
                 navController.navigate(ClientRoutes.Profile.route)
             },
-            retry = {
+            onRetry = {
                 navController.navigate(SettingRoutes.CameraStart.route) {
-                    popUpTo(SettingRoutes.CameraStart.route) { inclusive = false }
+                    // 지금 로딩 화면(= FaceTestLoading)을 포함해서 팝 → 뒤로 가도 로딩으로 안 돌아감
+                    popUpTo(SettingRoutes.FaceTestLoading.route) { inclusive = true }
+                    launchSingleTop = true
                 }
+
+
             }, onCancel = {
                 navController.popBackStack()
             })
