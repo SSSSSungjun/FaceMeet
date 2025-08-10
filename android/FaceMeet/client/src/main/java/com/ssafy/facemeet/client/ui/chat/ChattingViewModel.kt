@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -42,6 +43,12 @@ class ChattingViewModel @Inject constructor(
 
     var currentUserId: Long = 0L
     var currentRoomId: Long = 0L
+
+    private val _myLastMessageId = MutableStateFlow<String?>(null)
+    val myLastMessageId: StateFlow<String?> = _myLastMessageId.asStateFlow()
+
+    private val _showReadStatus = MutableStateFlow(false)
+    val showReadStatus: StateFlow<Boolean> = _showReadStatus.asStateFlow()
 
     private val _messageState = MutableStateFlow(MessageState())
     val messageState: StateFlow<MessageState> = _messageState
@@ -125,7 +132,6 @@ class ChattingViewModel @Inject constructor(
         viewModelScope.launch {
             if (newMessage.chatElement.roomID != currentRoomId) return@launch
 
-            // 중복 체크를 더 안정적으로
             val messageKey = generateMessageKey(newMessage.chatElement)
             val isDuplicate = _unifiedMessages.value.any {
                 generateMessageKey(it.chatMessage.chatElement) == messageKey
@@ -138,15 +144,21 @@ class ChattingViewModel @Inject constructor(
 
             Log.d(TAG, "📩 새 메시지 처리: ${newMessage.chatElement.content}")
 
-            // 내가 보낸 메시지인 경우 PENDING 상태의 메시지를 SENT로 변경
             if (newMessage.chatElement.senderID == currentUserId) {
+                // 내가 보낸 메시지: PENDING를 SENT로 변경
                 updatePendingMessageToSent(newMessage)
+
+                // 전송 완료된 메시지의 실제 ID로 업데이트 (추가)
+                _myLastMessageId.value = generateMessageKey(newMessage.chatElement)
+
+                markAsRead()
+
             } else {
-                // 상대방 메시지는 바로 추가
+                // 상대방 메시지: 바로 추가하고 읽음 표시 제거 (추가)
                 addNewMessage(newMessage, MessageStatus.RECEIVED)
+                _showReadStatus.value = false
             }
 
-            // 자동 스크롤
             if (_uiState.value.scrollState.isAtBottom) {
                 triggerScroll(ScrollEvent.ToBottom)
             }
@@ -166,7 +178,10 @@ class ChattingViewModel @Inject constructor(
         val pendingMessage = createPendingMessage(messageContent, state.roomInfo, localId)
         addNewMessage(pendingMessage.chatMessage, MessageStatus.PENDING, localId)
 
-        // UI 상태 업데이트
+        // 내 마지막 메시지 ID 업데이트 (추가)
+        _myLastMessageId.value = localId
+
+        // 기존 UI 상태 업데이트 코드...
         _uiState.update {
             it.copy(
                 messageText = "",
@@ -175,10 +190,9 @@ class ChattingViewModel @Inject constructor(
             )
         }
 
-        // 자동 스크롤
         triggerScroll(ScrollEvent.ToBottom)
 
-        // 웹소켓으로 전송
+        // 기존 WebSocket 전송 코드...
         viewModelScope.launch {
             try {
                 webSocketManager.sendMessage(
@@ -189,7 +203,6 @@ class ChattingViewModel @Inject constructor(
                     tempId = System.currentTimeMillis()
                 )
 
-                // 타임아웃 처리
                 delay(TEMP_MESSAGE_TIMEOUT)
                 markMessageAsFailed(localId)
 
@@ -225,6 +238,25 @@ class ChattingViewModel @Inject constructor(
             }
         }
     }
+
+    private fun markAsRead() {
+        viewModelScope.launch {
+            try {
+                webSocketManager.markAsRead(
+                    roomId = currentRoomId.toString(),
+                    userId = currentUserId,
+                    senderId = currentUserId
+                )
+
+                // 읽음 처리 완료되면 읽음 표시 (추가)
+                _showReadStatus.value = true
+
+            } catch (e: Exception) {
+                Log.e(TAG, "읽음 처리 실패", e)
+            }
+        }
+    }
+
 
     private fun updatePendingMessageToSent(sentMessage: ChatMessageItem) {
         _unifiedMessages.update { current ->

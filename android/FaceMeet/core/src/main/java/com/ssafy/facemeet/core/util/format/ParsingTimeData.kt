@@ -69,12 +69,18 @@ object ParsingTimeData {
             }
         }
     }
+
     fun String.toHourMinuteString(): String {
+        val TAG = "ParsingTime" // 태그 정의
         Log.d(TAG, "toHourMinuteString() 시작 - 입력값: '$this'")
+
+        // 한국 시간대 ZoneId 정의
+        val koreaZoneId = ZoneId.of("Asia/Seoul")
+
         return try {
             // Instant.parse() 우선 시도
             val result = Instant.parse(this)
-                .atZone(ZoneId.systemDefault())
+                .atZone(koreaZoneId) // <-- 여기를 수정
                 .format(DateTimeFormatter.ofPattern("HH:mm"))
             Log.d(TAG, "toHourMinuteString() Instant.parse() 성공 - 결과: '$result'")
             result
@@ -83,7 +89,7 @@ object ParsingTimeData {
             try {
                 // ZonedDateTime.parse() 재시도
                 val result = ZonedDateTime.parse(this)
-                    .withZoneSameInstant(ZoneId.systemDefault())
+                    .withZoneSameInstant(koreaZoneId) // <-- 여기를 수정
                     .format(DateTimeFormatter.ofPattern("HH:mm"))
                 Log.d(TAG, "toHourMinuteString() ZonedDateTime.parse() 성공 - 결과: '$result'")
                 result
@@ -91,7 +97,7 @@ object ParsingTimeData {
                 Log.w(TAG, "toHourMinuteString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
                 // 파싱 실패 시 parseFlexibleDateTime으로 재시도
                 parseFlexibleDateTime()
-                    ?.withZoneSameInstant(ZoneId.systemDefault())
+                    ?.withZoneSameInstant(koreaZoneId) // <-- 여기를 수정
                     ?.format(DateTimeFormatter.ofPattern("HH:mm"))
                     ?.also { result ->
                         Log.d(TAG, "toHourMinuteString() parseFlexibleDateTime 성공 - 결과: '$result'")
@@ -106,6 +112,7 @@ object ParsingTimeData {
             "--:--"
         }
     }
+
 
     fun String.toFullDateString(): String {
         Log.d(TAG, "toFullDateString() 시작 - 입력값: '$this'")
@@ -145,13 +152,16 @@ object ParsingTimeData {
         }
     }
 
-    // 2025-08-06T06:08:03.375Z 형식에 최적화된 parseFlexibleDateTime
     fun String.parseFlexibleDateTime(): ZonedDateTime? {
         Log.d(TAG, "parseFlexibleDateTime() 시작 - 입력값: '$this'")
 
-        // 1. Instant.parse() - 가장 표준적이고 확실한 방법 (2025-08-06T06:08:03.375Z에 최적)
+        // 한국 시간대 ZoneId를 명시적으로 정의
+        val koreaZoneId = ZoneId.of("Asia/Seoul")
+
+        // 1. Instant.parse() - 가장 표준적이고 확실한 방법
         try {
-            val result = Instant.parse(this).atZone(ZoneId.systemDefault())
+            // atZone() 메서드에 한국 시간대 적용
+            val result = Instant.parse(this).atZone(koreaZoneId)
             Log.d(TAG, "parseFlexibleDateTime() Instant.parse() 성공")
             return result
         } catch (e: DateTimeParseException) {
@@ -160,34 +170,36 @@ object ParsingTimeData {
 
         // 2. 기본 ZonedDateTime.parse() 시도
         try {
-            val result = ZonedDateTime.parse(this)
+            // 파싱된 ZonedDateTime의 시간대도 한국 시간대로 통일
+            val result = ZonedDateTime.parse(this).withZoneSameInstant(koreaZoneId)
             Log.d(TAG, "parseFlexibleDateTime() ZonedDateTime.parse() 성공")
             return result
         } catch (e: DateTimeParseException) {
             Log.d(TAG, "parseFlexibleDateTime() ZonedDateTime.parse() 실패 - 커스텀 패턴 시도")
         }
 
-        // 3. 커스텀 패턴들로 시도 (우선순위 높은 것부터)
+        // 3. 커스텀 패턴들로 시도
         val patterns = listOf(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",     // 2025-08-06T06:08:03.375Z (3자리 밀리초)
-            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",  // 마이크로초 6자리
-            "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",      // 밀리초 2자리
-            "yyyy-MM-dd'T'HH:mm:ss.S'Z'",       // 밀리초 1자리
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",         // 초 단위
-            "yyyy-MM-dd'T'HH:mm:ssXXX",         // 타임존 포함
-            "yyyy-MM-dd'T'HH:mm:ss",            // 로컬 시간
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.S'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss",
         )
 
         for ((index, pattern) in patterns.withIndex()) {
             try {
                 Log.d(TAG, "parseFlexibleDateTime() 패턴 시도 #${index + 1}: '$pattern'")
-                val formatter = DateTimeFormatter.ofPattern(pattern)
+                val formatter = DateTimeFormatter.ofPattern(pattern).withZone(koreaZoneId) // <-- 여기를 수정
+
                 val result = if (pattern.endsWith("'Z'")) {
-                    // UTC 시간으로 파싱 후 시스템 시간대로 변환
-                    LocalDateTime.parse(this, formatter).atZone(ZoneId.of("UTC"))
+                    // 'Z'가 포함된 패턴은 UTC로 파싱 후 한국 시간대로 변환
+                    LocalDateTime.parse(this, DateTimeFormatter.ofPattern(pattern)).atZone(koreaZoneId)
                 } else {
-                    // 다른 형식들
-                    ZonedDateTime.parse(this, formatter.withZone(ZoneId.of("UTC")))
+                    // 다른 형식들은 한국 시간대 포맷터로 바로 파싱
+                    ZonedDateTime.parse(this, formatter)
                 }
                 Log.d(TAG, "parseFlexibleDateTime() 패턴 #${index + 1} 성공")
                 return result

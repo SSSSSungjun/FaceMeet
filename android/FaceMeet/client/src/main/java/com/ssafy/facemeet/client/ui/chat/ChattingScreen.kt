@@ -35,7 +35,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -79,6 +78,7 @@ import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.util.AppStateManager
+import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
 import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -330,24 +330,31 @@ private fun generateMessageKey(chatElement: ChatElement, index: Int): String {
 private fun RenderMessage(
     message: ChatMessageItem,
     isMyMessage: Boolean,
-    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED
+    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED,
+    isMyLastMessage: Boolean = false,
+    showReadStatus: Boolean = false
 ) {
     when (message.messageType) {
         MessageType.TEXT -> {
             ChatMessageBubble(
                 message = message.chatElement,
                 isMyMessage = isMyMessage,
-                messageStatus = messageStatus
+                messageStatus = messageStatus,
+                isMyLastMessage = isMyLastMessage,  // 추가
+                showReadStatus = showReadStatus     // 추가
             )
         }
+
         MessageType.DATE -> {
             DateSeparator(date = message.chatElement.content.toString())
         }
+
         MessageType.CHAT_END -> {
             ChatEndMessage(message.chatElement.content)
         }
+
         MessageType.SYSTEM -> {
-            // 시스템 메시지 처리
+
         }
     }
 }
@@ -357,14 +364,16 @@ private fun RenderMessage(
 fun ChatMessageBubble(
     message: ChatElement,
     isMyMessage: Boolean,
-    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED
+    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED,
+    isMyLastMessage: Boolean = false,
+    showReadStatus: Boolean = false
 ) {
     val isPending = messageStatus == ChattingViewModel.MessageStatus.PENDING
     val isFailed = messageStatus == ChattingViewModel.MessageStatus.FAILED
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(vertical = 3.dp)
             .alpha(
                 when (messageStatus) {
@@ -380,53 +389,56 @@ fun ChatMessageBubble(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 verticalAlignment = Alignment.Bottom
             ) {
-                // 메시지 상태 표시
-                when (messageStatus) {
-                    ChattingViewModel.MessageStatus.PENDING -> {
+                // 메시지 상태 표시 (세로로 배치)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    // 읽음 표시 (맨 위) - 추가
+                    if (isMyLastMessage && showReadStatus && messageStatus == ChattingViewModel.MessageStatus.SENT) {
                         Text(
-                            text = "전송중...",
+                            text = "읽음",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(end = 4.dp)
+                            color = Color.Blue,
+                            fontSize = 10.sp
                         )
                     }
-                    ChattingViewModel.MessageStatus.FAILED -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Error, // 기본 에러 아이콘 사용
-                                contentDescription = "전송 실패",
-                                tint = Color.Red,
-                                modifier = Modifier.size(16.dp)
-                            )
+
+                    // 전송중/전송실패 표시 (읽음 아래)
+                    when (messageStatus) {
+                        ChattingViewModel.MessageStatus.PENDING -> {
                             Text(
-                                text = "실패",
+                                text = "전송중",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.Red,
-                                modifier = Modifier.padding(start = 2.dp)
+                                color = Color.Gray,
+                                fontSize = 10.sp
                             )
                         }
+                        ChattingViewModel.MessageStatus.FAILED -> {
+                            Text(
+                                text = "전송실패",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Red,
+                                fontSize = 10.sp
+                            )
+                        }
+                        else -> {}
                     }
-                    ChattingViewModel.MessageStatus.SENT -> {
-                        Text(
-                            text = "전송됨",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(end = 4.dp)
-                        )
-                    }
-                    else -> {
-                        // RECEIVED 상태에서는 아무것도 표시하지 않음
-                    }
+
+                    Text(
+                        text = message.createdAt.toHourMinuteString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        fontSize = 10.sp
+                    )
                 }
 
+                // 기존 메시지 버블 코드 그대로...
                 Card(
                     modifier = Modifier.widthIn(max = 240.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when (messageStatus) {
-                            ChattingViewModel.MessageStatus.FAILED -> Color(0xFFFFCDD2) // 연한 빨강
+                            ChattingViewModel.MessageStatus.FAILED -> Color(0xFFFFCDD2)
                             else -> Color(0xFF824946)
                         }
                     ),
@@ -446,11 +458,12 @@ fun ChatMessageBubble(
                 }
             }
         } else {
-            // 상대방 메시지
+            // 상대방 메시지 (시간 항상 표시로 수정)
             Row(
                 modifier = Modifier.align(Alignment.CenterStart),
                 verticalAlignment = Alignment.Bottom
             ) {
+                // 기존 메시지 버블 코드 그대로...
                 Card(
                     modifier = Modifier.widthIn(max = 240.dp),
                     colors = CardDefaults.cardColors(
@@ -470,11 +483,19 @@ fun ChatMessageBubble(
                         fontSize = 15.sp
                     )
                 }
+
+                // 시간 (항상 표시)
+                Text(
+                    text = message.createdAt.toHourMinuteString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 4.dp),
+                    fontSize = 10.sp
+                )
             }
         }
     }
 }
-
 // 기존 UI 컴포넌트들은 그대로 유지
 @Composable
 fun ChatHeader(
