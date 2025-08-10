@@ -2,6 +2,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 
 @Composable
 fun FaceSideOverlay(
@@ -61,7 +63,7 @@ fun FaceSideOverlay(
             // 원본 뷰박스: width = 28, height = 60
             // 우리가 그릴 높이 기준: faceH * 0.8
             val scale = faceH * 0.8f / 150f
-            val offsetX = cx - faceW * 0.35f
+            val offsetX = cx - faceW * 0.30f
             val offsetY = cy - (60f * scale) / 3f
 
             val path = Path().apply {
@@ -84,10 +86,12 @@ fun FaceSideOverlay(
             text = guideText,
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                .systemBarsPadding()
                 .padding(top = 48.dp),
             textAlign = TextAlign.Center,
-            fontSize = 16.sp,
-            color = Color.White
+            fontSize = 26.sp,
+            color = Color.White,
+            fontFamily = ChosunCentennial
         )
 
 

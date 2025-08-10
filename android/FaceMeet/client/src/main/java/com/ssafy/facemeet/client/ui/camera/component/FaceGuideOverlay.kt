@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssafy.facemeet.client.ml.FaceState
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import kotlin.math.min
 
 @Composable
@@ -80,10 +82,12 @@ fun FaceGuideOverlay(
             text = guideText,
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                .systemBarsPadding()
                 .padding(top = 48.dp),
             textAlign = TextAlign.Center,
-            fontSize = 16.sp,
-            color = Color.White
+            fontSize = 26.sp,
+            color = Color.White,
+            fontFamily = ChosunCentennial
         )
 
         countDown?.let { sec ->
