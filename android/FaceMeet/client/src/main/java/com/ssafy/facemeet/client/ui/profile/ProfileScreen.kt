@@ -227,7 +227,7 @@ fun ProfileScreenContent(
                         brush = Brush.linearGradient(
                             colors = listOf(Color(0xFFFFFCEE), Color(0xFFF4E5C9))
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                     .padding(16.dp)
             ) {
@@ -261,7 +261,7 @@ fun ProfileScreenContent(
                     onRetry()
                 }
         )
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(40.dp))
         Text(
             "관상 프로필을 SNS에 공유해보세요!",
             color = Color(0xFFDC6E2F),
