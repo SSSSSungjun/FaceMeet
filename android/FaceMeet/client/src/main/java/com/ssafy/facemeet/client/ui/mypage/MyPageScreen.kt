@@ -48,8 +48,8 @@ private const val TAG = "MyPageScreen"
 @Composable
 fun MyPageScreen(
     viewModel: MyPageViewModel = hiltViewModel(),
-    onLogout: () -> Unit,
-    onWithdraw: () -> Unit,
+    onMoveAfterLogout: () -> Unit,
+    onMoveAfterWithdraw: () -> Unit,
     onModify: () -> Unit,
     onOpenBlocked: () -> Unit,
 
@@ -71,7 +71,7 @@ fun MyPageScreen(
         LaunchedEffect(navigationEvent) {
             when (navigationEvent) {
                 MyPageNaviEvent.ToLogout -> {
-                    onLogout()
+                    onMoveAfterLogout()
                 }
 
                 MyPageNaviEvent.ToModify -> {
@@ -79,7 +79,7 @@ fun MyPageScreen(
                 }
 
                 MyPageNaviEvent.ToWithdraw -> {
-                    onWithdraw()
+                    onMoveAfterWithdraw()
                 }
 
                 null -> {
@@ -105,11 +105,11 @@ fun MyPageScreen(
 
         ImportantSection(
             onBlockList = onOpenBlocked,
-            onLogout = onLogout,
-            onWithdraw = onWithdraw,
+            onLogout = viewModel::navigateToLogout,
             onClickWithdraw = viewModel::clickWithdrawBtn,
             isShowDialog = uiState.isWithdrawBtnClicked,
-            onDismissDialog = viewModel::dismissWithdrawDialog
+            onDismissDialog = viewModel::dismissWithdrawDialog,
+            onDelete = viewModel::navigateToWithdraw
         )
 
         Spacer(modifier = Modifier.height(50.dp))
@@ -269,7 +269,7 @@ fun ImportantSection(
     onBlockList: () -> Unit = {},
     onLogout: () -> Unit,
     onClickWithdraw: () -> Unit,
-    onWithdraw: () -> Unit,
+    onDelete: () -> Unit,
     isShowDialog: Boolean,  // 탈퇴 다이얼로그 상태,
     onDismissDialog: () -> Unit // 다이얼로그 취소 처리
 ) {
@@ -312,7 +312,7 @@ fun ImportantSection(
     if (isShowDialog) {
         WithdrawConfirmDialog(
             onConfirm = {
-                onWithdraw()
+                onDelete()
                 onDismissDialog()
             },
             onDismiss = onDismissDialog
@@ -352,7 +352,7 @@ fun ImportantRow(label: String, onClick: () -> Unit, color: Color = CommonColor.
 fun MyPageScreenPreview() {
     MaterialTheme {
         MyInfoSection(
-            UserInfo("윤성준", "1__________999@naver.com", "윤성주윤", "남", "ss", "1999-01-31", 2, 2)
+            UserInfo("윤성준", "1__________999@naver.com", "윤성주윤", "남", "ss", "1999-01-31", 2, 2, 0.0,0.0)
         ) {}
     }
 }
@@ -364,9 +364,8 @@ fun BlockListSectionPreview_NoCount() {
         ImportantSection(
             onBlockList = {},
             onLogout = {},
-            onWithdraw = {},
             onDismissDialog = {},
             isShowDialog = false,
-            onClickWithdraw = {})
+            onClickWithdraw = {}, onDelete = {})
     }
 }

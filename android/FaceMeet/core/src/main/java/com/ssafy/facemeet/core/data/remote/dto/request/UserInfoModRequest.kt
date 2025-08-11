@@ -1,6 +1,6 @@
 package com.ssafy.facemeet.core.data.remote.dto.request
 
-data class UserInfoModRequest (
+data class UserInfoModRequest(
     val nickname: String,
     val address: String,
     val latitude: Double,

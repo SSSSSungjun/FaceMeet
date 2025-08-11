@@ -4,9 +4,11 @@ package com.ssafy.facemeet.client.navigation.setting
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.ui.camera.CameraCaptureScreen
 import com.ssafy.facemeet.client.ui.camera.CameraScreen
@@ -18,6 +20,9 @@ import com.ssafy.facemeet.client.ui.camera.ShotPreviewScreen
 import com.ssafy.facemeet.client.ui.map.MapScreen
 import com.ssafy.facemeet.client.ui.register.RegisterScreen
 
+
+enum class RegisterMode { REGISTER, EDIT }
+
 private const val TAG = "SettingNavHost"
 
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -27,17 +32,44 @@ fun NavGraphBuilder.settingNavHost(
     analyzeVM: FaceAnalyzeViewModel,
 ) {
 
+
     composable(
-        SettingRoutes.Register.route,
-    ) {
+        route = "register?mode={mode}",
+        arguments = listOf(navArgument("mode") { defaultValue = "register" })
+    ) { backStackEntry: NavBackStackEntry ->
+
+        val modeArgument = backStackEntry.arguments?.getString("mode") ?: "register"
+        val mode = if (modeArgument.equals("edit", ignoreCase = true)) {
+            RegisterMode.EDIT
+        } else {
+            RegisterMode.REGISTER
+        }
+
         RegisterScreen(
+            mode = mode,
             toNext = {
-                navController.navigate(SettingRoutes.CameraStart.route)
-            }, // 여기서 뒤로가면 등록 못가게 해야할듯.
-            toBack = { navController.popBackStack() },
+                when (mode) {
+                    RegisterMode.REGISTER -> {
+                        navController.navigate(SettingRoutes.CameraStart.route) {
+                            popUpTo("register") { inclusive = true } // 등록 플로우에서 뒤로가기 방지
+                            launchSingleTop = true
+                        }
+                    }
+
+                    RegisterMode.EDIT -> {
+                        navController.popBackStack()
+                    }
+                }
+            },
+            toBack = {
+                navController.popBackStack()
+            },
             toMap = { navController.navigate(SettingRoutes.Map.route) }
         )
     }
+
+
+
 
     composable(SettingRoutes.Map.route) {
         MapScreen(

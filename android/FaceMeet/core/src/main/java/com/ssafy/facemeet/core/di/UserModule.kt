@@ -9,6 +9,7 @@ import com.ssafy.facemeet.core.domain.usecase.DeleteUserUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetHomeInfoUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetPartnerFaceInfoUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetUserInfoUseCase
+import com.ssafy.facemeet.core.domain.usecase.GetUserStatusUseCase
 import com.ssafy.facemeet.core.domain.usecase.SetUserOfflineUseCase
 import com.ssafy.facemeet.core.domain.usecase.SetUserOnlineUseCase
 import com.ssafy.facemeet.core.domain.usecase.UpdateUserInfoUseCase
@@ -86,6 +87,12 @@ object UserModule {
     @Singleton
     fun provideGetPartnerFaceInfoUseCase(userRepository: UserRepository): GetPartnerFaceInfoUseCase {
         return GetPartnerFaceInfoUseCase(userRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetUserStatusUseCase(userRepository: UserRepository): GetUserStatusUseCase {
+        return GetUserStatusUseCase(userRepository)
     }
 
     @Provides
