@@ -209,14 +209,12 @@ class ChatWebSocketManager @Inject constructor() {
 
             try {
                 if (body.startsWith("{")) {
-                    // 읽음 확인 메시지 처리
-                    if (destination?.contains("read-receipt") == true || body.contains("readAt")) {
+                    if (destination?.contains("read-receipt") == true) {
                         Log.d("WebSocket", "📖 읽음 확인 수신: $body")
                         onReadNotification?.invoke()
                         return
                     }
 
-                    // 일반 채팅 메시지 처리
                     val messageResponse = gson.fromJson(body, ChatElement::class.java)
                     Log.d("WebSocket", "💬 일반 메시지 파싱: $messageResponse")
                     handleChatMessage(messageResponse)

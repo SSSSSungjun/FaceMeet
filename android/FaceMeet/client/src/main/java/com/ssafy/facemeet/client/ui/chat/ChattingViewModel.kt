@@ -118,46 +118,35 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 새 메시지 처리 로직
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
-            if (newMessage.chatElement.roomID != currentRoomId) return@launch
-
-            val existingItem = _unifiedMessages.value.find {
-                it.status == MessageStatus.PENDING &&
-                        it.chatMessage.chatElement.content.trim() == newMessage.chatElement.content.trim() &&
-                        it.chatMessage.chatElement.senderID == currentUserId
-            }
-
-            if (existingItem != null) {
-                updatePendingMessageToSent(newMessage)
-                Log.d(TAG, "✅ PENDING 메시지를 SENT로 업데이트: ${newMessage.chatElement.content}")
+            if (newMessage.chatElement.roomID != currentRoomId) {
+                Log.w(TAG, "다른 방 메시지 수신 - roomId: ${newMessage.chatElement.roomID}")
                 return@launch
             }
 
+            if (newMessage.chatElement.senderID == currentUserId) {
+                Log.d(TAG, "내가 보낸 메시지 수신 (중복 방지): ${newMessage.chatElement.content}")
+                return@launch
+            }
+
+            Log.d(TAG, "📩 상대방 메시지 처리: ${newMessage.chatElement.content}")
+
+            // 메시지 중복 체크
             val messageKey = generateMessageKey(newMessage.chatElement)
             val isDuplicate = _unifiedMessages.value.any {
                 generateMessageKey(it.chatMessage.chatElement) == messageKey
             }
-
             if (isDuplicate) {
                 Log.d(TAG, "중복 메시지 무시: $messageKey")
                 return@launch
             }
 
-            Log.d(TAG, "📩 새 메시지 처리: ${newMessage.chatElement.content}")
+            // UI에 새 메시지 추가
+            addNewMessage(newMessage, MessageStatus.RECEIVED)
 
-            if (newMessage.chatElement.senderID == currentUserId) {
-                updatePendingMessageToSent(newMessage)
-                _myLastMessageId.value = generateMessageKey(newMessage.chatElement)
-                markAsRead()
-            } else {
-                addNewMessage(newMessage, MessageStatus.RECEIVED)
-                _unifiedMessages.update { current ->
-                    current.map { it.copy(showReadStatus = false) }
-                }
-                markAsRead()
-            }
+            // 상대방 메시지를 받았으니 읽음 처리
+            markAsRead()
 
             if (_uiState.value.scrollState.isAtBottom) {
                 triggerScroll(ScrollEvent.ToBottom)
@@ -165,15 +154,13 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
+
     // 메시지 전송
     fun sendMessage() {
         val state = _uiState.value
         if (!state.canSendMessage || currentUserId == 0L) return
 
-        val messageContent = state.messageText.trim()
-        if (messageContent.isBlank()) return
-
-        val sentMessage = createSentMessage(messageContent, state.roomInfo)
+        val sentMessage = createSentMessage(state.messageText.trim(), state.roomInfo)
         addNewMessage(sentMessage.chatMessage, MessageStatus.SENT)
 
         _uiState.update {
@@ -189,7 +176,7 @@ class ChattingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 webSocketManager.sendMessage(
-                    content = messageContent,
+                    content = state.messageText.trim(),
                     roomId = state.roomInfo.chatRoomID,
                     senderId = currentUserId,
                     receiverId = state.roomInfo.partnerID
