@@ -1,12 +1,18 @@
 package com.ssafy.facemeet.navigation
 
 import LoginScreen
+import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,11 +21,13 @@ import androidx.navigation.navArgument
 import com.ssafy.facemeet.MainViewModel
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
 import com.ssafy.facemeet.client.navigation.client.clientNavHost
+import com.ssafy.facemeet.client.navigation.setting.RegisterMode
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.navigation.setting.settingNavHost
 import com.ssafy.facemeet.client.ui.camera.CameraShotViewModel
 import com.ssafy.facemeet.client.ui.camera.FaceAnalyzeViewModel
 import com.ssafy.facemeet.core.util.Animation.NavigationAnimations
+import com.ssafy.facemeet.navigation.gate.LoginGateScreen
 import com.ssafy.facemeet.ui.web.SocialProvider
 import com.ssafy.facemeet.ui.web.WebLoginScreen
 
@@ -34,7 +42,11 @@ fun AppNavHost(
 
     val navController = rememberNavController()
     val bottomNavController = rememberNavController()
-//    val startDestination = if (!isLoggedIn) AppRoutes.Start.route else ClientRoutes.MainMenu.route
+//    val startDestination = if (!isLoggedIn) {
+//        AppRoutes.Start.route
+//    } else {
+//        AppRoutes.LoginGate.route
+//    }
     val startDestination = AppRoutes.Start.route
 
     val cameraVM: CameraShotViewModel = hiltViewModel()
@@ -65,14 +77,35 @@ fun AppNavHost(
         Log.d(TAG, "AppNavHost: start")
         // 로그인 화면
         composable(AppRoutes.Start.route) {
-            LoginScreen(
-                onNavigateToKakaoLogin = {
-                    navController.navigate(AppRoutes.WebLogin.createRoute("KAKAO"))
-                },
-                onNavigateToNaverLogin = {
-                    navController.navigate(AppRoutes.WebLogin.createRoute("NAVER"))
+            LaunchedEffect(isLoggedIn) {
+                if (isLoggedIn) {
+                    navController.printBackStack()
+
+                    navController.navigate(AppRoutes.LoginGate.route) {
+                        launchSingleTop = true         // LoginGate 중복 방지
+                        // popUpTo 하지 않음 → Start가 백스택에 남아 바닥으로 깔림
+                    }
                 }
-            )
+            }
+
+            if (isLoggedIn) {
+                // 스플래시/플레이스홀더 화면 (로고 넣어도 됨)
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF4F3ED))
+                )
+            } else {
+                // 로그인 필요 시에만 진짜 LoginScreen 표시
+                LoginScreen(
+                    onNavigateToKakaoLogin = {
+                        navController.navigate(AppRoutes.WebLogin.createRoute("KAKAO"))
+                    },
+                    onNavigateToNaverLogin = {
+                        navController.navigate(AppRoutes.WebLogin.createRoute("NAVER"))
+                    }
+                )
+            }
         }
 
         composable(
@@ -88,21 +121,27 @@ fun AppNavHost(
                 provider = provider,
                 onLoginSuccess = { hasInfo, hasFace ->
                     Log.d(TAG, "hasInfo: ${hasInfo}  hasFace : ${hasFace}")
-
-                    if (!hasInfo) {
-                        navController.navigate(SettingRoutes.Register.route) {
-                            popUpTo(AppRoutes.Start.route) { inclusive = false }
-                        }
-                    } else if (!hasFace) {
-                        navController.navigate(SettingRoutes.CameraStart.route) {
-                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-                        }
-                    } else {
-                        Log.d(TAG, "AppNavHost: else")
-                        navController.navigate(ClientRoutes.MainMenu.route) {
-                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-                        }
+                    navController.printBackStack()
+                    navController.navigate(AppRoutes.LoginGate.route) {
+                        popUpTo(AppRoutes.Start.route) {
+                            inclusive = false
+                        } // 로그인 화면 스택 유지/제거는 취향대로
+                        launchSingleTop = true
                     }
+
+//                    if (!hasInfo) {
+//                        Log.d(TAG, "AppNavHost: hasInfo false")
+//                        navController.navigate("${SettingRoutes.Register.route}?mode=${RegisterMode.REGISTER.name}")
+//                    } else if (!hasFace) {
+//                        navController.navigate(SettingRoutes.CameraStart.route) {
+//                            popUpTo(AppRoutes.Start.route) { inclusive = true }
+//                        }
+//                    } else {
+//                        Log.d(TAG, "AppNavHost: else")
+//                        navController.navigate(ClientRoutes.MainMenu.route) {
+//                            popUpTo(AppRoutes.Start.route) { inclusive = true }
+//                        }
+//                    }
                 },
                 onLoginFailed = {
                     Log.d(TAG, "AppNavHost: Failed")
@@ -115,7 +154,42 @@ fun AppNavHost(
             )
         }
 
+
+        composable(AppRoutes.LoginGate.route) {
+            LoginGateScreen(
+                onToRegister = {
+                    navController.navigate("${SettingRoutes.Register.route}?mode=${RegisterMode.REGISTER.name}") {
+                        popUpTo(AppRoutes.Start.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onToCamera = {
+                    navController.navigate(SettingRoutes.CameraStart.route) {
+                        popUpTo(AppRoutes.Start.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onToMain = {
+                    navController.navigate(ClientRoutes.MainMenu.route) {
+                        popUpTo(AppRoutes.Start.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+
+
         settingNavHost(navController, cameraVM, analyzeVM)
         clientNavHost(navController, bottomNavController)
     }
+}
+
+
+@SuppressLint("RestrictedApi")
+fun NavController.printBackStack(tag: String = "NavStack") {
+    val stack = this.currentBackStack.value.map { entry ->
+        entry.destination.route ?: entry.destination.displayName
+    }
+    Log.d(tag, "Back stack: $stack (current=${currentDestination?.route})")
 }

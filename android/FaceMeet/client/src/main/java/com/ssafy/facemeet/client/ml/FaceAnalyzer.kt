@@ -15,7 +15,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.ssafy.facemeet.client.ui.camera.CaptureMode
-import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.pow
 
 /* ===========================
@@ -25,7 +25,7 @@ import kotlin.math.pow
 private const val TAG = "FaceAnalyzer"
 
 // 홀드 시간 (ms)
-private const val HOLD_MS = 1_500L
+private const val HOLD_MS = 3_600L
 
 // 얼굴 높이(화면 대비) 허용 범위
 private const val MIN_FACE_H_RATIO = 0.18f
@@ -35,14 +35,14 @@ private const val MAX_FACE_H_RATIO = 0.60f
 private const val OK_STREAK_NEED = 3
 
 // 타원 여유 %
-private const val OVAL_PADDING = 0.12f
+private const val OVAL_PADDING = 0.52f
 
 // 정면 포즈 허용 (yaw, roll 기준)
 private const val FRONT_YAW_MAX = 12f
 private const val FRONT_ROLL_MAX = 15f
 
 // 옆면 포즈 허용 범위 (절대값)
-private const val SIDE_MIN_YAW = 30f   // 최소 30도 정도는 돌아가야
+private const val SIDE_MIN_YAW = 20f   // 최소 30도 정도는 돌아가야
 private const val SIDE_MAX_YAW = 55f   // 55도 넘게 돌아가면 "너무 옆"으로 간주
 
 /* ===========================
@@ -57,7 +57,7 @@ class FaceAnalyzer(
     private val mode: CaptureMode,
     private val onHoldDone: () -> Unit,
     private val onProgress: (Int) -> Unit,
-    private val onStateChanged: (FaceState) -> Unit
+    private val onStateChanged: (FaceState) -> Unit,
 ) {
 
     private val detector by lazy {
@@ -164,15 +164,14 @@ class FaceAnalyzer(
                             if (startAt == null) startAt = now
                             val elapsed = now - (startAt ?: now)
                             val remainMs = (HOLD_MS - elapsed).coerceAtLeast(0)
-                            val secLeft = ceil(remainMs / 1000.0).toInt().coerceAtLeast(0)
+                            val secLeft = floor(remainMs / 1000.0).toInt().coerceAtLeast(0)
 
                             if (secLeft != lastReported && !fired) {
                                 lastReported = secLeft
-                                if (secLeft in 1..3) onProgress(secLeft)
+                                if (secLeft in 0..3) onProgress(secLeft)
                             }
-                            if (!fired && elapsed >= HOLD_MS) {
+                            if (!fired && secLeft == 0) {
                                 fired = true
-                                Log.d(TAG, "HOLD done -> fire capture callback")
                                 onHoldDone()
                             }
                         }

@@ -20,6 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.navigation.CurrentBottomNavState
 import com.ssafy.facemeet.client.navigation.client.ClientRoutes
+import com.ssafy.facemeet.client.navigation.setting.RegisterMode
 import com.ssafy.facemeet.client.navigation.setting.SettingRoutes
 import com.ssafy.facemeet.client.ui.chatlist.ChattingListScreen
 import com.ssafy.facemeet.client.ui.mainmenu.MainMenuScreen
@@ -100,18 +103,18 @@ fun MainScreenWithBottomNav(
 
             composable(BottomNavRoutes.MyPage.route) {
                 MyPageScreen(
-                    onLogout = {
+                    onMoveAfterLogout = {
                         mainNavController.navigate("start") {
                             popUpTo(0) { inclusive = false }
                         }
                     },
-                    onWithdraw = {
+                    onMoveAfterWithdraw = {
                         mainNavController.navigate("start") {
                             popUpTo(0) { inclusive = false }
                         }
                     },
                     onModify = {
-                        mainNavController.navigate(SettingRoutes.Register.route)
+                        mainNavController.navigate("${SettingRoutes.Register.route}?mode=${RegisterMode.EDIT.name}")
                     }, onOpenBlocked = {
                         mainNavController.navigate(ClientRoutes.BlockList.route)
                     }
@@ -189,7 +192,14 @@ fun BottomNavigationBar(
                         contentDescription = item.label, tint = CommonColor.Brown500
                     )
                 },
-                label = { Text(item.label) },
+                label = {
+                    Text(
+                        item.label,
+                        fontSize = 13.sp,
+                        color = CommonColor.Brown500,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = CommonColor.Beige200
                 )

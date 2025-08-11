@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssafy.facemeet.client.R
+import com.ssafy.facemeet.client.navigation.setting.RegisterMode
 import com.ssafy.facemeet.client.ui.register.model.RegisterNaviEvent
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
@@ -45,6 +46,7 @@ private const val TAG = "RegisterScreen"
 
 @Composable
 fun RegisterScreen(
+    mode: RegisterMode,
     toNext: () -> Unit = {},
     toBack: () -> Unit = {},
     toMap: () -> Unit = {},
@@ -53,13 +55,15 @@ fun RegisterScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
+
     LaunchedEffect(Unit) {
         Log.d("RegisterScreen", "navigationEvent: $navigationEvent")
         viewModel.updateAddressFromStore()
+        viewModel.loadInitial(mode)
     }
 
     LaunchedEffect(navigationEvent) {
-        when(navigationEvent){
+        when (navigationEvent) {
             RegisterNaviEvent.ToBack -> toBack()
             RegisterNaviEvent.ToCamera -> toNext()
             RegisterNaviEvent.ToMap -> toMap()
@@ -117,11 +121,11 @@ fun RegisterScreen(
         InputBtns(
             isEnabled = uiState.isValid(),
             onConfirm = {
-                viewModel.navigateToCamera()
-                viewModel.submitRegistration()
+                viewModel.navigateToNext()
+                viewModel.submit(mode = mode)
             },
             onCancel = {
-                viewModel.navigateToBack()
+                viewModel.navigateToBack(mode)
             }
         )
     }
@@ -328,8 +332,8 @@ fun InputBtns(
 
 @Preview(showBackground = true)
 @Composable
-fun RegisterScreenPreview(){
+fun RegisterScreenPreview() {
     FaceMeetTheme {
-        RegisterScreen()
+        RegisterScreen(RegisterMode.REGISTER)
     }
 }
