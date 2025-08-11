@@ -1,11 +1,6 @@
 package com.ssafy.facemeet.client.ui.chatlist
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -57,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
@@ -83,40 +77,6 @@ fun ChattingListScreen(
     DisposableEffect(Unit) {
         onDispose {
             AppStateManager.setCurrentScreen("", null)
-        }
-    }
-
-    DisposableEffect(Unit) { // context 대신 Unit 사용
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                Log.d("ChatListScreen", "📥 브로드캐스트 수신! action=${intent?.action}")
-                when (intent?.action) {
-                    "ACTION_REFRESH_CHAT_LIST" -> {
-                        Log.d("ChatListScreen", "채팅 리스트 갱신 요청")
-                        viewModel.loadChattingList()
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter().apply {
-            addAction("ACTION_REFRESH_CHAT_LIST")
-        }
-        try {
-            LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter)
-            context.registerReceiver(receiver, filter)
-            Log.d("ChatListScreen", "브로드캐스트 리시버 등록 완료")
-        } catch (e: Exception) {
-            Log.e("ChatListScreen", "브로드캐스트 리시버 등록 실패", e)
-        }
-        onDispose {
-            try {
-                LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
-                context.unregisterReceiver(receiver)
-                Log.d("ChatListScreen", "브로드캐스트 리시버 해제 완료")
-            } catch (e: Exception) {
-                Log.e("ChatListScreen", "브로드캐스트 리시버 해제 실패 (정상적인 경우일 수 있음)", e)
-            }
         }
     }
 

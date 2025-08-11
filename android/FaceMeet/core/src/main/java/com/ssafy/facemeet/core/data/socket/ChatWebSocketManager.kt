@@ -225,7 +225,7 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
-    // 채팅 메시지 처리 및 콜백 호출
+    var onNewMessageForList: (() -> Unit)? = null
     private fun handleChatMessage(response: ChatElement) {
         Log.d("WebSocket", "메시지 처리 시작 - 보낸사람: ${response.senderID}, 내용: ${response.content}")
 
@@ -236,6 +236,8 @@ class ChatWebSocketManager @Inject constructor() {
 
         onNewMessageReceived?.invoke(messageItem)
         Log.d("WebSocket", "✅ 메시지 콜백 호출 완료")
+
+        onNewMessageForList?.invoke()
     }
 
     // 재연결 시도
