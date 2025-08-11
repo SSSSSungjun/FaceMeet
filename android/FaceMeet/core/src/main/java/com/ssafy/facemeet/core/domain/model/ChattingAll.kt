@@ -9,6 +9,8 @@ data class ChatRoom (
     val chatRoomID: Long=0L,
     val partnerID: Long=0L,
     val partnerNickname: String="",
+    val blocked : Boolean=false,
+    val deleted : Boolean=false,
     val imgURL: String="",
     val similar: Long=0L
 )

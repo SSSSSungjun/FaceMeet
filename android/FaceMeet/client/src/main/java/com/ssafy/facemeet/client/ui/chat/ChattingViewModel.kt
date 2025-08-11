@@ -355,6 +355,7 @@ class ChattingViewModel @Inject constructor(
     // 채팅방 정보 로드
     suspend fun loadChatRoomInfo(roomId: Long) {
         getChattingMessagesLastUseCase.invoke(roomId, 30).onSuccess { chattingAll ->
+            Log.d(TAG, "loadChatRoomInfo: ${chattingAll.chatRoom}")
             _uiState.update { it.copy(roomInfo = chattingAll.chatRoom) }
         }
     }

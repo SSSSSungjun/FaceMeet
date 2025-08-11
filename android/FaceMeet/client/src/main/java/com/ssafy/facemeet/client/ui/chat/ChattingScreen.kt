@@ -323,14 +323,17 @@ fun ChattingScreen(
         }
 
 
-
-        MessageInput(
-            messageText = uiState.messageText,
-            onMessageChange = viewModel::updateMessageText,
-            onSendClick = viewModel::sendMessage,
-            canSend = uiState.canSendMessage,
-            isConnected = connectionState == ConnectionState.CONNECTED
-        )
+        if (!(uiState.roomInfo.blocked || uiState.roomInfo.deleted)) {
+            MessageInput(
+                messageText = uiState.messageText,
+                onMessageChange = viewModel::updateMessageText,
+                onSendClick = viewModel::sendMessage,
+                canSend = uiState.canSendMessage,
+                isConnected = connectionState == ConnectionState.CONNECTED
+            )
+        } else {
+            blockedChat()
+        }
 
         if (uiState.isLoading) {
             Box(
@@ -711,16 +714,21 @@ fun MessageInput(
 
 @Composable
 fun blockedChat() {
-    Box(modifier = Modifier
-        .fillMaxWidth().background(color=Color(0xFFDDDDDD), RoundedCornerShape(10.dp))
-        .padding(horizontal = 10.dp).padding(vertical = 10.dp),
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .padding(vertical = 10.dp)
+            .background(color = Color(0xFFDDDDDD), RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text="채팅이 종료되었습니다.",
-            color=Color(0xFF666666),
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center
+            text = "채팅이 종료되었습니다.",
+            color = Color(0xFF666666),
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium,
+            modifier=Modifier.padding(10.dp)
         )
     }
 }
