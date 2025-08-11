@@ -120,6 +120,7 @@ fun ChattingScreen(
                 is ScrollEvent.ToBottom -> {
                     listState.scrollToItem(0)
                 }
+
                 is ScrollEvent.WithKeyboard -> {
                     listState.scrollToItem(0)
                 }
@@ -206,7 +207,8 @@ fun ChattingScreen(
                     key = { index ->
                         if (index < unifiedMessages.size) {
                             val messageItem = unifiedMessages[index]
-                            messageItem.localId ?: generateMessageKey(messageItem.chatMessage.chatElement, index)
+                            messageItem.localId
+                                ?: generateMessageKey(messageItem.chatMessage.chatElement, index)
                         } else {
                             "unified_fallback_$index"
                         }
@@ -214,7 +216,10 @@ fun ChattingScreen(
                 ) { index ->
                     if (index < unifiedMessages.size) {
                         val messageItem = unifiedMessages[index]
-                        Log.d("DEBUG_RENDER", "통합 메시지 렌더링: index=$index, status=${messageItem.status}, content=${messageItem.chatMessage.chatElement.content}")
+                        Log.d(
+                            "DEBUG_RENDER",
+                            "통합 메시지 렌더링: index=$index, status=${messageItem.status}, content=${messageItem.chatMessage.chatElement.content}"
+                        )
 
                         RenderMessage(
                             message = messageItem.chatMessage,
@@ -227,24 +232,40 @@ fun ChattingScreen(
                 items(
                     count = pagedMessages.itemCount,
                     key = { index ->
-                        "paged_${index}_${pagedMessages.peek(index)?.chatElement?.let { generateMessageKey(it, index) } ?: "fallback_$index"}"
+                        "paged_${index}_${
+                            pagedMessages.peek(index)?.chatElement?.let {
+                                generateMessageKey(
+                                    it,
+                                    index
+                                )
+                            } ?: "fallback_$index"
+                        }"
                     }
                 ) { index ->
                     pagedMessages[index]?.let { message ->
                         val messageKey = generateMessageKey(message.chatElement, index)
                         val isDuplicate = unifiedMessages.any { unifiedItem ->
-                            generateMessageKey(unifiedItem.chatMessage.chatElement, -1) == messageKey
+                            generateMessageKey(
+                                unifiedItem.chatMessage.chatElement,
+                                -1
+                            ) == messageKey
                         }
 
                         if (!isDuplicate) {
-                            Log.d("DEBUG_RENDER", "페이징 메시지 렌더링: index=$index, content=${message.chatElement.content}")
+                            Log.d(
+                                "DEBUG_RENDER",
+                                "페이징 메시지 렌더링: index=$index, content=${message.chatElement.content}"
+                            )
                             RenderMessage(
                                 message = message,
                                 isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                                messageStatus = ChattingViewModel.MessageStatus.RECEIVED
+                                messageStatus = MessageStatus.RECEIVED
                             )
                         } else {
-                            Log.d("DEBUG_RENDER", "중복 메시지 스킵: index=$index, content=${message.chatElement.content}")
+                            Log.d(
+                                "DEBUG_RENDER",
+                                "중복 메시지 스킵: index=$index, content=${message.chatElement.content}"
+                            )
                         }
                     }
                 }
@@ -261,11 +282,13 @@ fun ChattingScreen(
                             }
                         }
                     }
+
                     is LoadState.Error -> {
                         item {
                             Text("메시지를 불러오는데 실패했습니다")
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -330,7 +353,7 @@ private fun generateMessageKey(chatElement: ChatElement, index: Int): String {
 private fun RenderMessage(
     message: ChatMessageItem,
     isMyMessage: Boolean,
-    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED,
+    messageStatus: MessageStatus = MessageStatus.RECEIVED,
     isMyLastMessage: Boolean = false,
     showReadStatus: Boolean = false
 ) {
@@ -364,12 +387,12 @@ private fun RenderMessage(
 fun ChatMessageBubble(
     message: ChatElement,
     isMyMessage: Boolean,
-    messageStatus: ChattingViewModel.MessageStatus = ChattingViewModel.MessageStatus.RECEIVED,
+    messageStatus: MessageStatus = MessageStatus.RECEIVED,
     isMyLastMessage: Boolean = false,
     showReadStatus: Boolean = false
 ) {
-    val isPending = messageStatus == ChattingViewModel.MessageStatus.PENDING
-    val isFailed = messageStatus == ChattingViewModel.MessageStatus.FAILED
+    val isPending = messageStatus == MessageStatus.PENDING
+    val isFailed = messageStatus == MessageStatus.FAILED
 
     Box(
         modifier = Modifier
@@ -377,8 +400,8 @@ fun ChatMessageBubble(
             .padding(vertical = 3.dp)
             .alpha(
                 when (messageStatus) {
-                    ChattingViewModel.MessageStatus.PENDING -> 0.7f
-                    ChattingViewModel.MessageStatus.FAILED -> 0.5f
+                    MessageStatus.PENDING -> 0.7f
+                    MessageStatus.FAILED -> 0.5f
                     else -> 1f
                 }
             )
@@ -395,7 +418,7 @@ fun ChatMessageBubble(
                     modifier = Modifier.padding(end = 4.dp)
                 ) {
                     // 읽음 표시 (맨 위) - 추가
-                    if (isMyLastMessage && showReadStatus && messageStatus == ChattingViewModel.MessageStatus.SENT) {
+                    if (isMyLastMessage && showReadStatus && messageStatus == MessageStatus.SENT) {
                         Text(
                             text = "읽음",
                             style = MaterialTheme.typography.bodySmall,
@@ -406,7 +429,7 @@ fun ChatMessageBubble(
 
                     // 전송중/전송실패 표시 (읽음 아래)
                     when (messageStatus) {
-                        ChattingViewModel.MessageStatus.PENDING -> {
+                        MessageStatus.PENDING -> {
                             Text(
                                 text = "전송중",
                                 style = MaterialTheme.typography.bodySmall,
@@ -414,7 +437,8 @@ fun ChatMessageBubble(
                                 fontSize = 10.sp
                             )
                         }
-                        ChattingViewModel.MessageStatus.FAILED -> {
+
+                        MessageStatus.FAILED -> {
                             Text(
                                 text = "전송실패",
                                 style = MaterialTheme.typography.bodySmall,
@@ -422,6 +446,7 @@ fun ChatMessageBubble(
                                 fontSize = 10.sp
                             )
                         }
+
                         else -> {}
                     }
 
@@ -438,7 +463,7 @@ fun ChatMessageBubble(
                     modifier = Modifier.widthIn(max = 240.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when (messageStatus) {
-                            ChattingViewModel.MessageStatus.FAILED -> Color(0xFFFFCDD2)
+                            MessageStatus.FAILED -> Color(0xFFFFCDD2)
                             else -> Color(0xFF824946)
                         }
                     ),
@@ -496,6 +521,7 @@ fun ChatMessageBubble(
         }
     }
 }
+
 // 기존 UI 컴포넌트들은 그대로 유지
 @Composable
 fun ChatHeader(
@@ -683,6 +709,22 @@ fun MessageInput(
     }
 }
 
+@Composable
+fun blockedChat() {
+    Box(modifier = Modifier
+        .fillMaxWidth().background(color=Color(0xFFDDDDDD), RoundedCornerShape(10.dp))
+        .padding(horizontal = 10.dp).padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text="채팅이 종료되었습니다.",
+            color=Color(0xFF666666),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
@@ -690,5 +732,6 @@ fun ChattingScreenPreview() {
     Column {
         ChatEndMessage("채팅을 할 수 가 없다")
         DateSeparator("2020-01-01")
+        blockedChat()
     }
 }

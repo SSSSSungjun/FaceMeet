@@ -92,7 +92,7 @@ object ParsingTimeData {
     fun String.toFullDateString(): String {
         Log.d(TAG, "toFullDateString() 시작 - 입력값: '$this'")
         return try {
-            // Instant.parse() 우선 시도
+
             val result = Instant.parse(this)
                 .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))

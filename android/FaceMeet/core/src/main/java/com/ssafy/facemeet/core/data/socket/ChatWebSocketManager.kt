@@ -28,30 +28,43 @@ class ChatWebSocketManager @Inject constructor() {
     private var webSocket: WebSocket? = null
     private val gson = Gson()
 
+    // 연결 상태 관리
     private val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
+    // 현재 연결 정보
     private var currentUserId: Long = 0
     private var currentRoomId: Long = 0
     private var isStompConnected = false
 
-    // 새 메시지 콜백 (ChatMessageItem 전달)
+    // 콜백 함수들
     private var onNewMessageReceived: ((ChatMessageItem) -> Unit)? = null
+    private var onStompConnected: (() -> Unit)? = null
+    var onReadNotification: (() -> Unit)? = null
 
+    // 새 메시지 콜백 설정
     fun setOnNewMessageCallback(callback: (ChatMessageItem) -> Unit) {
         onNewMessageReceived = callback
     }
 
+    // STOMP 연결 완료 콜백 설정
+    fun setOnStompConnectedCallback(callback: () -> Unit) {
+        onStompConnected = callback
+    }
+
+    // WebSocket 연결 시작
     fun connect(userId: Long, token: String, roomId: Long = 0) {
         currentUserId = userId
         currentRoomId = roomId
         Log.d("WebSocket", "WebSocket 연결 시작 - userId: $userId")
         _connectionState.postValue(ConnectionState.CONNECTING)
+
         CoroutineScope(Dispatchers.IO).launch {
             tryConnection(token)
         }
     }
 
+    // 실제 연결 시도
     private fun tryConnection(token: String) {
         val websocketUrl = "wss://i13d201.p.ssafy.io/api/v1/websocket?token=$token"
 
@@ -63,9 +76,7 @@ class ChatWebSocketManager @Inject constructor() {
             .retryOnConnectionFailure(true)
             .build()
 
-        val request = Request.Builder()
-            .url(websocketUrl)
-            .build()
+        val request = Request.Builder().url(websocketUrl).build()
 
         webSocket = wsClient.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
@@ -93,12 +104,14 @@ class ChatWebSocketManager @Inject constructor() {
         })
     }
 
+    // STOMP CONNECT 프레임 전송
     private fun sendStompConnect() {
         val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:0,0\n\n\u0000"
         webSocket?.send(connectFrame)
         Log.d("WebSocket", "📤 STOMP CONNECT 전송")
     }
 
+    // STOMP 메시지 처리
     private fun handleStompMessage(message: String) {
         when {
             message.startsWith("CONNECTED") -> {
@@ -121,30 +134,34 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
+    // STOMP 메시지 전송
     private fun sendStompMessage(destination: String, body: String) {
         if (!isStompConnected) {
             Log.w("WebSocket", "STOMP 연결되지 않은 상태")
             return
         }
 
-        val frame =
-            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        val frame = "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
         webSocket?.send(frame)
         Log.d("WebSocket", "📤 메시지 전송: $destination")
     }
 
+    // 개인 채널 구독
     private fun subscribeToPrivateChannel(destination: String) {
         val subscribeFrame = "SUBSCRIBE\nid:sub-$currentUserId\ndestination:$destination\n\n\u0000"
         webSocket?.send(subscribeFrame)
         Log.d("WebSocket", "📡 구독: $destination")
     }
 
-    private var onStompConnected: (() -> Unit)? = null
-    fun setOnStompConnectedCallback(callback: () -> Unit) {
-        onStompConnected = callback
+    // 읽음 확인 채널 구독
+    private fun subscribeToReadChannel(destination: String) {
+        val subscribeId = "read-receipt-${System.currentTimeMillis()}"
+        val subscribeMessage = "SUBSCRIBE\nid:$subscribeId\ndestination:$destination\n\n\u0000"
+        val success = webSocket?.send(subscribeMessage) == true
+        Log.d("WebSocket", "📖 읽음 확인 채널 구독: $destination - 성공: $success")
     }
 
-
+    // 채팅 메시지 전송
     fun sendMessage(
         content: String,
         roomId: Long,
@@ -159,20 +176,21 @@ class ChatWebSocketManager @Inject constructor() {
             "content" to content,
         )
         sendStompMessage("/pub/chat.private", gson.toJson(messageRequest))
-        Log.d("WebSocket", "메시지 전송 완료 - tempId: ${gson.toJson(messageRequest)}")
+        Log.d("WebSocket", "메시지 전송 완료 - ${gson.toJson(messageRequest)}")
     }
 
+    // 읽음 처리 전송
     fun markAsRead(roomId: Long, userId: Long, senderId: Long) {
         val readRequest = mapOf(
             "readerId" to userId,
             "senderId" to senderId,
             "roomId" to roomId
         )
-        Log.d("WebSocket", "🧪 테스트 payload: $readRequest")
-        Log.d("WebSocket", "🧪 테스트 payload2 :  ${gson.toJson(readRequest)}")
+        Log.d("WebSocket", "읽음 처리 전송: ${gson.toJson(readRequest)}")
         sendStompMessage("/pub/chat.read", gson.toJson(readRequest))
     }
 
+    // STOMP 메시지 파싱
     private fun parseStompMessage(message: String) {
         val lines = message.split("\n")
         val bodyStart = lines.indexOfFirst { it.isEmpty() }
@@ -184,7 +202,6 @@ class ChatWebSocketManager @Inject constructor() {
 
             Log.d("WebSocket", "수신된 메시지 바디: [$body]")
 
-            // 헤더에서 destination 확인
             val headers = lines.subList(1, bodyStart)
             val destination = headers.find { it.startsWith("destination:") }
 
@@ -192,9 +209,8 @@ class ChatWebSocketManager @Inject constructor() {
 
             try {
                 if (body.startsWith("{")) {
-                    if (destination?.contains("read-receipt") == true ||
-                        body.contains("readAt")) {
-
+                    // 읽음 확인 메시지 처리
+                    if (destination?.contains("read-receipt") == true || body.contains("readAt")) {
                         Log.d("WebSocket", "📖 읽음 확인 수신: $body")
                         onReadNotification?.invoke()
                         return
@@ -211,37 +227,29 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
-    var onReadNotification: (() -> Unit)? = null
-
+    // 채팅 메시지 처리 및 콜백 호출
     private fun handleChatMessage(response: ChatElement) {
         Log.d("WebSocket", "메시지 처리 시작 - 보낸사람: ${response.senderID}, 내용: ${response.content}")
 
-        // ChatMessageItem으로 변환하여 콜백 호출
         val messageItem = ChatMessageItem(
             chatElement = response,
             messageType = MessageType.TEXT
         )
 
-        // ViewModel에 새 메시지 전달
         onNewMessageReceived?.invoke(messageItem)
         Log.d("WebSocket", "✅ 메시지 콜백 호출 완료")
     }
 
-    private fun subscribeToReadChannel(destination: String) {
-        val subscribeId = "read-receipt-${System.currentTimeMillis()}"
-        val subscribeMessage = "SUBSCRIBE\nid:$subscribeId\ndestination:$destination\n\n\u0000"
-        val success = webSocket?.send(subscribeMessage) == true
-        Log.d("WebSocket", "📖 읽음 확인 채널 구독: $destination - 성공: $success")
-    }
-
+    // 재연결 시도
     private fun reconnect(token: String) {
-        Log.d("WebSocket", "♻️ 5초 후 재연결 시도...")
+        Log.d("WebSocket", "♻️ 3초 후 재연결 시도...")
         CoroutineScope(Dispatchers.IO).launch {
             delay(3000)
             tryConnection(token)
         }
     }
 
+    // 연결 종료
     fun disconnect() {
         Log.d("WebSocket", "연결 종료")
 
