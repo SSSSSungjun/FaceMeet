@@ -17,6 +17,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -68,6 +69,10 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+
+    // desugar - 26어노테이션 안붙여도 되게
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
 //    // room
 //    implementation(libs.androidx.room.runtime)

@@ -1,8 +1,6 @@
 package com.ssafy.facemeet.core.util.format
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -10,7 +8,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
-@RequiresApi(Build.VERSION_CODES.O)
 object ParsingTimeData {
 
     private const val TAG = "ParsingTimeData"
@@ -66,7 +63,11 @@ object ParsingTimeData {
                 Log.d(TAG, "formatSmartDate() ZonedDateTime.parse() 성공 - 결과: '$result'")
                 result
             } catch (e2: DateTimeParseException) {
-                Log.w(TAG, "formatSmartDate() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
+                Log.w(
+                    TAG,
+                    "formatSmartDate() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도",
+                    e2
+                )
                 // 마지막 시도: parseFlexibleDateTime으로 재시도
                 parseFlexibleDateTime()?.let { zonedDateTime ->
                     val result = formatSmartDateSafe(zonedDateTime)
@@ -102,7 +103,11 @@ object ParsingTimeData {
                 Log.d(TAG, "toHourMinuteString() ZonedDateTime.parse() 성공 - 결과: '$result'")
                 result
             } catch (e2: DateTimeParseException) {
-                Log.w(TAG, "toHourMinuteString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
+                Log.w(
+                    TAG,
+                    "toHourMinuteString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도",
+                    e2
+                )
                 // 파싱 실패 시 parseFlexibleDateTime으로 재시도
                 parseFlexibleDateTime()
                     ?.withZoneSameInstant(ZoneId.systemDefault())
@@ -140,7 +145,11 @@ object ParsingTimeData {
                 Log.d(TAG, "toFullDateString() ZonedDateTime.parse() 성공 - 결과: '$result'")
                 result
             } catch (e2: DateTimeParseException) {
-                Log.w(TAG, "toFullDateString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도", e2)
+                Log.w(
+                    TAG,
+                    "toFullDateString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도",
+                    e2
+                )
                 // 파싱 실패 시 parseFlexibleDateTime으로 재시도
                 parseFlexibleDateTime()
                     ?.withZoneSameInstant(ZoneId.systemDefault())

@@ -4,6 +4,7 @@ import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
 
 interface UserRepository {
     suspend fun postOnline(): Result<Unit>
@@ -12,5 +13,6 @@ interface UserRepository {
     suspend fun deleteUser(): Result<Unit>
     suspend fun patchUserInfo(request: UserInfoModRequest): Result<UserInfoResponse>
     suspend fun getPartnerFaceInfo(partnerId: Long): Result<PartnerFaceInfoResponse>
+    suspend fun getUserStatus(): Result<UserStatusResponse>
     suspend fun getHomeInfo(): Result<HomeInfoResponse>
 }

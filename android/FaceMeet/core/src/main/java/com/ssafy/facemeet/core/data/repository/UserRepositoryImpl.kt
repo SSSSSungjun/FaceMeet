@@ -6,6 +6,7 @@ import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
 import com.ssafy.facemeet.core.domain.repository.UserRepository
 import javax.inject.Inject
 
@@ -74,7 +75,15 @@ class UserRepositoryImpl @Inject constructor(
                 Log.e("UserRepository", "getPartnerFaceInfo error", it)
             }
 
-    // core/data/repository/UserRepositoryImpl.kt
+    override suspend fun getUserStatus(): Result<UserStatusResponse> = runCatching {
+        val res = userDataRemoteDataSource.getUserStatus()
+        if (res.isSuccessful) {
+            res.body() ?: error("Empty body")
+        } else {
+            error("HTTP ${res.code()}")
+        }
+    }
+
     override suspend fun getHomeInfo(): Result<HomeInfoResponse> = try {
         val res = userDataRemoteDataSource.getHomeInfo()
         if (res.isSuccessful) {

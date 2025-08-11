@@ -347,7 +347,7 @@ fun ProfileCardWithBackground(
                                         fontSize = 12.sp,
                                         color = CommonColor.BrownGray600
                                     )
-                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = ui.remainingMatchTickets.toString(),
                                         fontWeight = FontWeight.Bold,
@@ -362,7 +362,7 @@ fun ProfileCardWithBackground(
                                 color = CommonColor.Gray200,
                                 modifier = Modifier
                                     .fillMaxHeight()
-                                    .padding(top = 12.dp, bottom = 22.dp)
+                                    .padding(top = 18.dp, bottom = 18.dp)
                                     .width(1.dp)
                             )
 
@@ -372,7 +372,7 @@ fun ProfileCardWithBackground(
                                     .weight(1f)
                                     .fillMaxHeight()
                                     .clickable { onProfile() }
-                                    .padding(top = 12.dp, bottom = 22.dp),
+                                    .padding(top = 18.dp, bottom = 18.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(

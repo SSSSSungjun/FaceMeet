@@ -53,7 +53,7 @@ fun CameraScreen(
     LaunchedEffect(Unit) { visible = true }
 
     fun enter(delay: Int) =
-        fadeIn(animationSpec = tween(durationMillis = 800, delayMillis = delay)) +
+        fadeIn(animationSpec = tween(durationMillis = 1000, delayMillis = delay)) +
                 slideInVertically(
                     animationSpec = tween(
                         durationMillis = 800,
@@ -109,7 +109,7 @@ fun CameraScreen(
 
 
         // 예시 텍스트 + 사진
-        AnimatedVisibility(visible, enter = enter(120)) {
+        AnimatedVisibility(visible, enter = enter(600)) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "예시사진)",
@@ -157,7 +157,7 @@ fun CameraScreen(
         }
 
         // 시작 버튼
-        AnimatedVisibility(visible, enter = enter(240)) {
+        AnimatedVisibility(visible, enter = enter(1200)) {
             Button(
                 onClick = onLaunchCamera,
                 modifier = Modifier

@@ -62,6 +62,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -105,6 +106,8 @@ dependencies {
     //glide
     implementation("io.coil-kt:coil-compose:2.5.0")
 
+    // desugar - 26어노테이션 안붙여도 되게
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
 //    // room
 //    implementation(libs.androidx.room.runtime)
