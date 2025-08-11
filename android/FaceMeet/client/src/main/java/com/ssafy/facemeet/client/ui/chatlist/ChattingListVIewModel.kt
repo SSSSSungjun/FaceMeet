@@ -22,6 +22,8 @@ class ChattingListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatListUiState())
     val uiState: StateFlow<ChatListUiState> = _uiState
 
+    internal var selectedRoomId: Long =0L
+
     fun loadChattingList() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -35,6 +37,29 @@ class ChattingListViewModel @Inject constructor(
                 Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")
             }
         }
+    }
+
+    fun clickExitRoom(){
+        _uiState.value = _uiState.value.copy(showExitDialog = true)
+    }
+    fun dismissExitDialog(){
+        _uiState.value = _uiState.value.copy(showExitDialog = false)
+    }
+
+    fun setSelectedRoomId(roomId: Long) {
+        selectedRoomId = roomId
+    }
+
+    fun exitRoom(chatRoomId: Long){
+        viewModelScope.launch {
+            postChattingLeaveUseCase(chatRoomId).onSuccess {
+                Log.d(TAG, "방 나가기 성공")
+                loadChattingList()
+            }.onFailure {
+                Log.d(TAG, "방 나가기 실패")
+            }
+        }
+
     }
 
 

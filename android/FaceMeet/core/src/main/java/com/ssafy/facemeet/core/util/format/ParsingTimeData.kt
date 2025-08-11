@@ -4,6 +4,7 @@ import android.util.Log
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -15,10 +16,8 @@ object ParsingTimeData {
     fun String.formatSmartDate(): String {
         Log.d(TAG, "formatSmartDate() 시작 - 입력값: '$this'")
         return try {
-            // Instant.parse()를 사용해서 ISO 8601 형식을 더 정확하게 파싱
-            val instant = Instant.parse(this)
-            val localDateTime = instant.atZone(ZoneId.systemDefault())
-            val now = ZonedDateTime.now(ZoneId.systemDefault())
+            val localDateTime = LocalDateTime.parse(this.replace("Z", "").replace("+09:00", ""))
+            val now = LocalDateTime.now()
 
             val inputDate = localDateTime.toLocalDate()
             val today = now.toLocalDate()
@@ -38,18 +37,19 @@ object ParsingTimeData {
             Log.d(TAG, "formatSmartDate() 성공 - 결과: '$result'")
             result
         } catch (e: DateTimeParseException) {
-            Log.w(TAG, "formatSmartDate() Instant.parse() 실패 - 두 번째 시도", e)
+            Log.w(TAG, "formatSmartDate() LocalDateTime.parse() 실패", e)
             try {
-                // 두 번째 시도: ZonedDateTime으로 파싱
-                val utcZonedDateTime = ZonedDateTime.parse(this)
-                val localDateTime = utcZonedDateTime.withZoneSameInstant(ZoneId.systemDefault())
-                val now = ZonedDateTime.now(ZoneId.systemDefault())
+                // ISO 8601 형식이라면 시간대 변환
+                val instant = Instant.parse(this)
+                val localDateTime = instant.atOffset(ZoneOffset.ofHours(9)).toLocalDateTime() // UTC+9 (한국)
+                val now = LocalDateTime.now()
 
+                // 위와 동일한 로직
                 val inputDate = localDateTime.toLocalDate()
                 val today = now.toLocalDate()
                 val yesterday = today.minusDays(1)
 
-                val result = when (inputDate) {
+                when (inputDate) {
                     today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
                     yesterday -> "어제"
                     else -> {
@@ -60,69 +60,29 @@ object ParsingTimeData {
                         }
                     }
                 }
-                Log.d(TAG, "formatSmartDate() ZonedDateTime.parse() 성공 - 결과: '$result'")
-                result
-            } catch (e2: DateTimeParseException) {
-                Log.w(
-                    TAG,
-                    "formatSmartDate() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도",
-                    e2
-                )
-                // 마지막 시도: parseFlexibleDateTime으로 재시도
-                parseFlexibleDateTime()?.let { zonedDateTime ->
-                    val result = formatSmartDateSafe(zonedDateTime)
-                    Log.d(TAG, "formatSmartDate() parseFlexibleDateTime 성공 - 결과: '$result'")
-                    result
-                } ?: run {
-                    Log.e(TAG, "formatSmartDate() 모든 시도 실패 - 원본 반환: '$this'")
-                    this
-                }
+            } catch (e2: Exception) {
+                Log.e(TAG, "formatSmartDate() 모든 시도 실패", e2)
+                this
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "formatSmartDate() 예상치 못한 오류", e)
-            this
         }
     }
 
     fun String.toHourMinuteString(): String {
+        val TAG = "ParsingTime"
         Log.d(TAG, "toHourMinuteString() 시작 - 입력값: '$this'")
+
         return try {
-            // Instant.parse() 우선 시도
-            val result = Instant.parse(this)
-                .atZone(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ofPattern("HH:mm"))
-            Log.d(TAG, "toHourMinuteString() Instant.parse() 성공 - 결과: '$result'")
-            result
+            // 💡 ISO_LOCAL_DATE_TIME 포맷터를 사용하여 다양한 정밀도의 시간을 처리합니다.
+            val localDateTime = LocalDateTime.parse(this, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+            // 원하는 "HH:mm" 형식으로 포맷팅합니다.
+            val result = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+
+            Log.d(TAG, "toHourMinuteString() 파싱 성공 - 결과: '$result'")
+            return result
         } catch (e: DateTimeParseException) {
-            Log.w(TAG, "toHourMinuteString() Instant.parse() 실패 - ZonedDateTime 시도", e)
-            try {
-                // ZonedDateTime.parse() 재시도
-                val result = ZonedDateTime.parse(this)
-                    .withZoneSameInstant(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("HH:mm"))
-                Log.d(TAG, "toHourMinuteString() ZonedDateTime.parse() 성공 - 결과: '$result'")
-                result
-            } catch (e2: DateTimeParseException) {
-                Log.w(
-                    TAG,
-                    "toHourMinuteString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도",
-                    e2
-                )
-                // 파싱 실패 시 parseFlexibleDateTime으로 재시도
-                parseFlexibleDateTime()
-                    ?.withZoneSameInstant(ZoneId.systemDefault())
-                    ?.format(DateTimeFormatter.ofPattern("HH:mm"))
-                    ?.also { result ->
-                        Log.d(TAG, "toHourMinuteString() parseFlexibleDateTime 성공 - 결과: '$result'")
-                    }
-                    ?: run {
-                        Log.e(TAG, "toHourMinuteString() 모든 시도 실패 - 기본값 반환")
-                        "--:--"
-                    }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "toHourMinuteString() 예상치 못한 오류", e)
-            "--:--"
+            Log.e(TAG, "toHourMinuteString() 파싱 실패", e)
+            return "--:--"
         }
     }
 
@@ -168,13 +128,16 @@ object ParsingTimeData {
         }
     }
 
-    // 2025-08-06T06:08:03.375Z 형식에 최적화된 parseFlexibleDateTime
     fun String.parseFlexibleDateTime(): ZonedDateTime? {
         Log.d(TAG, "parseFlexibleDateTime() 시작 - 입력값: '$this'")
 
-        // 1. Instant.parse() - 가장 표준적이고 확실한 방법 (2025-08-06T06:08:03.375Z에 최적)
+        // 한국 시간대 ZoneId를 명시적으로 정의
+        val koreaZoneId = ZoneId.of("Asia/Seoul")
+
+        // 1. Instant.parse() - 가장 표준적이고 확실한 방법
         try {
-            val result = Instant.parse(this).atZone(ZoneId.systemDefault())
+            // atZone() 메서드에 한국 시간대 적용
+            val result = Instant.parse(this).atZone(koreaZoneId)
             Log.d(TAG, "parseFlexibleDateTime() Instant.parse() 성공")
             return result
         } catch (e: DateTimeParseException) {
@@ -183,34 +146,36 @@ object ParsingTimeData {
 
         // 2. 기본 ZonedDateTime.parse() 시도
         try {
-            val result = ZonedDateTime.parse(this)
+            // 파싱된 ZonedDateTime의 시간대도 한국 시간대로 통일
+            val result = ZonedDateTime.parse(this).withZoneSameInstant(koreaZoneId)
             Log.d(TAG, "parseFlexibleDateTime() ZonedDateTime.parse() 성공")
             return result
         } catch (e: DateTimeParseException) {
             Log.d(TAG, "parseFlexibleDateTime() ZonedDateTime.parse() 실패 - 커스텀 패턴 시도")
         }
 
-        // 3. 커스텀 패턴들로 시도 (우선순위 높은 것부터)
+        // 3. 커스텀 패턴들로 시도
         val patterns = listOf(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",     // 2025-08-06T06:08:03.375Z (3자리 밀리초)
-            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",  // 마이크로초 6자리
-            "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",      // 밀리초 2자리
-            "yyyy-MM-dd'T'HH:mm:ss.S'Z'",       // 밀리초 1자리
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",         // 초 단위
-            "yyyy-MM-dd'T'HH:mm:ssXXX",         // 타임존 포함
-            "yyyy-MM-dd'T'HH:mm:ss",            // 로컬 시간
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.S'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss",
         )
 
         for ((index, pattern) in patterns.withIndex()) {
             try {
                 Log.d(TAG, "parseFlexibleDateTime() 패턴 시도 #${index + 1}: '$pattern'")
-                val formatter = DateTimeFormatter.ofPattern(pattern)
+                val formatter = DateTimeFormatter.ofPattern(pattern).withZone(koreaZoneId) // <-- 여기를 수정
+
                 val result = if (pattern.endsWith("'Z'")) {
-                    // UTC 시간으로 파싱 후 시스템 시간대로 변환
-                    LocalDateTime.parse(this, formatter).atZone(ZoneId.of("UTC"))
+                    // 'Z'가 포함된 패턴은 UTC로 파싱 후 한국 시간대로 변환
+                    LocalDateTime.parse(this, DateTimeFormatter.ofPattern(pattern)).atZone(koreaZoneId)
                 } else {
-                    // 다른 형식들
-                    ZonedDateTime.parse(this, formatter.withZone(ZoneId.of("UTC")))
+                    // 다른 형식들은 한국 시간대 포맷터로 바로 파싱
+                    ZonedDateTime.parse(this, formatter)
                 }
                 Log.d(TAG, "parseFlexibleDateTime() 패턴 #${index + 1} 성공")
                 return result

@@ -49,7 +49,8 @@ fun CompactNoticeToggle(
     similar: Int = 89
 ) {
     Box(
-        modifier = modifier.wrapContentSize()
+        modifier = modifier.wrapContentSize(),
+        contentAlignment = Alignment.CenterEnd
     ) {
         AnimatedContent(
             targetState = isNoticeOpen,
@@ -87,6 +88,7 @@ fun CompactNoticeToggle(
             } else {
                 // 접힌 상태: 작은 버튼
                 EnhancedCompactNoticeButton(
+                    modifier = Modifier.align(Alignment.CenterEnd),
                     onClick = onToggleNotice
                 )
             }
@@ -101,7 +103,7 @@ private fun ExpandedNoticeCard(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
+            .wrapContentSize()
             .padding(horizontal = 8.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFFBFBFB)
@@ -150,6 +152,7 @@ private fun ExpandedNoticeCard(
 
 @Composable
 fun EnhancedCompactNoticeButton(
+    modifier :Modifier =Modifier,
     onClick: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -164,12 +167,12 @@ fun EnhancedCompactNoticeButton(
     )
 
     Box(
-        modifier = Modifier.wrapContentSize(),
+        modifier = modifier.wrapContentSize(),
         contentAlignment = Alignment.CenterEnd
     ) {
         Card(
             onClick = onClick,
-            modifier = Modifier
+            modifier = modifier
                 .size(44.dp)
                 .padding(4.dp)
                 .scale(pulse), // 펄스 효과

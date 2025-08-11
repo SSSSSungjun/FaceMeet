@@ -10,6 +10,7 @@ fun ChatListItemResponse.toDomain(): ChatListItem {
         nickName = this.nickName ?: "",
         lastActivatedTime = this.lastActivatedTime?.formatSmartDate() ?: "", //이거 필요있음? 필요없음
         isOnline = this.isOnline,
+        imgUrl = this.imgUrl ?:"",
         chatRoomId = this.chatRoomId,
         chatRoomStringId = this.chatRoomStringId ?: "",
         lastMessage = this.lastMessage ?: "",

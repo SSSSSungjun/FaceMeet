@@ -5,5 +5,6 @@ import com.ssafy.facemeet.core.domain.model.ChatListItem
 data class ChatListUiState(
     val chatList: List<ChatListItem> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val showExitDialog: Boolean = false
 )
