@@ -70,7 +70,7 @@ class ChatWebSocketManager @Inject constructor() {
 
         val wsClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(45, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
             .pingInterval(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
@@ -106,7 +106,7 @@ class ChatWebSocketManager @Inject constructor() {
 
     // STOMP CONNECT 프레임 전송
     private fun sendStompConnect() {
-        val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:0,0\n\n\u0000"
+        val connectFrame = "CONNECT\naccept-version:1.0,1.1,2.0\nheart-beat:10000,10000\n\n\u0000"
         webSocket?.send(connectFrame)
         Log.d("WebSocket", "📤 STOMP CONNECT 전송")
     }
@@ -141,7 +141,8 @@ class ChatWebSocketManager @Inject constructor() {
             return
         }
 
-        val frame = "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        val frame =
+            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
         webSocket?.send(frame)
         Log.d("WebSocket", "📤 메시지 전송: $destination")
     }
@@ -242,6 +243,7 @@ class ChatWebSocketManager @Inject constructor() {
 
     // 재연결 시도
     private fun reconnect(token: String) {
+        webSocket?.cancel()
         Log.d("WebSocket", "♻️ 3초 후 재연결 시도...")
         CoroutineScope(Dispatchers.IO).launch {
             delay(3000)

@@ -59,7 +59,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -70,9 +69,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.ssafy.facemeet.client.R
+import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.ui.chat.component.CompactNoticeToggle
 import com.ssafy.facemeet.client.ui.chat.model.ChatNaviEvent
+import com.ssafy.facemeet.client.ui.chat.model.ChatUiState
 import com.ssafy.facemeet.client.ui.chat.model.MessageStatus
 import com.ssafy.facemeet.client.ui.chat.model.ScrollEvent
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
@@ -175,6 +175,7 @@ fun ChattingScreen(
             compatibilityScore = uiState.roomInfo.similar,
             onBack = viewModel::navigateToBack,
             onPartnerProfile = viewModel::navigateToProfile,
+            uiState = uiState
         )
 
         Box(modifier = Modifier.weight(1f)) {
@@ -209,9 +210,12 @@ fun ChattingScreen(
                     }
                 ) { index ->
                     pagedMessages[index]?.let { message ->
+                        val isMyMessage = message.chatElement.senderID == viewModel.currentUserId
                         RenderMessage(
                             message = message,
-                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId
+                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
+                            showReadStatus =  isMyMessage && message.chatElement.isRead
+
                         )
                     }
                 }
@@ -281,6 +285,9 @@ private fun RenderMessage(
     messageStatus: MessageStatus = MessageStatus.RECEIVED,
     showReadStatus: Boolean = false
 ) {
+    if (isMyMessage) {
+        Log.d("WebSocket-ReadStatus", "🎨 UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus")
+    }
     when (message.messageType) {
         MessageType.TEXT -> {
             ChatMessageBubble(
@@ -330,8 +337,13 @@ fun ChatMessageBubble(
                     horizontalAlignment = Alignment.End,
                     modifier = Modifier.padding(end = 4.dp)
                 ) {
-                    if (showReadStatus) {
-                        Text(text = "읽음", style = MaterialTheme.typography.bodySmall, color = Color.Blue, fontSize = 10.sp)
+                    if (showReadStatus && messageStatus == MessageStatus.SENT) {
+                        Text(
+                            text = "읽음",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Blue,
+                            fontSize = 10.sp
+                        )
                     }
                     when (messageStatus) {
                         MessageStatus.PENDING -> Text(text = "전송중", style = MaterialTheme.typography.bodySmall, color = Color.Gray, fontSize = 10.sp)
@@ -375,6 +387,7 @@ fun ChatHeader(
     compatibilityScore: Long,
     onBack: () -> Unit,
     onPartnerProfile: () -> Unit,
+    uiState : ChatUiState
 ) {
     Row(
         modifier = Modifier
@@ -390,7 +403,7 @@ fun ChatHeader(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painter = painterResource(id = R.drawable.temp_face),
+                painter = rememberAsyncImagePainter(model = uiState.roomInfo.imgURL),
                 contentDescription = "Profile image",
                 modifier = Modifier.size(40.dp)
             )
@@ -404,7 +417,7 @@ fun ChatHeader(
         }
 
         Text(
-            text = "Compatibility $compatibilityScore%",
+            text = "궁합 $compatibilityScore%",
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF6B7280)
         )

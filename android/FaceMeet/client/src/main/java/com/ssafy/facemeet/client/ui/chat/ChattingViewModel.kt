@@ -13,6 +13,7 @@ import com.ssafy.facemeet.client.ui.chat.model.MessageItem
 import com.ssafy.facemeet.client.ui.chat.model.MessageState
 import com.ssafy.facemeet.client.ui.chat.model.MessageStatus
 import com.ssafy.facemeet.client.ui.chat.model.ScrollEvent
+import com.ssafy.facemeet.client.ui.chatlist.ChatListUiState
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
@@ -20,6 +21,7 @@ import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.domain.model.ChatRoom
+import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesCurrentUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesLastUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +42,8 @@ class ChattingViewModel @Inject constructor(
     private val webSocketManager: ChatWebSocketManager,
     private val tokenManager: TokenManager,
     private val getChattingMessagesLastUseCase: GetChattingMessagesLastUseCase,
-    private val getChattingMessagesCurrentUseCase: GetChattingMessagesCurrentUseCase
+    private val getChattingMessagesCurrentUseCase: GetChattingMessagesCurrentUseCase,
+    private val getChattingListUseCase: GetChattingListUseCase,
 ) : ViewModel() {
 
     // 현재 사용자 및 방 정보
@@ -50,6 +53,9 @@ class ChattingViewModel @Inject constructor(
     // UI 상태 관리
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+
+    private val _listUiState = MutableStateFlow(ChatListUiState())
+    val listUiState = _listUiState.asStateFlow()
 
     // 메시지 관련 상태 관리
     private val _messageState = MutableStateFlow(MessageState())
@@ -104,12 +110,25 @@ class ChattingViewModel @Inject constructor(
     private fun setupWebSocketCallbacks() {
         webSocketManager.setOnNewMessageCallback(::handleNewMessage)
         webSocketManager.onReadNotification = {
-            Log.d(TAG, "📖 Read notification received - partner read my message")
+            Log.d(TAG, "✅ 단계 2 - 서버로부터 '읽음' 알림 수신!")
             viewModelScope.launch { updateReadStatusInUI() }
         }
         webSocketManager.setOnStompConnectedCallback {
             Log.d(TAG, "STOMP connection successful. Marking as read.")
             markAsRead()
+        }
+        webSocketManager.onNewMessageForList = {
+            viewModelScope.launch {
+                getChattingListUseCase().onSuccess { chatList ->
+                    Log.d(TAG, "loadChattingList: 로드 성공 $chatList")
+                    _listUiState.value = _listUiState.value.copy(
+                        chatList = chatList,
+                        isLoading = false
+                    )
+                }.onFailure {
+                    Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")
+                }
+            }
         }
     }
 
@@ -192,7 +211,7 @@ class ChattingViewModel @Inject constructor(
         val currentPartnerId = uiState.value.roomInfo.partnerID
         viewModelScope.launch {
             try {
-                Log.d(TAG, "✅ Executing mark-as-read")
+                Log.d(TAG, "🔍 단계 1 - '읽음' 처리 요청 전송: roomId=$currentRoomId, senderId=$currentUserId, partnerId=$currentPartnerId")
                 webSocketManager.markAsRead(currentRoomId, currentUserId, currentPartnerId)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to mark as read", e)
@@ -202,14 +221,16 @@ class ChattingViewModel @Inject constructor(
 
     // UI에서 읽음 상태 업데이트
     private fun updateReadStatusInUI() {
+        Log.d("WebSocket-ReadStatus", "⚙️ updateReadStatusInUI() 함수 호출 시작")
         _unifiedMessages.update { current ->
-            var lastSentMessageFound = false
+            var isLastSentMessageFound = false
             current.map { item ->
-                if (!lastSentMessageFound &&
+                if (!isLastSentMessageFound &&
                     item.chatMessage.chatElement.senderID == currentUserId &&
-                    item.status == MessageStatus.SENT
-                ) {
-                    lastSentMessageFound = true
+                    item.status == MessageStatus.SENT) {
+                    isLastSentMessageFound = true
+
+                    Log.d("WebSocket-ReadStatus", "✅ 메시지 상태 업데이트: 메시지 [${item.chatMessage.chatElement.content}]의 showReadStatus를 true로 변경")
                     item.copy(showReadStatus = true)
                 } else {
                     item.copy(showReadStatus = false)

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
@@ -20,6 +21,7 @@ private const val TAG = "ChattingListViewModel"
 @HiltViewModel
 class ChattingListViewModel @Inject constructor(
     private val chatWebSocketManager: ChatWebSocketManager,
+    private val tokenManager: TokenManager,
     private val getChattingListUseCase: GetChattingListUseCase,
     private val postChattingLeaveUseCase: PostChattingLeaveUseCase
 ) : ViewModel() {
@@ -30,11 +32,14 @@ class ChattingListViewModel @Inject constructor(
     internal var selectedRoomId: Long = 0L
 
     init {
-        chatWebSocketManager.onNewMessageForList = {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            chatWebSocketManager.connect(0L, tokenManager.getAccessToken().toString(), 0L)
+            chatWebSocketManager.onNewMessageForList = {
+                Log.d(TAG, "websocket호출:  ㅇㅇ")
                 loadChattingList()
             }
         }
+
     }
 
     fun loadChattingList() {
