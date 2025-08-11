@@ -42,11 +42,7 @@ fun AppNavHost(
 
     val navController = rememberNavController()
     val bottomNavController = rememberNavController()
-//    val startDestination = if (!isLoggedIn) {
-//        AppRoutes.Start.route
-//    } else {
-//        AppRoutes.LoginGate.route
-//    }
+
     val startDestination = AppRoutes.Start.route
 
     val cameraVM: CameraShotViewModel = hiltViewModel()
@@ -125,23 +121,9 @@ fun AppNavHost(
                     navController.navigate(AppRoutes.LoginGate.route) {
                         popUpTo(AppRoutes.Start.route) {
                             inclusive = false
-                        } // 로그인 화면 스택 유지/제거는 취향대로
+                        }
                         launchSingleTop = true
                     }
-
-//                    if (!hasInfo) {
-//                        Log.d(TAG, "AppNavHost: hasInfo false")
-//                        navController.navigate("${SettingRoutes.Register.route}?mode=${RegisterMode.REGISTER.name}")
-//                    } else if (!hasFace) {
-//                        navController.navigate(SettingRoutes.CameraStart.route) {
-//                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-//                        }
-//                    } else {
-//                        Log.d(TAG, "AppNavHost: else")
-//                        navController.navigate(ClientRoutes.MainMenu.route) {
-//                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-//                        }
-//                    }
                 },
                 onLoginFailed = {
                     Log.d(TAG, "AppNavHost: Failed")

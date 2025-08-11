@@ -1,11 +1,14 @@
 package com.ssafy.facemeet.client.ui.mainmenu
 
+import android.app.Activity
 import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +42,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +73,8 @@ private const val TAG = "MainMenuScreen"
 fun MainMenuScreen(
     onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {},
 ) {
+    DoubleBackToExit()
+
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -399,3 +407,28 @@ fun MainMenSucreenPreview() {
 }
 
 
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is android.content.ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
+@Composable
+fun DoubleBackToExit() {
+    val activity = LocalContext.current.findActivity()
+    var backPressedTime by remember { mutableStateOf(0L) }
+    val interval = 2000L // 2초
+
+    BackHandler {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - backPressedTime <= interval) {
+            activity?.finishAffinity() // 전체 종료
+        } else {
+            backPressedTime = currentTime
+            Toast.makeText(activity, "한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
