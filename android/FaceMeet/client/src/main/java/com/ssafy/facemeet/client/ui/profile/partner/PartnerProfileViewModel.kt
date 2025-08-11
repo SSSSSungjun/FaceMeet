@@ -64,7 +64,6 @@ class PartnerProfileViewModel @Inject constructor(
         viewModelScope.launch {
             postChattingLeaveUseCase.invoke(roomId).onSuccess {
                 _exitRoomEvent.emit(Unit)
-                chatWebSocketManager.disconnect()
                 Toast.makeText(context, "채팅방 나가기 완료!!", Toast.LENGTH_SHORT).show()
             }.onFailure {
                 Log.d(TAG, "exitChatRoom: 방 나가기 실패")

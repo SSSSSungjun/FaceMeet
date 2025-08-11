@@ -355,7 +355,6 @@ class ChattingViewModel @Inject constructor(
 
     // 채팅방 종료
     fun endChatRoom() {
-        webSocketManager.disconnect()
         _unifiedMessages.value = emptyList()
     }
 

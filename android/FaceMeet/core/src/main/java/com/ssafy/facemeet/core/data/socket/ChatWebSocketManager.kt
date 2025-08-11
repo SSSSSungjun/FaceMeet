@@ -191,6 +191,7 @@ class ChatWebSocketManager @Inject constructor() {
         sendStompMessage("/pub/chat.read", gson.toJson(readRequest))
     }
 
+
     // STOMP 메시지 파싱
     private fun parseStompMessage(message: String) {
         val lines = message.split("\n")
@@ -248,6 +249,15 @@ class ChatWebSocketManager @Inject constructor() {
         CoroutineScope(Dispatchers.IO).launch {
             delay(3000)
             tryConnection(token)
+        }
+    }
+
+    fun unsubscribe(subscriptionId: String) {
+        if (isStompConnected) {
+            // Stomp 프로토콜의 UNSUBSCRIBE 프레임
+            val unsubscribeFrame = "UNSUBSCRIBE\nid:$subscriptionId\n\n\u0000"
+            webSocket?.send(unsubscribeFrame)
+            Log.d("WebSocket", "구독 취소: $subscriptionId")
         }
     }
 

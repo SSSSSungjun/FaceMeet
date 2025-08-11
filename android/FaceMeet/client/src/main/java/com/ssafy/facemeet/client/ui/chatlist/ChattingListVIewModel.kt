@@ -32,14 +32,15 @@ class ChattingListViewModel @Inject constructor(
     internal var selectedRoomId: Long = 0L
 
     init {
+        // ViewModel이 처음 생성될 때만 웹소켓 연결
         viewModelScope.launch {
             chatWebSocketManager.connect(0L, tokenManager.getAccessToken().toString(), 0L)
             chatWebSocketManager.onNewMessageForList = {
                 Log.d(TAG, "websocket호출:  ㅇㅇ")
                 loadChattingList()
             }
+            loadChattingList()
         }
-
     }
 
     fun loadChattingList() {
@@ -73,13 +74,10 @@ class ChattingListViewModel @Inject constructor(
         viewModelScope.launch {
             postChattingLeaveUseCase(chatRoomId).onSuccess {
                 Log.d(TAG, "방 나가기 성공")
-                loadChattingList()
+
             }.onFailure {
                 Log.d(TAG, "방 나가기 실패")
             }
         }
-
     }
-
-
 }
