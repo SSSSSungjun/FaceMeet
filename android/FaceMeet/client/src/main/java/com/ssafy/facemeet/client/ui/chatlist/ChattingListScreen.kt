@@ -1,11 +1,6 @@
 package com.ssafy.facemeet.client.ui.chatlist
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -32,12 +27,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,13 +50,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
+import com.ssafy.facemeet.client.ui.theme.ChosunGongseo
 import com.ssafy.facemeet.core.domain.model.ChatListItem
-import com.ssafy.facemeet.core.util.AppStateManager
 
 private const val TAG = "ChattingListScreen"
 
@@ -72,53 +64,8 @@ fun ChattingListScreen(
     onItemClick: (ChatListItem) -> Unit = {},
     viewModel: ChattingListViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadChattingList()
-        AppStateManager.setCurrentScreen("ChatListScreen")
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            AppStateManager.setCurrentScreen("", null)
-        }
-    }
-
-    DisposableEffect(Unit) { // context 대신 Unit 사용
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                Log.d("ChatListScreen", "📥 브로드캐스트 수신! action=${intent?.action}")
-                when (intent?.action) {
-                    "ACTION_REFRESH_CHAT_LIST" -> {
-                        Log.d("ChatListScreen", "채팅 리스트 갱신 요청")
-                        viewModel.loadChattingList()
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter().apply {
-            addAction("ACTION_REFRESH_CHAT_LIST")
-        }
-        try {
-            LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter)
-            context.registerReceiver(receiver, filter)
-            Log.d("ChatListScreen", "브로드캐스트 리시버 등록 완료")
-        } catch (e: Exception) {
-            Log.e("ChatListScreen", "브로드캐스트 리시버 등록 실패", e)
-        }
-        onDispose {
-            try {
-                LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
-                context.unregisterReceiver(receiver)
-                Log.d("ChatListScreen", "브로드캐스트 리시버 해제 완료")
-            } catch (e: Exception) {
-                Log.e("ChatListScreen", "브로드캐스트 리시버 해제 실패 (정상적인 경우일 수 있음)", e)
-            }
-        }
-    }
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -130,33 +77,41 @@ fun ChattingListScreen(
                 .fillMaxWidth()
                 .padding(15.dp),
             text = "채팅 목록",
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            fontFamily = ChosunGongseo
         )
         NoticeBanner()
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(uiState.chatList) { item ->
-                ChatListElementItem(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onLeaveRoom = { roomId ->
-                        viewModel.setSelectedRoomId(roomId)
-                        viewModel.clickExitRoom()
-                    }
-                )
+
+        if (!uiState.isLoading) {
+            // 로딩 중일 때 로딩 인디케이터 등을 표시
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            // 로딩이 완료되었을 때 LazyColumn을 표시
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(uiState.chatList) { item ->
+                    ChatListElementItem(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onLeaveRoom = { roomId ->
+                            viewModel.setSelectedRoomId(roomId)
+                            viewModel.clickExitRoom()
+                        }
+                    )
+                }
             }
         }
-
-        RoomExitDialog(
-            showDialog = uiState.showExitDialog,
-            onConfirm = {
-                viewModel.dismissExitDialog()
-                viewModel.exitRoom(viewModel.selectedRoomId)
-            },
-            onDismiss = {
-                viewModel.dismissExitDialog()
-            }
-        )
     }
+
+    RoomExitDialog(
+        showDialog = uiState.showExitDialog,
+        onConfirm = {
+            viewModel.dismissExitDialog()
+            viewModel.exitRoom(viewModel.selectedRoomId)
+        },
+        onDismiss = {
+            viewModel.dismissExitDialog()
+        }
+    )
 
 }
 

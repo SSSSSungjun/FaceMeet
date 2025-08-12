@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.client.ui.chat
+package com.ssafy.facemeet.client.ui.chat.model
 
 sealed class ChatNaviEvent {
     object ToBack : ChatNaviEvent()

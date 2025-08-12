@@ -14,6 +14,8 @@ data class ChatRoomResponse (
     @SerializedName("partnerId")
     val partnerID: Long,
     val partnerNickname: String,
+    val blocked : Boolean,
+    val deleted : Boolean,
     @SerializedName("imgUrl")
     val imgURL: String?,
     val similar: Long

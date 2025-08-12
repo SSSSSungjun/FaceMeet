@@ -18,6 +18,8 @@ fun ChattingAllResponse.toDomain(): ChattingAll {
             partnerID = 0L,
             partnerNickname = "",
             imgURL = "",
+            blocked = this.chatRoom.blocked,
+            deleted = this.chatRoom.deleted,
             similar = 0
         )
     )
@@ -29,6 +31,8 @@ fun ChatRoomResponse.toDomain(): ChatRoom {
         partnerID = partnerID ?: 0L,
         partnerNickname = partnerNickname ?: "",
         imgURL = imgURL ?: "",
+        blocked = blocked,
+        deleted = deleted,
         similar = similar ?: 0
     )
 }
