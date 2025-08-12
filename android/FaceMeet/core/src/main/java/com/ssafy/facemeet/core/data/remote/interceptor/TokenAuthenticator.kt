@@ -35,7 +35,10 @@ class TokenAuthenticator @Inject constructor(
                 tokenManager.getRefreshToken()
             } ?: throw Exception("refreshToken is null")
 
-            Log.d("TokenAuthenticator", "현재 accessToken : $currentAccessToken\n현재 refreshToken : $currentRefreshToken")
+            Log.d(
+                "TokenAuthenticator",
+                "현재 accessToken : $currentAccessToken\n현재 refreshToken : $currentRefreshToken"
+            )
 
             synchronized(this) {
                 Log.d("TokenAuthenticator", "synchronized 블록 내부 진입")

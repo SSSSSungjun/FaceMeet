@@ -17,7 +17,9 @@ import com.ssafy.facemeet.client.ui.matching.MatchingLoadingScreen
 import com.ssafy.facemeet.client.ui.notification.NotificationScreen
 import com.ssafy.facemeet.client.ui.profile.ProfileScreen
 import com.ssafy.facemeet.client.ui.profile.partner.PartnerProfileScreen
+import com.ssafy.facemeet.client.ui.ticketEvent.TicketEventScreen
 
+private const val TAG = "ClientNavHost"
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun NavGraphBuilder.clientNavHost(
@@ -32,8 +34,14 @@ fun NavGraphBuilder.clientNavHost(
         )
     }
 
+
     composable(ClientRoutes.Notification.route) {
-        NotificationScreen(onBackClick = { navController.popBackStack() })
+        NotificationScreen(
+            onBackClick = { navController.popBackStack() },
+            onNavigateToTicketEvent = { settingId: Long ->
+                navController.navigate(ClientRoutes.TicketEvent.build(settingId))
+            }
+        )
     }
 
     composable(ClientRoutes.Profile.route) {
@@ -128,5 +136,20 @@ fun NavGraphBuilder.clientNavHost(
         MyBlockListScreen(onBack = {
             navController.popBackStack()
         })
+    }
+
+    composable(
+        route = ClientRoutes.TicketEvent.route,
+        arguments = listOf(
+            navArgument(ClientRoutes.TicketEvent.ARG_SETTING_ID) {
+                type = NavType.LongType
+            }
+        )
+    ) { backStackEntry ->
+        val settingId = backStackEntry.arguments!!.getLong(ClientRoutes.TicketEvent.ARG_SETTING_ID)
+
+        TicketEventScreen(
+            settingId = settingId
+        )
     }
 }
