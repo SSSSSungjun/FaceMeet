@@ -174,7 +174,7 @@ private fun BlockRow(
             modifier = Modifier
                 .clickable { onUnblockClick() }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
-            color = CommonColor.Gray300,
+            color = CommonColor.Gray400,
             fontSize = 12.sp
         )
     }

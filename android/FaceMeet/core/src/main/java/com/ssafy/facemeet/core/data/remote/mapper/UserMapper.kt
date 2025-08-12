@@ -11,10 +11,11 @@ fun UserInfoResponse.toDomain(): UserInfo {
         nickname = nickname,
         gender = gender,
         address = address,
-        birth = birth.toFullDateString(),   // 기존 로직 유지
+        birth = birth.toFullDateString(),
         preferAgeLower = preferAgeLower,
         preferAgeUpper = preferAgeUpper,
         latitude = latitude,
-        longitude = longitude
+        longitude = longitude,
+        isEventSubscribed = isEventSubscribed
     )
 }

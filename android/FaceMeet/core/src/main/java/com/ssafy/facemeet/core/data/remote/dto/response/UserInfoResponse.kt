@@ -9,6 +9,7 @@ data class UserInfoResponse(
     val birth: String,
     val preferAgeLower: Int,
     val preferAgeUpper: Int,
-    val latitude: Double,   // 필수
-    val longitude: Double   // 필수
+    val latitude: Double,
+    val longitude: Double,
+    val isEventSubscribed: Boolean
 )

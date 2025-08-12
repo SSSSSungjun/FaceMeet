@@ -124,7 +124,7 @@ fun ReportDialog(
                         placeholder = {
                             Text(
                                 "카테고리를 선택하세요",
-                                color = CommonColor.Gray300,
+                                color = CommonColor.Gray400,
                                 fontFamily = Roboto
                             )
                         },
@@ -135,7 +135,7 @@ fun ReportDialog(
                             .menuAnchor()
                             .fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = CommonColor.Gray300,
+                            unfocusedBorderColor = CommonColor.Gray400,
                             focusedBorderColor = CommonColor.Brown500,
                         ),
                         shape = RoundedCornerShape(6.dp),
@@ -181,7 +181,7 @@ fun ReportDialog(
                     placeholder = {
                         Text(
                             "상세 내용을 입력해주세요",
-                            color = CommonColor.Gray300,
+                            color = CommonColor.Gray400,
                             fontFamily = Roboto
                         )
                     },
@@ -189,7 +189,7 @@ fun ReportDialog(
                         .fillMaxWidth()
                         .height(100.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = CommonColor.Gray300,
+                        unfocusedBorderColor = CommonColor.Gray400,
 
                         focusedBorderColor = CommonColor.Brown500
                     ),
@@ -226,7 +226,7 @@ fun ReportDialog(
                     ) {
                         Text(
                             "신고하기",
-                            color = if (enabled) CommonColor.Orange else CommonColor.Gray300
+                            color = if (enabled) CommonColor.Orange else CommonColor.Gray400
                         )
                     }
                 }
