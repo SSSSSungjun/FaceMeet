@@ -228,6 +228,10 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     var onNewMessageForList: (() -> Unit)? = null
+        set(value) {
+            field = value
+            Log.d("WebSocket", "onNewMessageForList 콜백 상태 변경: ${if (value != null) "설정됨" else "해제됨"}")
+        }
     private fun handleChatMessage(response: ChatElement) {
         Log.d("WebSocket", "메시지 처리 시작 - 보낸사람: ${response.senderID}, 내용: ${response.content}")
 
@@ -237,7 +241,7 @@ class ChatWebSocketManager @Inject constructor() {
         )
 
         onNewMessageReceived?.invoke(messageItem)
-        Log.d("WebSocket", "✅ 메시지 콜백 호출 완료")
+        Log.d("WebSocket", "✅ 메시지 콜백 호출 완료 $messageItem")
 
         Log.d("WebSocket", "onNewMessageForList 콜백 호출 직전")
         onNewMessageForList?.invoke()

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
+import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,11 +34,14 @@ class ChattingListViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            chatWebSocketManager.connect(0L, tokenManager.getAccessToken().toString(), 0L)
-            chatWebSocketManager.onNewMessageForList = {
-                Log.d(TAG, "✅ onNewMessageForList 콜백 설정 완료!")
-                loadChattingList()
+            if (chatWebSocketManager.connectionState.value == ConnectionState.CONNECTING) {
+                chatWebSocketManager.connect(tokenManager.getUserPK()?.toLong() ?: 0L, tokenManager.getAccessToken().toString(), 0L)
+                chatWebSocketManager.onNewMessageForList = {
+                    Log.d(TAG, "✅ onNewMessageForList 콜백 설정 완료!")
+                    loadChattingList()
+                }
             }
+
             loadChattingList()
         }
     }
