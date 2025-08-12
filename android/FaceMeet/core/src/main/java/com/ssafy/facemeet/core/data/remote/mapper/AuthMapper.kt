@@ -6,7 +6,8 @@ import com.ssafy.facemeet.core.domain.model.Auth
 fun AuthResponse<Unit>.toDomain(): Auth {
     return Auth(
         status = this.status,
+        data = {},
         accessToken = this.accessToken,
-        data = {}
+        refreshToken = this.refreshToken ?:"null",
     )
 }
