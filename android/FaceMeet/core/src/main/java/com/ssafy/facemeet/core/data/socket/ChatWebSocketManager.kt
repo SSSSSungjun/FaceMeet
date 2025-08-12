@@ -239,7 +239,9 @@ class ChatWebSocketManager @Inject constructor() {
         onNewMessageReceived?.invoke(messageItem)
         Log.d("WebSocket", "✅ 메시지 콜백 호출 완료")
 
+        Log.d("WebSocket", "onNewMessageForList 콜백 호출 직전")
         onNewMessageForList?.invoke()
+        Log.d("WebSocket", "onNewMessageForList 콜백 호출 완료 여부: ${onNewMessageForList != null}")
     }
 
     // 재연결 시도

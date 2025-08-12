@@ -13,7 +13,8 @@ import javax.inject.Inject
 
 class TokenAuthenticator @Inject constructor(
     private val tokenManager: TokenManager,
-    private val authApiService: AuthApiService
+    private val authApiService: AuthApiService,
+    private val tokenExpirationNotifier: TokenExpirationNotifier
 ) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {
@@ -55,6 +56,9 @@ class TokenAuthenticator @Inject constructor(
         } catch (e: Exception) {
             Log.e("TokenAuthenticator", "토큰 갱신 실패: ${e.message}")
             tokenManager.clearTokensSync()
+            runBlocking {
+                tokenExpirationNotifier.notifyTokenExpired()
+            }
             Log.d("TokenAuthenticator", "authenticate: 세션 만료")
             null
         }

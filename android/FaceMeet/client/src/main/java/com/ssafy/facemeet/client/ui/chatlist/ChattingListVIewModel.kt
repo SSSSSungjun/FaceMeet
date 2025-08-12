@@ -32,11 +32,10 @@ class ChattingListViewModel @Inject constructor(
     internal var selectedRoomId: Long = 0L
 
     init {
-        // ViewModel이 처음 생성될 때만 웹소켓 연결
         viewModelScope.launch {
             chatWebSocketManager.connect(0L, tokenManager.getAccessToken().toString(), 0L)
             chatWebSocketManager.onNewMessageForList = {
-                Log.d(TAG, "websocket호출:  ㅇㅇ")
+                Log.d(TAG, "✅ onNewMessageForList 콜백 설정 완료!")
                 loadChattingList()
             }
             loadChattingList()
@@ -50,7 +49,7 @@ class ChattingListViewModel @Inject constructor(
                 Log.d(TAG, "loadChattingList: 로드 성공 $chatList")
                 _uiState.value = _uiState.value.copy(
                     chatList = chatList,
-                    isLoading = false
+                    isLoading = true
                 )
             }.onFailure {
                 Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")

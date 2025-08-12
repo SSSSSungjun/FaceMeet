@@ -3,6 +3,7 @@ package com.ssafy.facemeet
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,10 +12,14 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import com.ssafy.facemeet.core.data.remote.interceptor.TokenExpirationNotifier
 import com.ssafy.facemeet.navigation.AppNavHost
 import com.ssafy.facemeet.service.OfflineNotifyService
 import com.ssafy.facemeet.theme.FacemeetTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "MainActivity"
 
@@ -22,6 +27,9 @@ private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
+
+    @Inject
+    lateinit var tokenExpirationNotifier: TokenExpirationNotifier
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +42,12 @@ class MainActivity : ComponentActivity() {
 
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
         startService(serviceIntent)
+
+        lifecycleScope.launch {
+            tokenExpirationNotifier.tokenExpiredEvent.collect {
+                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG).show()
+            }
+        }
 
         enableEdgeToEdge()
         setContent {

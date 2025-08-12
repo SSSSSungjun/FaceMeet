@@ -27,12 +27,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,12 +50,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
 import com.ssafy.facemeet.core.domain.model.ChatListItem
-import com.ssafy.facemeet.core.util.AppStateManager
 
 private const val TAG = "ChattingListScreen"
 
@@ -66,19 +63,8 @@ fun ChattingListScreen(
     onItemClick: (ChatListItem) -> Unit = {},
     viewModel: ChattingListViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadChattingList()
-        AppStateManager.setCurrentScreen("ChatListScreen")
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            AppStateManager.setCurrentScreen("", null)
-        }
-    }
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -93,30 +79,37 @@ fun ChattingListScreen(
             fontSize = 18.sp
         )
         NoticeBanner()
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(uiState.chatList) { item ->
-                ChatListElementItem(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onLeaveRoom = { roomId ->
-                        viewModel.setSelectedRoomId(roomId)
-                        viewModel.clickExitRoom()
-                    }
-                )
+
+        if (!uiState.isLoading) {
+            // 로딩 중일 때 로딩 인디케이터 등을 표시
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            // 로딩이 완료되었을 때 LazyColumn을 표시
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(uiState.chatList) { item ->
+                    ChatListElementItem(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onLeaveRoom = { roomId ->
+                            viewModel.setSelectedRoomId(roomId)
+                            viewModel.clickExitRoom()
+                        }
+                    )
+                }
             }
         }
-
-        RoomExitDialog(
-            showDialog = uiState.showExitDialog,
-            onConfirm = {
-                viewModel.dismissExitDialog()
-                viewModel.exitRoom(viewModel.selectedRoomId)
-            },
-            onDismiss = {
-                viewModel.dismissExitDialog()
-            }
-        )
     }
+
+    RoomExitDialog(
+        showDialog = uiState.showExitDialog,
+        onConfirm = {
+            viewModel.dismissExitDialog()
+            viewModel.exitRoom(viewModel.selectedRoomId)
+        },
+        onDismiss = {
+            viewModel.dismissExitDialog()
+        }
+    )
 
 }
 
