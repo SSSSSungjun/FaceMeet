@@ -117,19 +117,19 @@ class ChattingViewModel @Inject constructor(
             Log.d(TAG, "STOMP connection successful. Marking as read.")
             markAsRead()
         }
-        webSocketManager.onNewMessageForList = {
-            viewModelScope.launch {
-                getChattingListUseCase().onSuccess { chatList ->
-                    Log.d(TAG, "loadChattingList: 로드 성공 $chatList")
-                    _listUiState.value = _listUiState.value.copy(
-                        chatList = chatList,
-                        isLoading = false
-                    )
-                }.onFailure {
-                    Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")
-                }
-            }
-        }
+//        webSocketManager.onNewMessageForList = {
+//            viewModelScope.launch {
+//                getChattingListUseCase().onSuccess { chatList ->
+//                    Log.d(TAG, "loadChattingList: 로드 성공 $chatList")
+//                    _listUiState.value = _listUiState.value.copy(
+//                        chatList = chatList,
+//                        isLoading = false
+//                    )
+//                }.onFailure {
+//                    Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")
+//                }
+//            }
+//        }
     }
 
     // 새 메시지 수신 처리

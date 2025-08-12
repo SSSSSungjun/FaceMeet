@@ -53,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
+import com.ssafy.facemeet.client.ui.theme.ChosunGongseo
 import com.ssafy.facemeet.core.domain.model.ChatListItem
 
 private const val TAG = "ChattingListScreen"
@@ -76,7 +77,8 @@ fun ChattingListScreen(
                 .fillMaxWidth()
                 .padding(15.dp),
             text = "채팅 목록",
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            fontFamily = ChosunGongseo
         )
         NoticeBanner()
 
