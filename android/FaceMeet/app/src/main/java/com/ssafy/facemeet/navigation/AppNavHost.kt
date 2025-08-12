@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,6 +42,7 @@ fun AppNavHost(
 ) {
 
     val navController = rememberNavController()
+    val pending = mainViewModel.pendingNav.collectAsState().value
     val bottomNavController = rememberNavController()
 
     val startDestination = AppRoutes.Start.route
@@ -48,19 +50,37 @@ fun AppNavHost(
     val cameraVM: CameraShotViewModel = hiltViewModel()
     val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
-    LaunchedEffect(Unit) {
-        Log.d("AppNavHost", "🎯 pendingNavigation 구독 시작")
-        mainViewModel.pendingNavigation.collect { navigation ->
-            navigation?.let { (screen, roomId) ->
-                Log.d("AppNavHost", "📥 네비게이션 이벤트 수신: $screen, $roomId")
-                if (screen == "chatList" && roomId != null) {
-                    Log.d("AppNavHost", "🚀 채팅방 이동 실행")
-                    navController.navigate(ClientRoutes.Chat.createRoute(roomId))
-                    mainViewModel.clearPendingNavigation()
+    LaunchedEffect(isLoggedIn, pending) {
+        if (!isLoggedIn) return@LaunchedEffect
+
+        when (pending) {
+            is MainViewModel.PendingNav.Chat -> {
+                val roomId = (pending as MainViewModel.PendingNav.Chat).roomId
+                navController.navigate(ClientRoutes.Chat.createRoute(roomId)) {
+                    launchSingleTop = true
                 }
+                mainViewModel.consumePendingNavigation()
             }
+
+            is MainViewModel.PendingNav.TicketEvent -> {
+                navController.navigate(ClientRoutes.TicketEvent.route) {
+                    launchSingleTop = true
+                }
+                mainViewModel.consumePendingNavigation()
+            }
+
+            MainViewModel.PendingNav.NotificationCenter -> {
+                navController.navigate(ClientRoutes.Notification.route) {
+                    launchSingleTop = true
+                }
+                mainViewModel.consumePendingNavigation()
+            }
+
+            MainViewModel.PendingNav.None -> Unit
+            else -> {}
         }
     }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,

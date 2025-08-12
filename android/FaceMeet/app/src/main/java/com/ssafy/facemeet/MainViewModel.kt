@@ -1,6 +1,5 @@
 package com.ssafy.facemeet
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.datastore.TokenManager
@@ -12,8 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
-
-private const val TAG = "MainViewModel"
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -27,18 +24,29 @@ class MainViewModel @Inject constructor(
         .onEach { _isLoading.value = false }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-
-    private val _pendingNavigation = MutableStateFlow<Pair<String, Long?>?>(null)
-    val pendingNavigation: StateFlow<Pair<String, Long?>?> = _pendingNavigation.asStateFlow()
-
-    fun setPendingNavigation(screen: String, roomId: Long?) {
-        Log.d("MainViewModel", "✅ setPendingNavigation: $screen, $roomId")
-        _pendingNavigation.value = screen to roomId
+    sealed class PendingNav {
+        data object None : PendingNav()
+        data class Chat(val roomId: Long) : PendingNav()
+        data class TicketEvent(val settingId: Long? = null) : PendingNav()
+        data object NotificationCenter : PendingNav()
     }
 
-    fun clearPendingNavigation() {
-        _pendingNavigation.value = null
+    private val _pendingNav = MutableStateFlow<PendingNav>(PendingNav.None)
+    val pendingNav: StateFlow<PendingNav> = _pendingNav.asStateFlow()
+
+    fun goToChat(roomId: Long) {
+        _pendingNav.value = PendingNav.Chat(roomId)
     }
 
+    fun goToTicketEvent(settingId: Long? = null) {
+        _pendingNav.value = PendingNav.TicketEvent(settingId)
+    }
+
+    fun goToNotificationCenter() {
+        _pendingNav.value = PendingNav.NotificationCenter
+    }
+
+    fun consumePendingNavigation() {
+        _pendingNav.value = PendingNav.None
+    }
 }
-

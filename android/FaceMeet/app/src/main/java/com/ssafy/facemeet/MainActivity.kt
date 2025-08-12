@@ -45,7 +45,8 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             tokenExpirationNotifier.tokenExpiredEvent.collect {
-                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG)
+                    .show()
                 //nav처리는 따로 해야함 이건 ㅇㅇ
             }
         }
@@ -66,13 +67,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleNotificationIntent(intent: Intent) {
-        val deepLink = intent.getStringExtra("deep_link")
-        val roomId = intent.getLongExtra("roomId", -1L)
+        when (intent.getStringExtra("deep_link")) {
+            "chat" -> {
+                val roomId = intent.getLongExtra("roomId", -1L)
+                if (roomId > 0) mainViewModel.goToChat(roomId)
+            }
 
-        if (deepLink == "chat" && roomId != -1L) {
-            mainViewModel.setPendingNavigation("chatList", roomId)
+            "ticket_event" -> {
+                val settingId = intent.getLongExtra("settingId", -1L).takeIf { it > 0 }
+                mainViewModel.goToTicketEvent(settingId)
+            }
+
+            "notification_center" -> {
+                mainViewModel.goToNotificationCenter()
+            }
+
+            else -> Unit
         }
     }
+
 
 }
 

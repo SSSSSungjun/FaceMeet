@@ -234,6 +234,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("deep_link", "ticket_event")
         }
 
         val pendingIntent = PendingIntent.getActivity(
