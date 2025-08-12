@@ -149,7 +149,6 @@ fun NavGraphBuilder.clientNavHost(
         val settingId = backStackEntry.arguments!!.getLong(ClientRoutes.TicketEvent.ARG_SETTING_ID)
 
         TicketEventScreen(
-            onAcquire = { /* ... */ },
             settingId = settingId
         )
     }

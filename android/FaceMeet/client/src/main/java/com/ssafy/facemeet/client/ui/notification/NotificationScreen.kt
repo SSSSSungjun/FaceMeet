@@ -116,9 +116,11 @@ fun NotificationItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Row() {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
             Image(
                 painter = painterResource(id = iconRes),
                 contentDescription = "알림 아이콘",

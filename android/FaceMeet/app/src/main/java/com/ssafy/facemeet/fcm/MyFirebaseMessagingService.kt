@@ -167,8 +167,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     settingId = settingId,
                     triggerTime = triggerTime,
                     eventDataStr = eventDataStr,
-                    title = data["title"],
-                    body = data["body"]
+                    title = data["title"] ?: "없음",
+                    body = data["body"] ?: "없음"
                 )
 
             }
@@ -335,7 +335,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
     private fun storeEvent(
-        settingId: String, triggerTime: Date, eventDataStr: String, title: String?, body: String?
+        settingId: Long, triggerTime: Date, eventDataStr: String, title: String?, body: String?
     ) {
         val eventInfo = mapOf(
             "settingId" to settingId,
@@ -364,8 +364,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 val triggerTime =
                     eventInfo["triggerTime"]?.toLongOrNull()?.let { Date(it) } ?: continue
                 val eventDataStr = eventInfo["eventData"] ?: continue
-                val title = eventInfo["title"]
-                val body = eventInfo["body"]
+                val title = eventInfo["title"] ?: "없음"
+                val body = eventInfo["body"] ?: "없음"
 
                 if (triggerTime.time > System.currentTimeMillis()) {
                     scheduleLocalEvent(
@@ -392,7 +392,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         triggerTime: Long,
         settingId: Long?
     ) {
-        Log.d(TAG, "saveNotificationToRoom: ")
+        Log.d(TAG, "saveNotificationToRoom: $")
         CoroutineScope(Dispatchers.IO).launch {
             val notification = NotificationEntity(
                 title = title,
@@ -410,8 +410,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         settingId: String,
         triggerTime: Date,
         eventDataStr: String,
-        title: String?,
-        body: String?
+        title: String,
+        body: String
     ) {
         Log.d("FCM", "scheduleLocalEvent: title ${title} body: ${body}")
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -448,7 +448,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
 
-            storeEvent(settingId, triggerTime, eventDataStr, title, body)
+            FcmAlarmHandler.saveNotificationToRoom(
+                notificationDao,
+                title,
+                body,
+                System.currentTimeMillis(),
+                settingId = settingId.toLong()
+            )
+            storeEvent(settingId.toLong(), triggerTime, eventDataStr, title, body)
             Log.d("FCM", "알람 예약 성공: $settingId")
         } catch (e: SecurityException) {
             Log.e("FCM", "알람 예약 중 SecurityException 발생", e)
@@ -526,7 +533,7 @@ object FcmAlarmHandler {
         manager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
-    private fun saveNotificationToRoom(
+    fun saveNotificationToRoom(
         dao: NotificationDao, title: String, body: String, time: Long, settingId: Long
     ) {
         Log.d(TAG, "saveNotificationToRoom: ")
