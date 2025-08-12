@@ -4,5 +4,5 @@ data class AuthResponse<T>(
     val status: Int,
     val data: T?,
     val accessToken: String?,
-    val refreshToken : String? = "null",
+    val refreshToken : String?,
 ) // auth전용

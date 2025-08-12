@@ -34,22 +34,35 @@ class ChattingListViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val currentState = chatWebSocketManager.connectionState.value
-            Log.d(TAG, "현재 WebSocket 상태: $currentState")
-
-            if (currentState == ConnectionState.CONNECTING || currentState == ConnectionState.DISCONNECTED) {
-                chatWebSocketManager.connect(tokenManager.getUserPK()?.toLong() ?: 0L, tokenManager.getAccessToken().toString(), 0L)
-            }
-
-            // 콜백은 항상 설정
+            // ... (콜백 설정만 남겨두고)
             chatWebSocketManager.onNewMessageForList = {
                 Log.d(TAG, "✅ onNewMessageForList 콜백 실행됨!")
                 loadChattingList()
             }
+        }
+    }
 
+    fun initializeChatting() {
+        viewModelScope.launch {
+            val currentState = chatWebSocketManager.connectionState.value
+            Log.d(TAG, "현재 WebSocket 상태: $currentState")
+
+            // 연결이 필요할 경우에만 connect를 호출합니다.
+            if (currentState == ConnectionState.CONNECTING || currentState == ConnectionState.DISCONNECTED) {
+                chatWebSocketManager.connect(
+                    tokenManager.getUserPK()?.toLong() ?: 0L,
+                    tokenManager.getAccessToken().toString(),
+                    0L
+                )
+            }
+            chatWebSocketManager.onNewMessageForList = {
+                Log.d(TAG, "✅ onNewMessageForList 콜백 실행됨!")
+                loadChattingList()
+            }
             loadChattingList()
         }
     }
+
 
     fun loadChattingList() {
         viewModelScope.launch {

@@ -72,6 +72,7 @@ dependencies {
     api("androidx.compose.animation:animation")
 
     implementation(libs.hilt.android)
+    //implementation(libs.androidx.ui.desktop)
     ksp(libs.hilt.android.compiler)
 
     testImplementation(libs.junit)
@@ -96,7 +97,6 @@ dependencies {
 
     api("androidx.paging:paging-compose:3.3.6")
     api("androidx.compose.foundation:foundation:1.8.3")
-
     // room
     api(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
