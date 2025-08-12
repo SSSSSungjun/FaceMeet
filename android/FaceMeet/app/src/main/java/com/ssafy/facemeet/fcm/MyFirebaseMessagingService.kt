@@ -23,6 +23,7 @@ import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.R
 import com.ssafy.facemeet.core.data.database.NotificationDao
 import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
+import com.ssafy.facemeet.core.data.database.entity.NotificationType
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.domain.usecase.RegisterDeviceUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
@@ -36,6 +37,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+
+
+private const val TAG = "MyFirebaseMessagingServ"
 
 @AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
@@ -150,7 +154,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 triggerEvent(
                     context = this,
                     dao = notificationDao,
-                    settingId = settingId,
+                    settingId = settingId.toLong(),
                     eventDataStr = eventDataStr,
                     title = data["title"],
                     body = data["body"]
@@ -180,8 +184,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "handleImmediateEvent: ${data.entries}")
         val title = data["title"] ?: notification?.title ?: "없음"
         val body = data["body"] ?: notification?.body ?: "없음"
+        val settingId = data["settingId"]?.toLong()
         sendNotification(title, body)
-        saveNotificationToRoom(title, body, System.currentTimeMillis())
+        saveNotificationToRoom(title, body, System.currentTimeMillis(), settingId = settingId)
     }
 
     private fun handleChatNotification(
@@ -242,7 +247,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti).setContentTitle(title)
+            .setSmallIcon(R.drawable.icon_small).setContentTitle(title)
             .setContentText(body).setAutoCancel(true)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
@@ -285,7 +290,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(com.ssafy.facemeet.client.R.drawable.logo_noti).setContentTitle(title)
+            .setSmallIcon(R.drawable.icon_small).setContentTitle(title)
             .setContentText(body).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE).setContentIntent(pendingIntent)
@@ -381,10 +386,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
 
-    private fun saveNotificationToRoom(title: String, body: String, triggerTime: Long) {
+    private fun saveNotificationToRoom(
+        title: String,
+        body: String,
+        triggerTime: Long,
+        settingId: Long?
+    ) {
+        Log.d(TAG, "saveNotificationToRoom: ")
         CoroutineScope(Dispatchers.IO).launch {
             val notification = NotificationEntity(
-                title = title, body = body, triggerTime = triggerTime, type = "ticket"
+                title = title,
+                body = body,
+                triggerTime = triggerTime,
+                type = NotificationType.TICKET,
+                settingId = settingId
             )
             notificationDao.insert(notification)
         }
@@ -441,8 +456,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.e("FCM", "알람 예약 중 알 수 없는 예외 발생", e)
         }
     }
-
-
 }
 
 
@@ -460,17 +473,24 @@ object FcmAlarmHandler {
     fun triggerEvent(
         context: Context,
         dao: NotificationDao,
-        settingId: String,
+        settingId: Long,
         eventDataStr: String,
         title: String?,
         body: String?
     ) {
+        Log.d(TAG, "triggerEvent: ")
         try {
             val finalTitle = title ?: "없음"
             val finalBody = body ?: "없음"
 
             sendNotification(context, finalTitle, finalBody)
-            saveNotificationToRoom(dao, finalTitle, finalBody, System.currentTimeMillis())
+            saveNotificationToRoom(
+                dao,
+                finalTitle,
+                finalBody,
+                System.currentTimeMillis(),
+                settingId = settingId
+            )
         } catch (e: Exception) {
             Log.e("FCM", "외부 알람 실행 중 오류", e)
         }
@@ -507,12 +527,17 @@ object FcmAlarmHandler {
     }
 
     private fun saveNotificationToRoom(
-        dao: NotificationDao, title: String, body: String, time: Long
+        dao: NotificationDao, title: String, body: String, time: Long, settingId: Long
     ) {
+        Log.d(TAG, "saveNotificationToRoom: ")
         CoroutineScope(Dispatchers.IO).launch {
             dao.insert(
                 NotificationEntity(
-                    title = title, body = body, triggerTime = time, type = "ticket"
+                    title = title,
+                    body = body,
+                    triggerTime = time,
+                    type = NotificationType.TICKET,
+                    settingId = settingId
                 )
             )
         }

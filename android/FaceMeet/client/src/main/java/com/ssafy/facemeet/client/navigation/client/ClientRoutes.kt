@@ -20,5 +20,10 @@ sealed class ClientRoutes(val route: String) {
 
     object BlockList : ClientRoutes("block_list")
 
+    object TicketEvent : ClientRoutes("ticket_event/{settingId}") {
+        const val ARG_SETTING_ID = "settingId"
+        fun build(settingId: Long) = "ticket_event/$settingId"
+    }
+
 }
 

@@ -23,7 +23,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra("title")
         val body = intent.getStringExtra("body")
 
-        FcmAlarmHandler.triggerEvent(context, dao, settingId, eventDataStr, title, body)
+        FcmAlarmHandler.triggerEvent(context, dao, settingId.toLong(), eventDataStr, title, body)
     }
 
 }

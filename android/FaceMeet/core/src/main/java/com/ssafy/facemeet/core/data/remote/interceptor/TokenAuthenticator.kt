@@ -26,10 +26,15 @@ class TokenAuthenticator @Inject constructor(
             val currentRefreshToken = tokenManager.getRefreshTokenSync()
                 ?: throw Exception("refreshToken is null")
 
-            Log.d("TokenAuthenticator", "현재 accessToken : $currentAccessToken\n현재 refreshToken : $currentRefreshToken")
+            Log.d(
+                "TokenAuthenticator",
+                "현재 accessToken : $currentAccessToken\n현재 refreshToken : $currentRefreshToken"
+            )
 
             synchronized(this) {
-                if (currentAccessToken != response.request.header("Authorization")?.removePrefix("Bearer ")) {
+                if (currentAccessToken != response.request.header("Authorization")
+                        ?.removePrefix("Bearer ")
+                ) {
                     Log.d("TokenAuthenticator", "토큰이 이미 갱신되었으므로 요청 재시도")
                     return response.request.createRequestWithRenewedToken(currentAccessToken)
                 }
@@ -44,12 +49,15 @@ class TokenAuthenticator @Inject constructor(
 
                 val newTokenData = newTokenResponse.body() ?: throw Exception("토큰 갱신 응답 에러")
 
-                val newAccessToken = newTokenData.accessToken ?: throw Exception("새 accessToken이 null")
-                val newRefreshToken = currentRefreshToken
+                val newAccessToken =
+                    newTokenData.accessToken ?: throw Exception("새 accessToken이 null")
 
-                tokenManager.saveTokensSync(newAccessToken, newRefreshToken)
+                tokenManager.saveTokensSync(newAccessToken, currentRefreshToken)
 
-                Log.d("TokenAuthenticator", "갱신 accessToken : $newAccessToken\n갱신 refreshToken : $newRefreshToken")
+                Log.d(
+                    "TokenAuthenticator",
+                    "갱신 accessToken : $newAccessToken\n갱신 refreshToken : $currentRefreshToken"
+                )
 
                 return response.request.createRequestWithRenewedToken(newAccessToken)
             }

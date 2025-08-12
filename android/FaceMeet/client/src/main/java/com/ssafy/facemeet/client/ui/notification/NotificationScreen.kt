@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.client.ui.notification
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
+import com.ssafy.facemeet.core.data.database.entity.NotificationType
 import com.ssafy.facemeet.core.util.constant.CommonColor
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,6 +47,7 @@ import java.util.Locale
 @Composable
 fun NotificationScreen(
     onBackClick: () -> Unit,
+    onNavigateToTicketEvent: (Long) -> Unit,
     viewModel: NotificationViewModel = hiltViewModel()
 ) {
     val notifications by viewModel.notifications.collectAsState()
@@ -84,7 +87,15 @@ fun NotificationScreen(
                 .padding(padding)
         ) {
             items(notifications) { notification ->
-                NotificationItem(notification)
+                NotificationItem(
+                    notification = notification,
+                    onClick = {
+                        if (notification.type == NotificationType.TICKET) {
+                            notification.settingId?.let { onNavigateToTicketEvent(it) }      // ✅ 여기서 티켓 이벤트로 이동
+                        }
+                        // 다른 type 처리 필요하면 else-if로 추가
+                    }
+                )
             }
         }
     }
@@ -92,16 +103,19 @@ fun NotificationScreen(
 
 
 @Composable
-fun NotificationItem(notification: NotificationEntity) {
+fun NotificationItem(
+    notification: NotificationEntity,
+    onClick: () -> Unit
+) {
     val iconRes = when (notification.type) {
-        "ticket" -> R.drawable.ic_notification_ticket // 실제 리소스 아이콘으로 교체
+        NotificationType.TICKET -> R.drawable.ic_notification_ticket // 실제 리소스 아이콘으로 교체
         else -> R.drawable.ic_notification_default
     }
-
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row() {
