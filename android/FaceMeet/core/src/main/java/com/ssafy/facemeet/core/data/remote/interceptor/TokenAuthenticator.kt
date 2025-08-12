@@ -15,6 +15,8 @@ import javax.inject.Singleton
 
 // TokenAuthenticator.kt
 
+private const val TAG = "TokenAuthenticator"
+
 @Singleton
 class TokenAuthenticator @Inject constructor(
     private val tokenManager: TokenManager,
@@ -23,101 +25,96 @@ class TokenAuthenticator @Inject constructor(
 ) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {
-        return try {
-            Log.d("TokenAuthenticator", "401 응답으로 인한 authenticate 호출")
+        try {
+            Log.d(TAG, "401 응답으로 인한 authenticate 호출")
 
-            // runBlocking으로 suspend 함수들 호출
-            val currentAccessToken = runBlocking {
-                tokenManager.getAccessToken()
-            } ?: throw Exception("accessToken is null")
+            // 1) 두 번째 401이면 → 토큰 삭제 후 null
+            if (response.request.header("X-Retry") == "1") {
+                Log.w(TAG, "두 번째 401 감지 → 토큰 삭제 & 로그아웃 처리")
+                tokenManager.clearTokensSync()
+                runBlocking { tokenExpirationNotifier.notifyTokenExpired() }
+                return null
+            }
 
-            val currentRefreshToken = runBlocking {
-                tokenManager.getRefreshToken()
-            } ?: throw Exception("refreshToken is null")
+            // 2) refresh 엔드포인트면 무한루프 방지
+            if (response.request.url.encodedPath.contains("/auth/refresh")) return null
 
-            Log.d(
-                "TokenAuthenticator",
-                "현재 accessToken : $currentAccessToken\n현재 refreshToken : $currentRefreshToken"
-            )
+            val reqToken = response.request.header("Authorization")?.removePrefix("Bearer ")
+            val currentAccessToken = runBlocking { tokenManager.getAccessToken() } ?: return null
+            val currentRefreshToken = runBlocking { tokenManager.getRefreshToken() } ?: return null
+
+            // 3) 최신 토큰과 다르면 → 빠른 재시도 (refresh 안 함)
+            if (reqToken != null && reqToken != currentAccessToken) {
+                return response.request.newBuilder()
+                    .header("Authorization", "Bearer $currentAccessToken")
+                    .header("X-Retry", "1") // ★ 재시도 마커
+                    .build()
+            }
 
             synchronized(this) {
-                Log.d("TokenAuthenticator", "synchronized 블록 내부 진입")
-                if (currentAccessToken != response.request.header("Authorization")?.removePrefix("Bearer ")) {
-                    Log.d("TokenAuthenticator", "토큰이 이미 갱신되었으므로 요청 재시도")
-                    return response.request.createRequestWithRenewedToken(currentAccessToken)
+                // 이중 체크
+                if (currentAccessToken != response.request.header("Authorization")
+                        ?.removePrefix("Bearer ")
+                ) {
+                    return response.request.newBuilder()
+                        .header("Authorization", "Bearer $currentAccessToken")
+                        .header("X-Retry", "1")
+                        .build()
                 }
 
-                // ✅ 핵심 수정: runBlocking 안에서 runCatching을 사용합니다.
+                // 4) refresh API 호출
                 val newTokenResponseResult = runBlocking {
-                    Log.d("TokenAuthenticator", "refresh API 호출 중...")
-                    runCatching { // 이 안에서 발생하는 모든 예외를 Result로 감쌉니다.
-                        authApiService.get().postRefreshToken(RefreshTokenRequest(currentRefreshToken))
+                    Log.d(TAG, "refresh API 호출 중...")
+                    runCatching {
+                        authApiService.get()
+                            .postRefreshToken(RefreshTokenRequest(currentRefreshToken))
                     }
                 }
 
-                // ✅ Result 객체에서 성공 또는 실패를 처리합니다.
                 val newTokenResponse = newTokenResponseResult.getOrElse { exception ->
-                    Log.e("TokenAuthenticator", "❌ refresh API 호출 중 예외 발생: ${exception.message}", exception)
-                    // 예외가 발생했으므로 세션 만료 처리
+                    Log.e(TAG, "❌ refresh API 호출 중 예외: ${exception.message}", exception)
                     tokenManager.clearTokensSync()
                     runBlocking { tokenExpirationNotifier.notifyTokenExpired() }
-                    return null // 예외 발생 시 null 반환
+                    return null
                 }
 
+                // 5) refresh 결과가 실패(401/403 포함)면 토큰 삭제 후 null
                 if (!newTokenResponse.isSuccessful) {
-                    Log.e("TokenAuthenticator", "토큰 갱신 실패: HTTP ${newTokenResponse.code()}")
-                    if (newTokenResponse.code() == 401 || newTokenResponse.code() == 403) {
-                        Log.e("TokenAuthenticator", "❌ 세션 만료 - Refresh token이 만료되었습니다. (HTTP ${newTokenResponse.code()})")
-                    } else {
-                        Log.e("TokenAuthenticator", "❌ 세션 만료 - 토큰 갱신 중 알 수 없는 HTTP 오류: ${newTokenResponse.code()}")
-                    }
+                    Log.e(TAG, "토큰 갱신 실패: HTTP ${newTokenResponse.code()}")
                     tokenManager.clearTokensSync()
                     runBlocking { tokenExpirationNotifier.notifyTokenExpired() }
-                    return null // 세 번째 null 반환 지점
+                    return null
                 }
 
-                val newTokenData = newTokenResponse.body()
-                Log.d("TokenAuthenticator", "토큰 갱신 응답 받음: ${newTokenData}") // 응답 body 로그 추가
-                Log.d("TokenAuthenticator", "응답 body 파싱 완료")
-
-                if (newTokenData == null) {
-                    Log.e("TokenAuthenticator", "❌ 세션 만료 - 응답 body가 null입니다. refresh token 문제로 추정됩니다.")
+                val newTokenData = newTokenResponse.body() ?: run {
                     tokenManager.clearTokensSync()
                     runBlocking { tokenExpirationNotifier.notifyTokenExpired() }
-                    return null // 네 번째 null 반환 지점
+                    return null
                 }
 
-                val newAccessToken = newTokenData.accessToken
-                if (newAccessToken == null) {
-                    Log.e("TokenAuthenticator", "❌ 세션 만료 - 새 accessToken이 null입니다.")
+                val newAccessToken = newTokenData.accessToken ?: run {
                     tokenManager.clearTokensSync()
                     runBlocking { tokenExpirationNotifier.notifyTokenExpired() }
-                    return null // 다섯 번째 null 반환 지점
+                    return null
                 }
-
                 val responseRefreshToken = newTokenData.refreshToken
-                val finalRefreshToken = if (responseRefreshToken != null && responseRefreshToken != currentRefreshToken) {
-                    Log.d("TokenAuthenticator", "refreshToken이 변경되었습니다: $currentRefreshToken -> $responseRefreshToken")
-                    responseRefreshToken
-                } else {
-                    Log.d("TokenAuthenticator", "refreshToken 유지: $currentRefreshToken")
-                    currentRefreshToken
-                }
+                val finalRefreshToken =
+                    if (responseRefreshToken != null && responseRefreshToken != currentRefreshToken) {
+                        responseRefreshToken
+                    } else currentRefreshToken
 
-                Log.d("TokenAuthenticator", "토큰 저장 시작")
-                runBlocking {
-                    tokenManager.saveTokens(newAccessToken, finalRefreshToken)
-                }
-                Log.d("TokenAuthenticator", "토큰 저장 완료")
+                // 6) 새 토큰 저장
+                runBlocking { tokenManager.saveTokens(newAccessToken, finalRefreshToken) }
 
-                Log.d("TokenAuthenticator", "갱신 accessToken : $newAccessToken\n갱신 refreshToken : $finalRefreshToken")
-
-                response.request.createRequestWithRenewedToken(newAccessToken)
-
+                // 7) 새 토큰 + 재시도 마커 추가해서 반환
+                return response.request.newBuilder()
+                    .header("Authorization", "Bearer $newAccessToken")
+                    .header("X-Retry", "1") // ★ 이게 두 번째 시도 구분 포인트
+                    .build()
             }
         } catch (e: Exception) {
-            Log.d("TokenAuthenticator", "토큰 갱신 실패: ${e.message}")
-            null
+            Log.e(TAG, "토큰 갱신 실패: ${e.message}", e)
+            return null
         }
     }
 

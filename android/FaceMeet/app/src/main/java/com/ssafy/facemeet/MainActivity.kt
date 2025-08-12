@@ -47,7 +47,10 @@ class MainActivity : ComponentActivity() {
             tokenExpirationNotifier.tokenExpiredEvent.collect {
                 Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG)
                     .show()
-                //nav처리는 따로 해야함 이건 ㅇㅇ
+
+                // 로그아웃
+                mainViewModel.logout()
+
             }
         }
 

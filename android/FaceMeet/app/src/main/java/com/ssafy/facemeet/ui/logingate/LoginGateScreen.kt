@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ssafy.facemeet.core.util.constant.CommonColor
 
 private const val TAG = "LoginGateScreen"
 
@@ -66,7 +67,7 @@ fun LoginGateScreen(
     ) {
         if (ui.loading) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = CommonColor.Gray100)
                 Spacer(Modifier.height(12.dp))
                 Text("상태 확인 중…")
             }

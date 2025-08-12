@@ -54,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -314,7 +315,9 @@ fun ProfileCardWithBackground(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 28.sp,
                                 fontFamily = ChosunCentennial,
-                                color = CommonColor.BrownGray900
+                                color = CommonColor.BrownGray900,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(10.dp))
 
@@ -322,7 +325,9 @@ fun ProfileCardWithBackground(
                                 text = ui.title,
                                 fontSize = 16.sp,
                                 color = CommonColor.BrownGray600,
-                                fontFamily = ChosunSeirf
+                                fontFamily = ChosunSeirf,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
 

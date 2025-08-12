@@ -45,6 +45,16 @@ fun AppNavHost(
     val pending = mainViewModel.pendingNav.collectAsState().value
     val bottomNavController = rememberNavController()
 
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            // 로그아웃 → Start로 이동 + 백스택 전부 비우기
+            navController.navigate(AppRoutes.Start.route) {
+                popUpTo(0) { inclusive = true } // 전체 스택 클리어
+                launchSingleTop = true
+            }
+        }
+    }
+
     val startDestination = AppRoutes.Start.route
 
     val cameraVM: CameraShotViewModel = hiltViewModel()
