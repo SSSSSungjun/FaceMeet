@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
             FacemeetTheme {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
                 if (isLoggedIn != null)
-                    AppNavHost(isLoggedIn == true,mainViewModel)
+                    AppNavHost(isLoggedIn == true, mainViewModel)
             }
         }
     }

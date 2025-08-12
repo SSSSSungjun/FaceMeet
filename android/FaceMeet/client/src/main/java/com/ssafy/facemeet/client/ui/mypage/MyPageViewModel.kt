@@ -44,6 +44,13 @@ class MyPageViewModel @Inject constructor(
     private val _naviEvent = MutableSharedFlow<MyPageNaviEvent?>()
     val naviEvent: SharedFlow<MyPageNaviEvent?> = _naviEvent.asSharedFlow()
 
+    sealed interface UiEvent {
+        data class Toast(val message: String) : UiEvent
+    }
+
+    private val _event = MutableSharedFlow<UiEvent>(extraBufferCapacity = 1)
+    val event: SharedFlow<UiEvent> = _event
+
     init {
         viewModelScope.launch {
             getDeviceTokensUseCase().onSuccess { tokenInfo ->
@@ -88,21 +95,41 @@ class MyPageViewModel @Inject constructor(
     }
 
     fun setMarketingAlarm(enabled: Boolean) {
+        // 연타 방지(원하면 제거 가능)
+        if (uiState.value.isTogglingMarketing) return
+
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(marketingAlarmEnabled = enabled)
+            val prev = uiState.value.userInfo.isEventSubscribed
+
+            // 1) 낙관적 업데이트 + 즉시 토스트
+            _uiState.update { s ->
+                s.copy(
+                    userInfo = s.userInfo.copy(isEventSubscribed = enabled),
+                    isTogglingMarketing = true,
+                    error = null
+                )
             }
+            _event.tryEmit(UiEvent.Toast(if (enabled) "마케팅 알림을 켰어요" else "마케팅 알림을 껐어요"))
 
-            if (uiState.value.marketingAlarmEnabled) {
-                Log.d(TAG, "setMarketingAlarm: 알림 설정")
-                postSubscriptionUseCase.invoke(fcmTokenId?.toLong() ?: 0L)
-
-            } else {
-                Log.d(TAG, "setMarketingAlarm: 알림 해제")
-                deleteSubscriptionUseCase.invoke(fcmTokenId?.toLong() ?:0L)
+            // 2) 서버 반영
+            runCatching {
+                if (enabled) postSubscriptionUseCase.invoke(TOPIC.ONE.value)
+                else deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
+            }.onSuccess {
+                // 3) 성공: 끝 (상태 이미 반영됨)
+                _uiState.update { it.copy(isTogglingMarketing = false) }
+            }.onFailure { e ->
+                // 4) 실패: 롤백 + 실패 토스트
+                _uiState.update { s ->
+                    s.copy(
+                        userInfo = s.userInfo.copy(isEventSubscribed = prev),
+                        isTogglingMarketing = false,
+                        error = e.message
+                    )
+                }
+                _event.tryEmit(UiEvent.Toast("변경에 실패하여 되돌렸어요"))
             }
         }
-
     }
 
 
@@ -112,7 +139,7 @@ class MyPageViewModel @Inject constructor(
     fun loadUserProfile() = viewModelScope.launch {
         userInfoUserUseCase()
             .onSuccess { user ->
-                _uiState.update { it.copy(isLoading = false, userProfile = user, error = null) }
+                _uiState.update { it.copy(isLoading = false, userInfo = user, error = null) }
             }
             .onFailure { e ->
                 _uiState.update { it.copy(isLoading = false, error = "사용자 정보를 불러올 수 없습니다.") }
@@ -124,6 +151,7 @@ class MyPageViewModel @Inject constructor(
             userLogoutUseCase().onSuccess {
                 tokenManager.clearTokens()
             }.onFailure { e ->
+                tokenManager.clearTokens()
                 Log.d(TAG, "logout: ${e.message}")
             }.isSuccess
         } catch (e: Exception) {
@@ -143,4 +171,8 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
+}
+
+enum class TOPIC(val value: Long) {
+    ONE(1),
 }

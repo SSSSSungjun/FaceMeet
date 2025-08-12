@@ -44,6 +44,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -88,8 +89,8 @@ dependencies {
     api("com.squareup.retrofit2:converter-gson:2.9.0")
     api("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    api ("androidx.compose.runtime:runtime-livedata")
-    implementation ("org.java-websocket:Java-WebSocket:1.5.4")
+    api("androidx.compose.runtime:runtime-livedata")
+    implementation("org.java-websocket:Java-WebSocket:1.5.4")
 
     //dataStore (preference랑 용도 같음)
     implementation("androidx.datastore:datastore-preferences:1.1.7")
@@ -102,4 +103,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     api(libs.androidx.room.ktx)
 
+
+    // desugar - 26어노테이션 안붙여도 되게
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

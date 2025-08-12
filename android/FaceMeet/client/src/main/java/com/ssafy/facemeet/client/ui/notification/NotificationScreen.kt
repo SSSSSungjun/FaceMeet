@@ -132,7 +132,7 @@ fun NotificationItem(notification: NotificationEntity) {
                 Text(
                     text = getRelativeTime(notification.receivedTime),
                     style = MaterialTheme.typography.labelSmall,
-                    color = CommonColor.Gray300
+                    color = CommonColor.Gray400
                 )
             }
         }

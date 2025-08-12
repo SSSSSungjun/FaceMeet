@@ -4,6 +4,7 @@ import com.ssafy.facemeet.core.data.remote.api.UserApiService
 import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
 import retrofit2.Response
 import javax.inject.Inject
 
@@ -32,6 +33,10 @@ class UserRemoteDataSource @Inject constructor(
 
     suspend fun getPartnerFaceInfo(partnerId: Long): Response<PartnerFaceInfoResponse> {
         return userApiService.getPartnerFaceInfo(partnerId)
+    }
+
+    suspend fun getUserStatus(): Response<UserStatusResponse> {
+        return userApiService.getUserStatus()
     }
 
     suspend fun getHomeInfo() = userApiService.getHomeInfo()

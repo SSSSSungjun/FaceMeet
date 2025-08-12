@@ -4,6 +4,7 @@ import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -31,9 +32,12 @@ interface UserApiService {
     @GET("/api/v1/users/partner/{partnerId}")
     suspend fun getPartnerFaceInfo(@Path("partnerId") partnerId: Long): Response<PartnerFaceInfoResponse>
 
+    @GET("/api/v1/users/me/status")
+    suspend fun getUserStatus(): Response<UserStatusResponse>
+
     @GET("/api/v1/users/home")
     suspend fun getHomeInfo(): Response<HomeInfoResponse>
-    
+
 //    @GET("/api/v1/users/status")
 //    suspend fun getUserStatus(): Response<AuthResponse<Unit>>
 }

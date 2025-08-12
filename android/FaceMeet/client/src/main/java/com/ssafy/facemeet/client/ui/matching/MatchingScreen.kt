@@ -90,7 +90,7 @@ fun MatchingScreen(
                     text = "매칭권 ", // 추후 상태 기반으로 교체 가능
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = CommonColor.Gray300, // 갈색 계열,
+                    color = CommonColor.Gray400, // 갈색 계열,
 
                 )
                 Spacer(modifier = Modifier.padding(2.dp))
