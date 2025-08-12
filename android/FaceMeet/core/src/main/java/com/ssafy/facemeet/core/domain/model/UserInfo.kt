@@ -9,12 +9,15 @@ data class UserInfo(
     val birth: String,
     val preferAgeLower: Int,
     val preferAgeUpper: Int,
-    val latitude: Double,   // 필수 값
-    val longitude: Double   // 필수 값
+    val latitude: Double,
+    val longitude: Double,
+    val isEventSubscribed: Boolean
 ) {
     fun getGenderLabel(): String = when (gender) {
         "m" -> "남자"
         "f" -> "여자"
         else -> "기타"
     }
+
+    constructor() : this("", "", "", "", "", "", 0, 0, 0.0, 0.0, false)
 }

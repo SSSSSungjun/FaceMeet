@@ -156,6 +156,12 @@ fun AppNavHost(
                         popUpTo(AppRoutes.Start.route) { inclusive = true }
                         launchSingleTop = true
                     }
+                },
+                onToStart = {
+                    navController.navigate(AppRoutes.Start.route) {
+                        popUpTo(AppRoutes.Start.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             )
         }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,9 +64,15 @@ fun MyPageScreen(
 
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
+        val context = LocalContext.current
 
         LaunchedEffect(Unit) {
             viewModel.loadUserProfile()
+            viewModel.event.collect { ev ->
+                if (ev is MyPageViewModel.UiEvent.Toast) {
+                    android.widget.Toast.makeText(context, ev.message, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         LaunchedEffect(navigationEvent) {
@@ -91,14 +98,14 @@ fun MyPageScreen(
         Spacer(modifier = Modifier.height(40.dp))
 
         PushNotificationSection(
-            enabled = uiState.marketingAlarmEnabled,
+            enabled = uiState.userInfo.isEventSubscribed,
             onToggle = viewModel::setMarketingAlarm
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         MyInfoSection(
-            uiState.userProfile,
+            uiState.userInfo,
             viewModel::navigateToModify
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -164,10 +171,11 @@ fun PushNotificationSection(
                     onCheckedChange = { onToggle(it) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF2196F3),
+                        checkedTrackColor = CommonColor.Orange,
                         uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color.Gray
-                    )
+                        uncheckedTrackColor = CommonColor.Gray300,
+                        uncheckedBorderColor = CommonColor.Gray300
+                    ),
                 )
             }
         }
@@ -254,7 +262,7 @@ fun ProfileInfoRow(
         Text(
             text = value,
             fontSize = 14.sp,
-            color = CommonColor.Gray300,
+            color = CommonColor.Gray400,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = 250.dp),
@@ -352,7 +360,19 @@ fun ImportantRow(label: String, onClick: () -> Unit, color: Color = CommonColor.
 fun MyPageScreenPreview() {
     MaterialTheme {
         MyInfoSection(
-            UserInfo("윤성준", "1__________999@naver.com", "윤성주윤", "남", "ss", "1999-01-31", 2, 2, 0.0,0.0)
+            UserInfo(
+                "윤성준",
+                "1__________999@naver.com",
+                "윤성주윤",
+                "남",
+                "ss",
+                "1999-01-31",
+                2,
+                2,
+                0.0,
+                0.0,
+                false
+            )
         ) {}
     }
 }

@@ -1,7 +1,10 @@
 package com.ssafy.facemeet.navigation.gate
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.common.api.ApiException
+import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
 import com.ssafy.facemeet.core.domain.usecase.GetUserStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,11 +13,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
+
+private const val TAG = "LoginGateViewModel"
 
 @HiltViewModel
 class LoginGateViewModel @Inject constructor(
-    private val getUserStatusUseCase: GetUserStatusUseCase
+    private val getUserStatusUseCase: GetUserStatusUseCase,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     /** 화면 이동 이벤트 */
@@ -22,6 +29,7 @@ class LoginGateViewModel @Inject constructor(
         data object ToRegister : Nav
         data object ToCamera : Nav
         data object ToMain : Nav
+        data object ToStart : Nav
     }
 
     private val _nav = MutableSharedFlow<Nav>(extraBufferCapacity = 1)
@@ -39,10 +47,13 @@ class LoginGateViewModel @Inject constructor(
 
     /** 진입하자마자 호출해서 다음 화면 결정 */
     fun decideNext() = viewModelScope.launch {
+        Log.d(TAG, "decideNext: ")
         _uiState.value = _uiState.value.copy(loading = true, error = null)
 
         getUserStatusUseCase()
             .onSuccess { s ->
+                Log.d(TAG, "decideNext: ${s}")
+
                 _uiState.value = UiState(loading = false, status = s)
                 when {
                     !s.hasInfo -> _nav.tryEmit(Nav.ToRegister)
@@ -51,10 +62,20 @@ class LoginGateViewModel @Inject constructor(
                 }
             }
             .onFailure { e ->
-                // 정책에 맞게 처리: 일단 등록으로 유도하거나, 에러 노출 후 재시도 버튼 제공
+                val isUnauthorized =
+                    (e as? HttpException)?.code() == 401 || (e as? ApiException)?.statusCode == 401
+
+                if (isUnauthorized) {
+                    Log.w(TAG, "401 Unauthorized → 로그만 찍음")
+                    return@onFailure
+                }
+
+                // 그 외 에러 발생 시 토큰 삭제
+                tokenManager.clearTokens()
                 _uiState.value = UiState(loading = false, error = e.message)
-                _nav.tryEmit(Nav.ToRegister)
+                _nav.tryEmit(Nav.ToStart)
             }
+
     }
 
     /** 사용자가 재시도 눌렀을 때 호출 */

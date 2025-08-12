@@ -179,7 +179,7 @@ fun MainMenuScreen(
                         color = CommonColor.Gray900
                     )
                     Spacer(modifier = Modifier.padding(1.dp))
-                    Text("관상 궁합으로 찾기", fontSize = 12.sp, color = CommonColor.Gray300)
+                    Text("관상 궁합으로 찾기", fontSize = 12.sp, color = CommonColor.Gray400)
                 }
             }
             Button(
@@ -227,7 +227,7 @@ fun MainMenuScreen(
                         color = CommonColor.Gray900
                     )
                     Spacer(modifier = Modifier.height(1.dp))
-                    Text("대화 목록", fontSize = 12.sp, color = CommonColor.Gray300)
+                    Text("대화 목록", fontSize = 12.sp, color = CommonColor.Gray400)
                 }
             }
 

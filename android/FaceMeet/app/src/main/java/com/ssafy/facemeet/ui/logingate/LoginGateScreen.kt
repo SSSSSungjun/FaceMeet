@@ -2,6 +2,7 @@
 
 package com.ssafy.facemeet.navigation.gate
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,11 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+private const val TAG = "LoginGateScreen"
+
 @Composable
 fun LoginGateScreen(
     onToRegister: () -> Unit,
     onToCamera: () -> Unit,
     onToMain: () -> Unit,
+    onToStart: () -> Unit,
     viewModel: LoginGateViewModel = hiltViewModel()
 ) {
     // 1) 진입하자마자 분기 결정
@@ -36,11 +40,17 @@ fun LoginGateScreen(
     // 2) 네비 이벤트 수집
     LaunchedEffect(Unit) {
         viewModel.nav.collect { nav ->
+            Log.d(TAG, "LoginGateScreen: ${nav}")
+
             when (nav) {
                 LoginGateViewModel.Nav.ToRegister -> onToRegister()
                 LoginGateViewModel.Nav.ToCamera -> onToCamera()
                 LoginGateViewModel.Nav.ToMain -> onToMain()
-                else -> {}
+                LoginGateViewModel.Nav.ToStart -> onToStart()
+                else -> {
+                    Log.d(TAG, "LoginGateScreen: else")
+                    onToStart()
+                }
             }
         }
     }
