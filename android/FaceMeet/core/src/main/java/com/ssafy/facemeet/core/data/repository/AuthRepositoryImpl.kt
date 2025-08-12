@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.core.data.repository
 
+import android.util.Log
 import com.ssafy.facemeet.core.data.remote.datasource.AuthRemoteDataSource
 import com.ssafy.facemeet.core.data.remote.dto.request.OnboardingRequest
 import com.ssafy.facemeet.core.data.remote.dto.request.RefreshTokenRequest
@@ -40,6 +41,7 @@ class AuthRepositoryImpl @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val resBody = response.body()?.toDomain()
                     ?: return Result.failure(Exception("Empty response"))
+                Log.d(TAG, "refreshToken: $resBody")
                 Result.success(resBody)
             } else {
                 Result.failure(Exception(response.code().toString()))
