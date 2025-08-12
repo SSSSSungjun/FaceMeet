@@ -38,6 +38,7 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getUserInfo(): Result<UserInfoResponse> =
         runCatching { userDataRemoteDataSource.getUserInfo() }.mapCatching { response ->
+            Log.d(TAG, "getUserInfo: ${response.body()}")
             if (response.isSuccessful) {
                 response.body() ?: throw Exception("Empty body")
             } else throw Exception("getUserInfo failed: ${response.code()}")
@@ -77,6 +78,7 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getUserStatus(): Result<UserStatusResponse> = runCatching {
         val res = userDataRemoteDataSource.getUserStatus()
+        Log.d(TAG, "getUserStatus: ${res.body()}")
         if (res.isSuccessful) {
             res.body() ?: error("Empty body")
         } else {

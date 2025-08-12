@@ -21,8 +21,10 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @RequiresApi(Build.VERSION_CODES.O)
+@Singleton
 class ChatWebSocketManager @Inject constructor() {
 
     private var webSocket: WebSocket? = null
@@ -72,7 +74,7 @@ class ChatWebSocketManager @Inject constructor() {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
-            .pingInterval(20, TimeUnit.SECONDS)
+            .pingInterval(10, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
 

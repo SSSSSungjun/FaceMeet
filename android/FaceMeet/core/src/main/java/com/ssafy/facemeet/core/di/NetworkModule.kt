@@ -6,6 +6,7 @@ import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
+import com.ssafy.facemeet.core.data.remote.interceptor.TokenAuthenticator
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.data.socket.SystemMessageManager
 import dagger.Module
@@ -35,9 +36,13 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        authenticator: TokenAuthenticator
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
+            .authenticator(authenticator)
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
@@ -45,6 +50,7 @@ object NetworkModule {
             .readTimeout(60, TimeUnit.SECONDS)
             .build()
     }
+
 
     @Provides
     @Singleton
