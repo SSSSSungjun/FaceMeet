@@ -26,6 +26,7 @@ navigationCompose = "2.8.0-beta07"
 roomCompiler = "2.7.2"
 roomKtx = "2.7.2"
 roomRuntime = "2.7.2"
+uiDesktop = "1.7.0"
 
 
 
@@ -68,6 +69,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-compose-compiler = { module = "androidx.compose.compiler:compiler", version.ref = "composeCompiler" }
 firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 navigation-compose = { module = "androidx.navigation:navigation-compose" }
+androidx-ui-desktop = { group = "androidx.compose.ui", name = "ui-desktop", version.ref = "uiDesktop" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

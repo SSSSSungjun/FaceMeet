@@ -61,6 +61,7 @@ fun AppNavHost(
             }
         }
     }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,

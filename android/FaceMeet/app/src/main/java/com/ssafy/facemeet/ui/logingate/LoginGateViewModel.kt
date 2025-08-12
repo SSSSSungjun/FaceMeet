@@ -62,6 +62,7 @@ class LoginGateViewModel @Inject constructor(
                 }
             }
             .onFailure { e ->
+                Log.e(TAG, "decideNext: unknown error", )
                 val isUnauthorized =
                     (e as? HttpException)?.code() == 401 || (e as? ApiException)?.statusCode == 401
 
