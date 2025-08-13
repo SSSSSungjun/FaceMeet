@@ -3,12 +3,14 @@ package com.ssafy.facemeet
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -58,9 +60,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             FacemeetTheme {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
-                if (isLoggedIn != null)
+                if (isLoggedIn != null) {
                     AppNavHost(isLoggedIn == true, mainViewModel)
+
+                    // NavHost 생성 완료 후 한 번 의도 전달(선택)
+                    LaunchedEffect(Unit) {
+                        handleNotificationIntent(intent)
+                        intent.removeExtra("deep_link")
+                        intent.removeExtra("settingId")
+                    }
+                }
             }
+
+
         }
     }
 
@@ -69,23 +81,26 @@ class MainActivity : ComponentActivity() {
         handleNotificationIntent(intent)
     }
 
+    // MainActivity
     private fun handleNotificationIntent(intent: Intent) {
+        Log.d(TAG, "*handleNotificationIntent 진입")
         when (intent.getStringExtra("deep_link")) {
+            "ticket_event" -> {
+                Log.d(TAG, "handleNotificationIntent: ticket_event")
+                val id = intent.getLongExtra("settingId", -1L)
+                Log.d(TAG, "handleNotificationIntent: ${id}")
+                if (id > 0) {
+                    Log.d(TAG, "id > 0")
+                    mainViewModel.setPendingTicketEvent(id)
+                }
+            }
+
             "chat" -> {
                 val roomId = intent.getLongExtra("roomId", -1L)
-                if (roomId > 0) mainViewModel.goToChat(roomId)
+                if (roomId > 0) mainViewModel.setPendingChat(roomId)
             }
 
-            "ticket_event" -> {
-                val settingId = intent.getLongExtra("settingId", -1L).takeIf { it > 0 }
-                mainViewModel.goToTicketEvent(settingId)
-            }
-
-            "notification_center" -> {
-                mainViewModel.goToNotificationCenter()
-            }
-
-            else -> Unit
+            "notification_center" -> mainViewModel.setPendingNotificationCenter()
         }
     }
 

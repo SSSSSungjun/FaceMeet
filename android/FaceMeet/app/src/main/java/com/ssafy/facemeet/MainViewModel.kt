@@ -36,16 +36,39 @@ class MainViewModel @Inject constructor(
     private val _pendingNav = MutableStateFlow<PendingNav>(PendingNav.None)
     val pendingNav: StateFlow<PendingNav> = _pendingNav.asStateFlow()
 
-    fun goToChat(roomId: Long) {
-        _pendingNav.value = PendingNav.Chat(roomId)
+    // 이미 쓰고 있는 로그인 상태 등은 그대로 두고,
+    // 딥링크 대기 상태만 추가
+    private val _pendingTicketEvent = MutableStateFlow<Long?>(null)
+    val pendingTicketEvent: StateFlow<Long?> = _pendingTicketEvent
+
+    private val _pendingChat = MutableStateFlow<Long?>(null)
+    val pendingChat: StateFlow<Long?> = _pendingChat
+
+    private val _pendingNotificationCenter = MutableStateFlow(false)
+    val pendingNotificationCenter: StateFlow<Boolean> = _pendingNotificationCenter
+
+    fun setPendingTicketEvent(settingId: Long) {
+        _pendingTicketEvent.value = settingId
     }
 
-    fun goToTicketEvent(settingId: Long? = null) {
-        _pendingNav.value = PendingNav.TicketEvent(settingId)
+    fun clearPendingTicketEvent() {
+        _pendingTicketEvent.value = null
     }
 
-    fun goToNotificationCenter() {
-        _pendingNav.value = PendingNav.NotificationCenter
+    fun setPendingChat(roomId: Long) {
+        _pendingChat.value = roomId
+    }
+
+    fun clearPendingChat() {
+        _pendingChat.value = null
+    }
+
+    fun setPendingNotificationCenter() {
+        _pendingNotificationCenter.value = true
+    }
+
+    fun clearPendingNotificationCenter() {
+        _pendingNotificationCenter.value = false
     }
 
     fun consumePendingNavigation() {

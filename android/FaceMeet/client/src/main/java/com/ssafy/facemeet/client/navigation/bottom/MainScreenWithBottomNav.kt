@@ -78,7 +78,15 @@ fun MainScreenWithBottomNav(
                         mainNavController.navigate(ClientRoutes.Notification.route)
                     },
                     onMatch = {
-                        bottomNavController.navigate(BottomNavRoutes.Matching.route)
+                        CurrentBottomNavState.currentBottomTab =
+                            BottomNavRoutes.Matching.route // (선택)
+                        bottomNavController.navigate(BottomNavRoutes.Matching.route) {
+                            popUpTo(bottomNavController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
