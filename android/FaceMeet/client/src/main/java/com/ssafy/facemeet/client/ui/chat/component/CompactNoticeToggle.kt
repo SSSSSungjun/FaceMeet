@@ -46,7 +46,7 @@ fun CompactNoticeToggle(
     modifier: Modifier = Modifier,
     isNoticeOpen: Boolean, // uiState에서 받아옴
     onToggleNotice: () -> Unit, // viewModel::toggleNotice
-    similar: Int = 89
+    similar: Int
 ) {
     Box(
         modifier = modifier.wrapContentSize(),
@@ -203,7 +203,8 @@ fun EnhancedCompactNoticeButton(
 fun CompactNoticeTogglePreview() {
     CompactNoticeToggle(
         isNoticeOpen = true,
-        onToggleNotice = {}
+        onToggleNotice = {},
+        similar = 89
     )
 }
 

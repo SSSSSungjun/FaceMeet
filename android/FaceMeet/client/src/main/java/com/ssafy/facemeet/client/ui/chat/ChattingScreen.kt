@@ -66,6 +66,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -91,6 +94,24 @@ fun ChattingScreen(
     onPartnerProfile: (partnerId: Long) -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onScreenResume()
+            } else if (event == Lifecycle.Event.ON_PAUSE) {
+                viewModel.onScreenPause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsState()
     val messageState by viewModel.messageState.collectAsState()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
@@ -103,6 +124,7 @@ fun ChattingScreen(
 
     val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
     var previousKeyboardHeight by remember { mutableIntStateOf(0) }
+
 
     LaunchedEffect(listState.isScrollInProgress, listState.firstVisibleItemIndex) {
         viewModel.onScrollStateChanged(listState.isScrollInProgress, listState.firstVisibleItemIndex)
@@ -199,7 +221,7 @@ fun ChattingScreen(
                         messageStatus = messageItem.status,
                         showReadStatus = messageItem.showReadStatus
                     )
-
+                    Log.d("ChattingScreen", "ChattingScreen: 메시지 상태는 ${messageItem.chatMessage}  읽음 처리 ${messageItem.showReadStatus}")
                     val nextMessage = if (index < unifiedMessages.size - 1) {
                         unifiedMessages[index + 1].chatMessage
                     } else {
@@ -253,7 +275,8 @@ fun ChattingScreen(
             CompactNoticeToggle(
                 modifier = Modifier.align(Alignment.TopEnd),
                 isNoticeOpen = uiState.isNoticeOpen,
-                onToggleNotice = viewModel::toggleNotice
+                onToggleNotice = viewModel::toggleNotice,
+                similar = uiState.roomInfo.similar.toInt()
             )
 
             if (!uiState.scrollState.isAtBottom) {
@@ -355,7 +378,7 @@ fun ChatMessageBubble(
                     horizontalAlignment = Alignment.End,
                     modifier = Modifier.padding(end = 4.dp)
                 ) {
-                    if (showReadStatus && messageStatus == MessageStatus.RECEIVED) {
+                    if (showReadStatus) {
                         Text(
                             text = "읽음",
                             style = MaterialTheme.typography.bodySmall,

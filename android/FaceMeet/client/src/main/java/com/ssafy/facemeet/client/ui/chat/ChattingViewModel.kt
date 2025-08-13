@@ -76,6 +76,21 @@ class ChattingViewModel @Inject constructor(
     private val _unifiedMessages = MutableStateFlow<List<MessageItem>>(emptyList())
     val unifiedMessages: StateFlow<List<MessageItem>> = _unifiedMessages.asStateFlow()
 
+    private val _isScreenActive = MutableStateFlow(false)
+    val isScreenActive: StateFlow<Boolean> = _isScreenActive.asStateFlow()
+
+    fun onScreenResume() {
+        _isScreenActive.value = true
+        if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
+            Log.d("ChatDebug", "상대방 앱: '읽음' 알림 전송")
+            markAsRead()
+        }
+    }
+
+    fun onScreenPause() {
+        _isScreenActive.value = false
+    }
+
     init {
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
@@ -93,6 +108,8 @@ class ChattingViewModel @Inject constructor(
             loadInitialMessages(roomId)
             setupWebSocketCallbacks()
             connectToChat()
+            Log.d(TAG, "STOMP connection successful. Marking as read.")
+
         }
     }
 
@@ -114,20 +131,19 @@ class ChattingViewModel @Inject constructor(
     private fun setupWebSocketCallbacks() {
         webSocketManager.setOnNewMessageCallback(::handleNewMessage)
         webSocketManager.onReadNotification = {
-            Log.d(TAG, "✅ 단계 2 - 서버로부터 '읽음' 알림 수신!")
+            Log.d("ChatDebug", "내 앱: 서버로부터 '읽음' 알림 받음!")
             viewModelScope.launch {
                 updateReadStatusInUI()
             }
         }
         webSocketManager.setOnStompConnectedCallback {
-            Log.d(TAG, "STOMP connection successful. Marking as read.")
-            if (!uiState.value.roomInfo.deleted || !uiState.value.roomInfo.blocked) {
+            if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
                 markAsRead()
             }
         }
         webSocketManager.onNewMessageForList={
             Log.d(TAG, "onNewMessageForList")
-            updateReadStatusInUI()
+           //updateReadStatusInUI()
         }
         webSocketManager.onNewMessageLeaved ={
             Log.d(TAG, "onNewMessageLeaved")
@@ -151,7 +167,7 @@ class ChattingViewModel @Inject constructor(
                 )
             }
 
-            updateReadStatusInUI()
+           // updateReadStatusInUI()
         }
 //        webSocketManager.onNewMessageForList = {
 //            viewModelScope.launch {
@@ -186,7 +202,10 @@ class ChattingViewModel @Inject constructor(
             }
 
             addNewMessage(newMessage, MessageStatus.RECEIVED)
-
+            if (_isScreenActive.value) { // 이 블록을 다시 추가
+                Log.d(TAG, "🟢 handleNewMessage: 화면 활성화 상태, markAsRead() 호출 시작")
+                markAsRead()
+            }
             if (_uiState.value.scrollState.isAtBottom) {
                 triggerScroll(ScrollEvent.ToBottom)
             }
@@ -254,7 +273,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // UI에서 읽음 상태 업데이트
     private fun updateReadStatusInUI() {
         Log.d("WebSocket-ReadStatus", "⚙️ updateReadStatusInUI() 함수 호출 시작")
 
@@ -262,24 +280,19 @@ class ChattingViewModel @Inject constructor(
             return
         }
         _unifiedMessages.update { current ->
-            var isLastSentMessageFound = false
-            val updatedList=current.map { item ->
-                if (!isLastSentMessageFound &&
-                    item.chatMessage.chatElement.senderID == currentUserId &&
-                    item.status == MessageStatus.SENT) {
-                    isLastSentMessageFound = true
-
+            val updatedList = current.map { item ->
+                // 내가 보낸 메시지이고, 아직 읽음 처리되지 않은 메시지라면
+                // showReadStatus를 true로 변경합니다.
+                if (item.chatMessage.chatElement.senderID == currentUserId && item.status == MessageStatus.SENT && !item.showReadStatus) {
                     Log.d("WebSocket-ReadStatus", "✅ 메시지 상태 업데이트: 메시지 [${item.chatMessage.chatElement.content}]의 showReadStatus를 true로 변경")
                     item.copy(showReadStatus = true)
                 } else {
-                    item.copy(showReadStatus = item.showReadStatus)
+                    item
                 }
             }
+            Log.d("UpdateDebug", "최종 업데이트 리스트 상태: ${updatedList.firstOrNull()?.showReadStatus}")
             updatedList
         }
-
-
-
     }
 
     // 전송할 메시지 생성
