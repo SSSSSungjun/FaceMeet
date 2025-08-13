@@ -121,6 +121,11 @@ class ChattingViewModel @Inject constructor(
             Log.d(TAG, "onNewMessageForList")
             updateReadStatusInUI()
         }
+        webSocketManager.onNewMessageLeaved ={
+            Log.d(TAG, "onNewMessageLeaved")
+            addNewMessage(it, MessageStatus.RECEIVED)
+            updateReadStatusInUI()
+        }
 //        webSocketManager.onNewMessageForList = {
 //            viewModelScope.launch {
 //                getChattingListUseCase().onSuccess { chatList ->

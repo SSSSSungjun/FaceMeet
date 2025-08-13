@@ -6,10 +6,11 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
+import com.ssafy.facemeet.core.data.socket.model.LeaveMessageResponse
 import com.ssafy.facemeet.core.data.socket.model.MessageType
-import com.ssafy.facemeet.core.data.socket.model.ReadReceiptData
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,7 @@ class ChatWebSocketManager @Inject constructor() {
 
     // 콜백 함수들
     private var onNewMessageReceived: ((ChatMessageItem) -> Unit)? = null
+    var onNewMessageLeaved :((ChatMessageItem) -> Unit)? = null
     private var onStompConnected: (() -> Unit)? = null
     var onReadNotification: (() -> Unit)? = null
 
@@ -143,17 +145,17 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     // STOMP 메시지 전송
-        private fun sendStompMessage(destination: String, body: String) {
-            if (!isStompConnected) {
-                Log.w("WebSocket", "STOMP 연결되지 않은 상태")
-                return
-            }
-
-            val frame =
-                "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
-            webSocket?.send(frame)
-            Log.d("WebSocket", "📤 메시지 전송: $destination")
+    private fun sendStompMessage(destination: String, body: String) {
+        if (!isStompConnected) {
+            Log.w("WebSocket", "STOMP 연결되지 않은 상태")
+            return
         }
+
+        val frame =
+            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+        webSocket?.send(frame)
+        Log.d("WebSocket", "📤 메시지 전송: $destination")
+    }
 
     // 개인 채널 구독
     private fun subscribeToPrivateChannel(destination: String) {
@@ -169,6 +171,9 @@ class ChatWebSocketManager @Inject constructor() {
         val success = webSocket?.send(subscribeMessage) == true
         Log.d("WebSocket", "📖 읽음 확인 채널 구독: $destination - 성공: $success")
     }
+
+
+
 
     // 채팅 메시지 전송
     fun sendMessage(
@@ -199,6 +204,16 @@ class ChatWebSocketManager @Inject constructor() {
         sendStompMessage("/pub/chat.read", gson.toJson(readRequest))
     }
 
+    fun leaveRoom(userId: Long, partnerId: Long, roomId: Long) {
+        val readRequest = mapOf(
+            "userId " to userId, //
+            "partnerId" to partnerId,
+            "roomId" to roomId
+        )
+        Log.d("WebSocket", "읽음 처리 전송: ${gson.toJson(readRequest)}")
+        sendStompMessage("/pub/chat.leave", gson.toJson(readRequest))
+    }
+
 
     // STOMP 메시지 파싱
     private fun parseStompMessage(message: String) {
@@ -218,27 +233,28 @@ class ChatWebSocketManager @Inject constructor() {
             Log.d("WebSocket", "메시지 destination: $destination")
 
             try {
-                if (destination?.contains("read-receipt") == true) {
-                    Log.d("WebSocket", "📖 읽음 확인 수신: $body")
+                if (body.startsWith("{")) {
+                    val jsonObject = gson.fromJson(body, JsonObject::class.java)
+                    val type = jsonObject.get("type")?.asString
 
-                    if (body.isNotEmpty() && body.startsWith("{")) {
-                        try {
-                            val readReceipt = gson.fromJson(body, ReadReceiptData::class.java)
-                            if (readReceipt.type == "READ_RECEIPT") {
-                                onReadNotification?.invoke()
-                            }
-                        } catch (e: Exception) {
-                            Log.e("WebSocket", "읽음 확인 파싱 실패", e)
+                    when (type) {
+                        "LEAVE_CONFIRMED" -> {
+                            val leaveResponse = gson.fromJson(body, LeaveMessageResponse::class.java)
+                            Log.d("WebSocket", "✅ 나가기 성공 메시지 파싱: $leaveResponse")
+                            handleLeaveMessage(leaveResponse)
+                        }
+                        "LEAVE_ERROR" -> {
+                            val leaveResponse = gson.fromJson(body, LeaveMessageResponse::class.java)
+                            Log.d("WebSocket", "❌ 나가기 오류 메시지 파싱: $leaveResponse")
+
+                        }
+                        else -> {
+                            // 기존 일반 메시지 처리 로직
+                            val messageResponse = gson.fromJson(body, ChatElement::class.java)
+                            Log.d("WebSocket", "💬 일반 메시지 파싱: $messageResponse")
+                            handleChatMessage(messageResponse)
                         }
                     }
-                    return
-                }
-
-                // 일반 메시지 처리
-                if (body.startsWith("{")) {
-                    val messageResponse = gson.fromJson(body, ChatElement::class.java)
-                    Log.d("WebSocket", "💬 일반 메시지 파싱: $messageResponse")
-                    handleChatMessage(messageResponse)
                 }
             } catch (e: Exception) {
                 Log.e("WebSocket", "메시지 파싱 오류: ${e.message}")
@@ -249,8 +265,12 @@ class ChatWebSocketManager @Inject constructor() {
     var onNewMessageForList: (() -> Unit)? = null
         set(value) {
             field = value
-            Log.d("WebSocket", "onNewMessageForList 콜백 상태 변경: ${if (value != null) "설정됨" else "해제됨"}")
+            Log.d(
+                "WebSocket",
+                "onNewMessageForList 콜백 상태 변경: ${if (value != null) "설정됨" else "해제됨"}"
+            )
         }
+
     private fun handleChatMessage(response: ChatElement) {
         Log.d("WebSocket", "메시지 처리 시작 - 보낸사람: ${response.senderID}, 내용: ${response.content}")
 
@@ -266,6 +286,29 @@ class ChatWebSocketManager @Inject constructor() {
         onNewMessageForList?.invoke()
         Log.d("WebSocket", "onNewMessageForList 콜백 호출 완료 여부: ${onNewMessageForList != null}")
     }
+
+
+    private fun handleLeaveMessage(response: LeaveMessageResponse) {
+        val tmpChatElement = ChatElement(
+            content = response.message,
+            senderID = -1,
+            receiverID = currentUserId,
+            roomID = response.roomId,
+            createdAt = "",
+            isRead = false,
+            readAt = " ",
+        )
+
+        val messageItem = ChatMessageItem(
+            chatElement = tmpChatElement,
+            messageType = MessageType.CHAT_END
+        )
+        Log.d("WebSocket", "onNewMessageForLeave 콜백 호출 직전")
+        onNewMessageLeaved?.invoke(messageItem)
+        Log.d("WebSocket", "onNewMessageForLeave 콜백 호출 완료 여부: ${onNewMessageForList != null}")
+    }
+
+
 
     // 재연결 시도
     private fun reconnect(token: String) {
