@@ -8,8 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -33,7 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssafy.facemeet.client.R
-import com.ssafy.facemeet.core.util.constant.CommonColor
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import java.io.File
 import java.io.FileOutputStream
 
@@ -48,23 +51,30 @@ fun FaceResultCard(
         modifier = Modifier
             .width(300.dp)
             .background(Color(0xFFEAE3D8))
-            .padding(horizontal = 36.dp, vertical = 70.dp)
+            .padding(horizontal = 20.dp, vertical = 70.dp)
             .clip(RoundedCornerShape(16.dp))
     ) {
         Text(
             "상견례", fontWeight = FontWeight.Bold, fontSize = 20.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            fontFamily = ChosunCentennial,
+            color = Color(0xFF8B5A2B)
         )
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
-            "PlayStore에서 상견례를 다운받아 내 관상을 알아보세요.", color = CommonColor.RedBrown, fontSize = 13.sp,
+            "PlayStore에서 상견례를 다운받아 내 관상을 알아보세요.",
+            color = Color(0xFFA28162),
+            fontSize = 13.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            fontFamily = ChosunCentennial,
         )
+        Spacer(modifier = Modifier.height(20.dp))
         Box(
             modifier = Modifier
                 .height(500.dp)
-                .padding(36.dp)
+                .padding(13.dp)
                 .background(Color(0xFFEAE3D8))
                 .clip(RoundedCornerShape(12.dp))
         ) {
@@ -76,40 +86,71 @@ fun FaceResultCard(
                 contentScale = ContentScale.Crop
             )
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                // 얼굴 이미지 (중앙에 올림)
-                Image(
-                    painter = faceImage,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f) // 가로:세로 비율 1:1, 또는 원하는 비율로 조정 (ex: 4f/5f)
-                        .padding(24.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Text(
-                    name, fontWeight = FontWeight.Bold, fontSize = 20.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    title, fontWeight = FontWeight.Bold, fontSize = 20.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 48.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
 
-                Spacer(Modifier.height(16.dp))
+                ) {
+                Column {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = name, fontSize = 26.sp,
+                            textAlign = TextAlign.Center,
+                            fontFamily = ChosunCentennial,
+                            color = Color(0xFFB18444),
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        Text(
+                            text = "의 관상은?", fontSize = 12.sp,
+                            textAlign = TextAlign.Center,
+                            fontFamily = ChosunCentennial,
+                            color = Color(0xFFB18444),
+                        )
+                    }
 
-                Text(
-                    description, color = CommonColor.RedBrown, fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                }
+
+                Column {
+                    Image(
+                        painter = faceImage,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth(0.74f) // 부모 가로의 70%
+                            .aspectRatio(1f)    // 정사각형 유지
+                            .align(Alignment.CenterHorizontally), // Column/Row라면 가운데 정렬
+                        contentScale = ContentScale.Fit
+                    )
+
+                    Column {
+                        Text(
+                            text = title,
+                            fontSize = 30.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                            fontFamily = ChosunCentennial,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF462C00)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = description,
+                            color = Color(0xFF9E754E), fontSize = 13.sp,
+                            modifier = Modifier.fillMaxWidth(),
+                            fontFamily = ChosunCentennial,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    Spacer(modifier = Modifier.padding(10.dp))
+                }
             }
-
-
         }
-
     }
 }
 
@@ -120,9 +161,9 @@ fun FaceResultCardPreview() {
     val sampleImage = painterResource(id = R.drawable.temp_face) // 🔁 리소스가 없다면 다른 drawable로 바꿔주세요
 
     FaceResultCard(
-        name = "김철수",
+        name = "이름",
         title = "알 수 없상",
-        description = "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원합니다.",
+        description = "배려심이 깊고 인간관계를 중시하는 성향입니다. 안정적이고 신뢰할 수 있는 파트너를 원하는 얼굴",
         faceImage = sampleImage
     )
 }

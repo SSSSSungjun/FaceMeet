@@ -24,7 +24,7 @@ fun CircleShareButton(
     isPng: Boolean,             // PNG면 틴트 X
     onClick: () -> Unit,
     enabled: Boolean = true,    // (옵션) 외부에서 비활성화 제어하고 싶을 때
-    iconSize: Dp = 33.dp,
+    iconSize: Dp = 30.dp,
     circleSize: Dp = 58.dp
 ) {
     Box(

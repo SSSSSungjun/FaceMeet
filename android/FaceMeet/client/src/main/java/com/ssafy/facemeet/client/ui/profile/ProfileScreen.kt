@@ -160,6 +160,7 @@ fun ProfileScreenContent(
                             .size(240.dp)
                             .padding(8.dp)
                     )
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(faceInfo.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(17.dp))
                     Text(
@@ -196,17 +197,17 @@ fun ProfileScreenContent(
             DetailItem(
                 "얼굴형",
                 faceInfo.faceShapeDesc,
-                R.drawable.nose
+                R.drawable.ic_shape
             )
-            DetailItem("눈", faceInfo.eyeDesc, R.drawable.nose)
+            DetailItem("눈", faceInfo.eyeDesc, R.drawable.ic_eye)
             DetailItem(
                 "눈썹",
                 faceInfo.eyebrowDesc,
-                R.drawable.nose
+                R.drawable.ic_eyebrow
             )
-            DetailItem("코", faceInfo.noseDesc, R.drawable.nose)
-            DetailItem("턱", faceInfo.chinDesc, R.drawable.nose)
-            DetailItem("입", faceInfo.mouthDesc, R.drawable.nose)
+            DetailItem("코", faceInfo.noseDesc, R.drawable.ic_nose)
+            DetailItem("턱", faceInfo.chinDesc, R.drawable.ic_chin)
+            DetailItem("입", faceInfo.mouthDesc, R.drawable.ic_lips)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -386,7 +387,7 @@ fun DetailItem(
 
 @Composable
 fun PersonalityDetail(title: String, desc: String) {
-    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         Text(
             text = title,
             fontSize = 16.sp,
@@ -436,7 +437,7 @@ fun shareRow(
     // 캡처 대상 컴포저블
     val faceInfoShareCard: @Composable () -> Unit = {
         FaceResultCard(
-            name = "김철수님",
+            name = faceInfo.name,
             title = faceInfo.title,
             description = faceInfo.description,
             faceImage = painter ?: ColorPainter(Color.LightGray)
@@ -543,6 +544,8 @@ fun ProfileScreenPreview() {
         ProfileScreenContent(
             {}, {}, {}, FaceInfoResponse(
                 faceId = 0,
+                name = "",
+                nickname = "",
                 img = "",
                 title = "",
                 description = "",
@@ -603,7 +606,7 @@ fun MatchingStartButton(
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(36.dp)
                     .padding(end = 8.dp)
             )
             Text(
@@ -648,6 +651,8 @@ fun PreviewShareRow() {
         shareRow(
             FaceInfoResponse(
                 faceId = 0,
+                name = "",
+                nickname = "",
                 img = "",
                 title = "",
                 description = "",
