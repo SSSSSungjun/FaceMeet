@@ -243,6 +243,7 @@ class ChatWebSocketManager @Inject constructor() {
                         "READ_RECEIPT"->{
                             Log.d("WebSocket", "✅ 읽음 처리 성공 메시지 파싱: $body")
                             onReadNotification?.invoke()
+                            onReadNotification?.invoke()
                         }
                         "USER_LEFT" -> {
                             val leaveResponse =

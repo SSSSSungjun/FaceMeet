@@ -115,7 +115,9 @@ class ChattingViewModel @Inject constructor(
         webSocketManager.setOnNewMessageCallback(::handleNewMessage)
         webSocketManager.onReadNotification = {
             Log.d(TAG, "✅ 단계 2 - 서버로부터 '읽음' 알림 수신!")
-            viewModelScope.launch { updateReadStatusInUI() }
+            viewModelScope.launch {
+                updateReadStatusInUI()
+            }
         }
         webSocketManager.setOnStompConnectedCallback {
             Log.d(TAG, "STOMP connection successful. Marking as read.")
@@ -134,7 +136,7 @@ class ChattingViewModel @Inject constructor(
                 webSocketManager.sendMessage(
                     content = it.chatElement.content,
                     roomId = it.chatElement.roomID?.toLong() ?: -1L,
-                    senderId = it.chatElement.senderID?.toLong() ?: -1L,
+                    senderId = -1L,
                     receiverId =  currentUserId
                 )
                 Log.d(TAG, "Message sent successfully")
@@ -275,6 +277,8 @@ class ChattingViewModel @Inject constructor(
             }
             updatedList
         }
+
+
 
     }
 
