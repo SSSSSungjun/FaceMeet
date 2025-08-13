@@ -302,8 +302,8 @@ class ChatWebSocketManager @Inject constructor() {
         Log.d("WebSocket", "handleLeaveMessage: $response")
         val tmpChatElement = ChatElement(
             content = response.message,
-            senderID = -1,
-            receiverID = currentUserId,
+            senderID = currentUserId,
+            receiverID = currentPartnerId,
             roomID = response.roomId,
             createdAt = "",
             isRead = false,

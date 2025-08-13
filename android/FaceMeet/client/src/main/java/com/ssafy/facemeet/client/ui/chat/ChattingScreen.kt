@@ -199,6 +199,16 @@ fun ChattingScreen(
                         messageStatus = messageItem.status,
                         showReadStatus = messageItem.showReadStatus
                     )
+
+                    val nextMessage = if (index < unifiedMessages.size - 1) {
+                        unifiedMessages[index + 1].chatMessage
+                    } else {
+                        if (pagedMessages.itemCount > 0) pagedMessages.peek(0) else null
+                    }
+
+                    if (shouldShowDateSeparator(messageItem.chatMessage, nextMessage)) {
+                        DateSeparator(date = messageItem.chatMessage.chatElement.createdAt.toHourMinuteString())
+                    }
                 }
 
                 items(
@@ -210,13 +220,21 @@ fun ChattingScreen(
                     }
                 ) { index ->
                     pagedMessages[index]?.let { message ->
+
                         val isMyMessage = message.chatElement.senderID == viewModel.currentUserId
                         RenderMessage(
                             message = message,
                             isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
                             showReadStatus =  isMyMessage && message.chatElement.isRead
-
                         )
+
+                        val nextMessage = if (index > 0) {
+                            pagedMessages.peek(index - 1) // reverseLayout이니까 index-1이 다음 메시지
+                        } else null
+
+                        if (shouldShowDateSeparator(message, nextMessage)) {
+                            DateSeparator(date = message.chatElement.createdAt.toHourMinuteString())
+                        }
                     }
                 }
 
@@ -264,8 +282,8 @@ fun ChattingScreen(
                 messageText = uiState.messageText,
                 onMessageChange = viewModel::updateMessageText,
                 onSendClick = viewModel::sendMessage,
-                canSend = uiState.canSendMessage,
-                isConnected = connectionState == ConnectionState.CONNECTED
+                canSend = uiState.canSendMessage && connectionState == ConnectionState.CONNECTED,
+                isConnected = connectionState != ConnectionState.DISCONNECTED
             )
         }
 
@@ -510,7 +528,7 @@ fun MessageInput(
                 enabled = isConnected
             )
 
-            if (canSend) {
+            if (canSend && isConnected) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
@@ -549,4 +567,14 @@ fun BlockedChat() {
             modifier = Modifier.padding(10.dp)
         )
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun shouldShowDateSeparator(currentMessage: ChatMessageItem, nextMessage: ChatMessageItem?): Boolean {
+    if (nextMessage == null) return true // 마지막 메시지면 날짜 표시
+
+    val currentDate = currentMessage.chatElement.createdAt.toHourMinuteString()
+    val nextDate = nextMessage.chatElement.createdAt.toHourMinuteString()
+
+    return currentDate != nextDate // 날짜가 바뀌면 구분자 표시
 }

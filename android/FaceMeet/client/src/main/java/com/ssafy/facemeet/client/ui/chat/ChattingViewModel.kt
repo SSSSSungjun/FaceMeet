@@ -100,13 +100,15 @@ class ChattingViewModel @Inject constructor(
     private fun loadInitialMessages(roomId: Long) {
         viewModelScope.launch {
             Log.d(TAG, "Starting to load initial messages: roomId=$roomId")
-            val pagingFlow =
-                getChattingMessagesCurrentUseCase.invoke(roomId).cachedIn(viewModelScope)
+            val pagingFlow = getChattingMessagesCurrentUseCase.invoke(roomId)
+                .cachedIn(viewModelScope)
             _messageState.update { it.copy(pagedMessages = pagingFlow) }
-            _unifiedMessages.value = emptyList() // Clear old messages
+            _unifiedMessages.value = emptyList()
             Log.d(TAG, "Initial message load complete")
         }
     }
+
+
 
     // WebSocket 콜백 설정
     private fun setupWebSocketCallbacks() {
@@ -128,11 +130,25 @@ class ChattingViewModel @Inject constructor(
         webSocketManager.onNewMessageLeaved ={
             Log.d(TAG, "onNewMessageLeaved")
             addNewMessage(it, MessageStatus.RECEIVED)
+            try {
+                webSocketManager.sendMessage(
+                    content = it.chatElement.content,
+                    roomId = it.chatElement.roomID?.toLong() ?: -1L,
+                    senderId = it.chatElement.senderID?.toLong() ?: -1L,
+                    receiverId =  currentUserId
+                )
+                Log.d(TAG, "Message sent successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Message sending failed", e)
+                _uiState.update { it.copy(error = "Message sending failed: ${e.message}") }
+            }
+
             _uiState.update { currentState ->
                 currentState.copy(
-                    roomInfo = currentState.roomInfo.copy(deleted = true)
+                    roomInfo = currentState.roomInfo.copy(blocked = true)
                 )
             }
+
             updateReadStatusInUI()
         }
 //        webSocketManager.onNewMessageForList = {
@@ -169,7 +185,6 @@ class ChattingViewModel @Inject constructor(
 
             addNewMessage(newMessage, MessageStatus.RECEIVED)
 
-            markAsRead()
             if (_uiState.value.scrollState.isAtBottom) {
                 triggerScroll(ScrollEvent.ToBottom)
             }
@@ -217,7 +232,7 @@ class ChattingViewModel @Inject constructor(
                 chatMessage = message,
                 status = status,
                 localId = generateLocalId(message.chatElement.content),
-                showReadStatus = true
+                showReadStatus = false
             )
             val updated = listOf(newItem) + current
             updated.take(REALTIME_MESSAGE_LIMIT)
@@ -240,6 +255,10 @@ class ChattingViewModel @Inject constructor(
     // UI에서 읽음 상태 업데이트
     private fun updateReadStatusInUI() {
         Log.d("WebSocket-ReadStatus", "⚙️ updateReadStatusInUI() 함수 호출 시작")
+
+        if (uiState.value.roomInfo.deleted || uiState.value.roomInfo.blocked) {
+            return
+        }
         _unifiedMessages.update { current ->
             var isLastSentMessageFound = false
             val updatedList=current.map { item ->
@@ -256,6 +275,7 @@ class ChattingViewModel @Inject constructor(
             }
             updatedList
         }
+
     }
 
     // 전송할 메시지 생성
