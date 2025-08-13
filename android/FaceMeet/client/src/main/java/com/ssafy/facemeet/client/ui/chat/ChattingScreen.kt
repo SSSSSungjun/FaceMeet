@@ -63,6 +63,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -280,22 +282,57 @@ fun ChattingScreen(
             )
 
             if (!uiState.scrollState.isAtBottom) {
-                FloatingActionButton(
-                    onClick = viewModel::scrollToBottomManually,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .size(48.dp),
-                    containerColor = Color.White.copy(alpha = 0.8f),
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 1.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Scroll to bottom",
-                        tint = Color.Black
-                    )
+                if (uiState.newMessageContent != null) {
+                    // New message exists: Show the custom Box button
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 10.dp)
+                            .clickable(onClick = viewModel::scrollToBottomManually)
+                            .background(Color.White, shape = RoundedCornerShape(20.dp))
+                            .padding(horizontal = 16.dp, vertical = 5.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "New message",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = uiState.newMessageContent.toString(),
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                } else {
+                    // No new message: Show the simple FloatingActionButton
+                    FloatingActionButton(
+                        onClick = viewModel::scrollToBottomManually,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(10.dp)
+                            .size(30.dp),
+                        containerColor = Color.White,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 1.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Scroll to bottom",
+                            tint = Color.Black,
+                        )
+                    }
                 }
             }
+
         }
 
         if (uiState.roomInfo.blocked || uiState.roomInfo.deleted) {
@@ -600,4 +637,38 @@ fun shouldShowDateSeparator(currentMessage: ChatMessageItem, nextMessage: ChatMe
     val nextDate = nextMessage.chatElement.createdAt.toHourMinuteString()
 
     return currentDate != nextDate // 날짜가 바뀌면 구분자 표시
+}
+
+
+@Preview
+@Composable
+fun tmpPreview(){
+    FloatingActionButton(
+        onClick = {  },
+        modifier = Modifier.padding(bottom = 10.dp),
+        containerColor = Color.White.copy(alpha = 0.8f),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "New message",
+                tint = Color.Gray,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = "uiState.newMessageContent.toString()",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                maxLines = 1, // 한 줄로 표시
+                overflow = TextOverflow.Ellipsis // 너무 길면 ...으로 표시
+            )
+        }
+    }
 }

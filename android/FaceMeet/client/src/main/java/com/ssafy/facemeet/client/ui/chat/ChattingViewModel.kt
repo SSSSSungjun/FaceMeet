@@ -202,6 +202,10 @@ class ChattingViewModel @Inject constructor(
             }
 
             addNewMessage(newMessage, MessageStatus.RECEIVED)
+            if (newMessage.chatElement.senderID != currentUserId && !uiState.value.scrollState.isAtBottom) {
+                _uiState.update { it.copy(newMessageContent = newMessage.chatElement.content) }
+            }
+
             if (_isScreenActive.value) { // 이 블록을 다시 추가
                 Log.d(TAG, "🟢 handleNewMessage: 화면 활성화 상태, markAsRead() 호출 시작")
                 markAsRead()
@@ -348,7 +352,12 @@ class ChattingViewModel @Inject constructor(
 
     // 수동으로 하단 스크롤
     fun scrollToBottomManually() {
-        _uiState.update { it.copy(scrollState = it.scrollState.copy(isAtBottom = true)) }
+        _uiState.update { currentState ->
+            currentState.copy(
+                scrollState = currentState.scrollState.copy(isAtBottom = true),
+                newMessageContent = null
+            )
+        }
         triggerScroll(ScrollEvent.ToBottom)
     }
 
