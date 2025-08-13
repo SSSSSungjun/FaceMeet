@@ -1,6 +1,7 @@
 package com.ssafy.facemeet.client.ui.mypage
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -70,7 +71,11 @@ fun MyPageScreen(
             viewModel.loadUserProfile()
             viewModel.event.collect { ev ->
                 if (ev is MyPageViewModel.UiEvent.Toast) {
-                    android.widget.Toast.makeText(context, ev.message, android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(
+                        context,
+                        ev.message,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -281,6 +286,9 @@ fun ImportantSection(
     isShowDialog: Boolean,  // 탈퇴 다이얼로그 상태,
     onDismissDialog: () -> Unit // 다이얼로그 취소 처리
 ) {
+
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -309,7 +317,10 @@ fun ImportantSection(
             ImportantRow(label = "내 차단목록 보기", onClick = onBlockList)
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
-            ImportantRow(label = "로그아웃", onClick = onLogout)
+            ImportantRow(label = "로그아웃", onClick = {
+                onLogout()
+                Toast.makeText(context, "로그아웃 되었습니다.", Toast.LENGTH_SHORT).show()
+            })
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
             ImportantRow(label = "탈퇴하기", onClick = onClickWithdraw, color = CommonColor.Orange)

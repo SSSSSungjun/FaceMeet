@@ -1,5 +1,7 @@
 package com.ssafy.facemeet.ui.web
 
+import android.os.Handler
+import android.os.Looper
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.Toast
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -28,6 +31,7 @@ fun WebLoginScreen(
     viewModel: WebLoginViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
     val url = when (provider) {
         SocialProvider.NAVER -> BASE_NAVER_URL
         SocialProvider.KAKAO -> BASE_KAKAO_URL
@@ -49,16 +53,22 @@ fun WebLoginScreen(
                     )
                     configureKakaoWebView(
                         onTokenExtracted = { accessToken, refreshToken, hasInfo, hasFace ->
-                            Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT)
+                            mainHandler.post {
+                                Toast.makeText(context, "로그인 성공하였습니다.", Toast.LENGTH_SHORT).show()
+                            }
                             viewModel.saveToken(refreshToken, accessToken)
                             onLoginSuccess(hasInfo, hasFace)
                         },
                         onError = { error ->
-                            Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT)
+                            mainHandler.post {
+                                Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT).show()
+                            }
                             onLoginFailed()
                         },
                         onCancel = {
-                            Toast.makeText(context, "로그인 취소", Toast.LENGTH_SHORT)
+                            mainHandler.post {
+                                Toast.makeText(context, "로그인 취소", Toast.LENGTH_SHORT).show()
+                            }
                             onCancel()
                         },
                         onDismiss = {}
@@ -67,7 +77,7 @@ fun WebLoginScreen(
                 }
             },
 
-        )
+            )
 
 
     }
