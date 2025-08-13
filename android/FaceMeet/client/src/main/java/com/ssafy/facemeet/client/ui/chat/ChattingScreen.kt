@@ -205,7 +205,7 @@ fun ChattingScreen(
                     count = pagedMessages.itemCount,
                     key = { index ->
                         pagedMessages.peek(index)?.chatElement?.let { chatElement ->
-                            "${chatElement.senderID}_${chatElement.roomID}_${chatElement.content}_${chatElement.createdAt}"
+                            chatElement.generateKey()
                         } ?: "paged_fallback_$index"
                     }
                 ) { index ->
@@ -286,7 +286,7 @@ private fun RenderMessage(
     showReadStatus: Boolean = false
 ) {
     if (isMyMessage) {
-        Log.d("WebSocket-ReadStatus", "🎨 UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus")
+        Log.d("WebSocket-ReadStatus", "🎨 UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus messageState : $messageStatus")
     }
     when (message.messageType) {
         MessageType.TEXT -> {
@@ -337,7 +337,7 @@ fun ChatMessageBubble(
                     horizontalAlignment = Alignment.End,
                     modifier = Modifier.padding(end = 4.dp)
                 ) {
-                    if (showReadStatus && messageStatus == MessageStatus.SENT) {
+                    if (showReadStatus && messageStatus == MessageStatus.RECEIVED) {
                         Text(
                             text = "읽음",
                             style = MaterialTheme.typography.bodySmall,

@@ -9,10 +9,10 @@ import com.google.gson.Gson
 import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
+import com.ssafy.facemeet.core.data.socket.model.ReadReceiptData
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -100,6 +100,7 @@ class ChatWebSocketManager @Inject constructor() {
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
                 Log.d("WebSocket", "🔌 연결 종료: $code - $reason")
+                reconnect(token)
                 _connectionState.postValue(ConnectionState.DISCONNECTED)
                 isStompConnected = false
             }
@@ -115,6 +116,10 @@ class ChatWebSocketManager @Inject constructor() {
 
     // STOMP 메시지 처리
     private fun handleStompMessage(message: String) {
+        if (message.isBlank() || message.trim().isEmpty()) {
+            return
+        }
+        Log.d("WebSocket", "처리할 메시지: $message")
         when {
             message.startsWith("CONNECTED") -> {
                 Log.d("WebSocket", "🎉 STOMP 연결 완료!")
@@ -131,23 +136,24 @@ class ChatWebSocketManager @Inject constructor() {
 
             message.startsWith("ERROR") -> {
                 Log.e("WebSocket", "❌ STOMP 오류: $message")
-                _connectionState.postValue(ConnectionState.ERROR)
+                //_connectionState.postValue(ConnectionState.ERROR)
+                //reconnect(token)
             }
         }
     }
 
     // STOMP 메시지 전송
-    private fun sendStompMessage(destination: String, body: String) {
-        if (!isStompConnected) {
-            Log.w("WebSocket", "STOMP 연결되지 않은 상태")
-            return
-        }
+        private fun sendStompMessage(destination: String, body: String) {
+            if (!isStompConnected) {
+                Log.w("WebSocket", "STOMP 연결되지 않은 상태")
+                return
+            }
 
-        val frame =
-            "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
-        webSocket?.send(frame)
-        Log.d("WebSocket", "📤 메시지 전송: $destination")
-    }
+            val frame =
+                "SEND\ndestination:$destination\ncontent-type:application/json\ncontent-length:${body.toByteArray().size}\n\n$body\u0000"
+            webSocket?.send(frame)
+            Log.d("WebSocket", "📤 메시지 전송: $destination")
+        }
 
     // 개인 채널 구독
     private fun subscribeToPrivateChannel(destination: String) {
@@ -212,13 +218,24 @@ class ChatWebSocketManager @Inject constructor() {
             Log.d("WebSocket", "메시지 destination: $destination")
 
             try {
-                if (body.startsWith("{")) {
-                    if (destination?.contains("read-receipt") == true) {
-                        Log.d("WebSocket", "📖 읽음 확인 수신: $body")
-                        onReadNotification?.invoke()
-                        return
-                    }
+                if (destination?.contains("read-receipt") == true) {
+                    Log.d("WebSocket", "📖 읽음 확인 수신: $body")
 
+                    if (body.isNotEmpty() && body.startsWith("{")) {
+                        try {
+                            val readReceipt = gson.fromJson(body, ReadReceiptData::class.java)
+                            if (readReceipt.type == "READ_RECEIPT") {
+                                onReadNotification?.invoke()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("WebSocket", "읽음 확인 파싱 실패", e)
+                        }
+                    }
+                    return
+                }
+
+                // 일반 메시지 처리
+                if (body.startsWith("{")) {
                     val messageResponse = gson.fromJson(body, ChatElement::class.java)
                     Log.d("WebSocket", "💬 일반 메시지 파싱: $messageResponse")
                     handleChatMessage(messageResponse)
@@ -253,16 +270,13 @@ class ChatWebSocketManager @Inject constructor() {
     // 재연결 시도
     private fun reconnect(token: String) {
         webSocket?.cancel()
-        Log.d("WebSocket", "♻️ 3초 후 재연결 시도...")
         CoroutineScope(Dispatchers.IO).launch {
-            delay(3000)
             tryConnection(token)
         }
     }
 
     fun unsubscribe(subscriptionId: String) {
         if (isStompConnected) {
-            // Stomp 프로토콜의 UNSUBSCRIBE 프레임
             val unsubscribeFrame = "UNSUBSCRIBE\nid:$subscriptionId\n\n\u0000"
             webSocket?.send(unsubscribeFrame)
             Log.d("WebSocket", "구독 취소: $subscriptionId")

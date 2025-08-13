@@ -28,7 +28,6 @@ class TokenAuthenticator @Inject constructor(
         try {
             Log.d(TAG, "401 응답으로 인한 authenticate 호출")
 
-            // 1) 두 번째 401이면 → 토큰 삭제 후 null
             if (response.request.header("X-Retry") == "1") {
                 Log.w(TAG, "두 번째 401 감지 → 토큰 삭제 & 로그아웃 처리")
                 tokenManager.clearTokensSync()
@@ -36,7 +35,6 @@ class TokenAuthenticator @Inject constructor(
                 return null
             }
 
-            // 2) refresh 엔드포인트면 무한루프 방지
             if (response.request.url.encodedPath.contains("/auth/refresh")) return null
 
             val reqToken = response.request.header("Authorization")?.removePrefix("Bearer ")
@@ -118,7 +116,4 @@ class TokenAuthenticator @Inject constructor(
         }
     }
 
-    private fun Request.createRequestWithRenewedToken(renewedToken: String): Request = newBuilder()
-        .header("Authorization", "Bearer $renewedToken")
-        .build()
 }

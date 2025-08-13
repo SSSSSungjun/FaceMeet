@@ -117,6 +117,10 @@ class ChattingViewModel @Inject constructor(
             Log.d(TAG, "STOMP connection successful. Marking as read.")
             markAsRead()
         }
+        webSocketManager.onNewMessageForList={
+            Log.d(TAG, "onNewMessageForList")
+            updateReadStatusInUI()
+        }
 //        webSocketManager.onNewMessageForList = {
 //            viewModelScope.launch {
 //                getChattingListUseCase().onSuccess { chatList ->
@@ -199,7 +203,7 @@ class ChattingViewModel @Inject constructor(
                 chatMessage = message,
                 status = status,
                 localId = generateLocalId(message.chatElement.content),
-                showReadStatus = false
+                showReadStatus = true
             )
             val updated = listOf(newItem) + current
             updated.take(REALTIME_MESSAGE_LIMIT)
@@ -224,7 +228,7 @@ class ChattingViewModel @Inject constructor(
         Log.d("WebSocket-ReadStatus", "⚙️ updateReadStatusInUI() 함수 호출 시작")
         _unifiedMessages.update { current ->
             var isLastSentMessageFound = false
-            current.map { item ->
+            val updatedList=current.map { item ->
                 if (!isLastSentMessageFound &&
                     item.chatMessage.chatElement.senderID == currentUserId &&
                     item.status == MessageStatus.SENT) {
@@ -233,9 +237,10 @@ class ChattingViewModel @Inject constructor(
                     Log.d("WebSocket-ReadStatus", "✅ 메시지 상태 업데이트: 메시지 [${item.chatMessage.chatElement.content}]의 showReadStatus를 true로 변경")
                     item.copy(showReadStatus = true)
                 } else {
-                    item.copy(showReadStatus = false)
+                    item.copy(showReadStatus = item.showReadStatus)
                 }
             }
+            updatedList
         }
     }
 
