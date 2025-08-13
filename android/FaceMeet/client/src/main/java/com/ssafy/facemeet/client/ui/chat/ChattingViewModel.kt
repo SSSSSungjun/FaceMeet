@@ -25,12 +25,15 @@ import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesCurrentUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesLastUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -79,6 +82,8 @@ class ChattingViewModel @Inject constructor(
     private val _isScreenActive = MutableStateFlow(false)
     val isScreenActive: StateFlow<Boolean> = _isScreenActive.asStateFlow()
 
+    private val newMessageChannel = Channel<ChatMessageItem>(Channel.UNLIMITED)
+
     fun onScreenResume() {
         _isScreenActive.value = true
         if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
@@ -94,6 +99,27 @@ class ChattingViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
+        }
+        // 💡 초기화 블록에 버퍼링 로직 시작
+        viewModelScope.launch {
+            newMessageChannel
+                .receiveAsFlow()
+                .debounce(200) // 💡 200ms 동안 메시지가 없으면 방출
+                .collect {
+                    // 💡 collect가 호출될 때까지 메시지를 모아둡니다.
+                    // 이 블록이 실행될 때 한 번에 UI 상태를 업데이트합니다.
+                    _unifiedMessages.update { current ->
+                        // 채널에 들어온 모든 메시지를 한 번에 처리
+                        val newItem = MessageItem(
+                            chatMessage = it,
+                            status = MessageStatus.RECEIVED,
+                            localId = generateLocalId(it.chatElement.content),
+                            showReadStatus = false
+                        )
+                        // 기존 리스트에 새 메시지를 추가
+                        listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
+                    }
+                }
         }
     }
 
@@ -187,13 +213,12 @@ class ChattingViewModel @Inject constructor(
     // 새 메시지 수신 처리
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
-
             if (newMessage.chatElement.roomID != currentRoomId || newMessage.chatElement.senderID == currentUserId) {
                 Log.w(TAG, "Ignoring message for a different room or from self.")
                 return@launch
             }
 
-            Log.d(TAG, "📩 Processing new message from partner: ${newMessage.chatElement.content}")
+            Log.d(TAG, "📩 새로운 메시지 수신: ${newMessage.chatElement.content}")
 
             val messageKey = generateMessageKey(newMessage.chatElement)
             if (_unifiedMessages.value.any { generateMessageKey(it.chatMessage.chatElement) == messageKey }) {
