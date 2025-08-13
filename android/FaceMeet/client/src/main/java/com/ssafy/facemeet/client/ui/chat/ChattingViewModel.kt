@@ -49,6 +49,7 @@ class ChattingViewModel @Inject constructor(
     // 현재 사용자 및 방 정보
     internal var currentUserId: Long = 0L
     private var currentRoomId: Long = 0L
+    private var currentPartnerId : Long = 0L
 
     // UI 상태 관리
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -82,12 +83,13 @@ class ChattingViewModel @Inject constructor(
     }
 
     // 채팅방 초기화 및 연결
-    fun initializeChat(roomId: Long) {
+    fun initializeChat(roomId: Long ) {
         webSocketManager.disconnect()
         viewModelScope.launch {
-            currentRoomId = roomId
-            _uiState.update { it.copy(isLoading = true) }
             loadChatRoomInfo(roomId)
+            currentRoomId = roomId
+            currentPartnerId = uiState.value.roomInfo.partnerID
+            _uiState.update { it.copy(isLoading = true) }
             loadInitialMessages(roomId)
             setupWebSocketCallbacks()
             connectToChat()
@@ -115,7 +117,9 @@ class ChattingViewModel @Inject constructor(
         }
         webSocketManager.setOnStompConnectedCallback {
             Log.d(TAG, "STOMP connection successful. Marking as read.")
-            markAsRead()
+            if (!uiState.value.roomInfo.deleted || !uiState.value.roomInfo.blocked) {
+                markAsRead()
+            }
         }
         webSocketManager.onNewMessageForList={
             Log.d(TAG, "onNewMessageForList")
@@ -124,6 +128,11 @@ class ChattingViewModel @Inject constructor(
         webSocketManager.onNewMessageLeaved ={
             Log.d(TAG, "onNewMessageLeaved")
             addNewMessage(it, MessageStatus.RECEIVED)
+            _uiState.update { currentState ->
+                currentState.copy(
+                    roomInfo = currentState.roomInfo.copy(deleted = true)
+                )
+            }
             updateReadStatusInUI()
         }
 //        webSocketManager.onNewMessageForList = {
@@ -271,7 +280,8 @@ class ChattingViewModel @Inject constructor(
 
     // 로컬 ID 생성
     private fun generateLocalId(content: String): String {
-        return "local_${currentUserId}_${System.currentTimeMillis()}_${content.hashCode()}"
+        val safeContent = content ?: "empty"
+        return "local_${currentUserId}_${System.currentTimeMillis()}_${safeContent.hashCode()}"
     }
 
     // 스크롤 상태 변경 처리
@@ -334,7 +344,7 @@ class ChattingViewModel @Inject constructor(
             try {
                 val token = tokenManager.getAccessToken()
                 if (token != null) {
-                    webSocketManager.connect(currentUserId, token, currentRoomId)
+                    webSocketManager.connect(currentUserId, token, currentRoomId,currentPartnerId)
                 }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {

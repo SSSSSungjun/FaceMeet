@@ -325,7 +325,7 @@ fun ChatMessageBubble(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp)
+            .padding(vertical = 6.dp)
             .alpha(if (messageStatus == MessageStatus.PENDING) 0.7f else 1f)
     ) {
         Row(
@@ -341,7 +341,7 @@ fun ChatMessageBubble(
                         Text(
                             text = "읽음",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Blue,
+                            color = Color.Gray,
                             fontSize = 10.sp
                         )
                     }
@@ -454,13 +454,13 @@ fun ChatEndMessage(content: String) {
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = 30.dp, vertical = 5.dp)
             .background(color = Color(0xFFE5E4DD), shape = RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = content,
-            fontSize = 16.sp,
+            fontSize = 13.sp,
             textAlign = TextAlign.Center,
             color = Color(0xFF666666),
             modifier = Modifier.padding(7.dp)

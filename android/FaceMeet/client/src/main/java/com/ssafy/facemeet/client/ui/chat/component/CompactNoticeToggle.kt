@@ -22,8 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.WheelchairPickup
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -188,7 +188,7 @@ fun EnhancedCompactNoticeButton(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.WheelchairPickup,
+                    imageVector = Icons.Default.AutoAwesome,
                     contentDescription = "공지사항 보기",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
