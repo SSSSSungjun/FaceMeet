@@ -20,13 +20,18 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Singleton
 class ChatWebSocketManager @Inject constructor() {
+
+    private val messageQueue = ConcurrentLinkedQueue<String>()
+    private val isSending = AtomicBoolean(false)
 
     private var webSocket: WebSocket? = null
     private val gson = Gson()

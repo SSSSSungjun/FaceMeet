@@ -264,7 +264,7 @@ fun ChattingScreen(
                         } else null
 
                         if (shouldShowDateSeparator(message, nextMessage)) {
-                            DateSeparator(date = message.chatElement.createdAt.toHourMinuteString())
+                            DateSeparator(date = message.chatElement.createdAt.toFullDateString())
                         }
 
 
@@ -642,16 +642,16 @@ fun BlockedChat() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 10.dp)
+            .padding(horizontal = 10.dp, vertical = 8.dp)
             .background(color = Color(0xFFDDDDDD), RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Chat has ended.",
+            text = "상대방과 더 이상 채팅을 할 수 없습니다.",
             color = Color(0xFF666666),
-            fontSize = 18.sp,
+            fontSize = 16.sp,
             textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Normal,
             modifier = Modifier.padding(10.dp)
         )
     }
@@ -663,8 +663,8 @@ fun shouldShowDateSeparator(currentMessage: ChatMessageItem, nextMessage: ChatMe
         return false
     }
 
-    val currentDate = currentMessage.chatElement.createdAt.toHourMinuteString()
-    val nextDate = nextMessage.chatElement.createdAt.toHourMinuteString()
+    val currentDate = currentMessage.chatElement.createdAt.toFullDateString()
+    val nextDate = nextMessage.chatElement.createdAt.toFullDateString()
 
     return currentDate != nextDate
 }
