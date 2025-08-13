@@ -85,8 +85,12 @@ import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.util.AppStateManager
+import com.ssafy.facemeet.core.util.format.ParsingTimeData.toFullDateString
 import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -217,22 +221,25 @@ fun ChattingScreen(
                     key = { index -> unifiedMessages[index].localId ?: index }
                 ) { index ->
                     val messageItem = unifiedMessages[index]
+
                     RenderMessage(
                         message = messageItem.chatMessage,
                         isMyMessage = messageItem.chatMessage.chatElement.senderID == viewModel.currentUserId,
                         messageStatus = messageItem.status,
                         showReadStatus = messageItem.showReadStatus
                     )
-                    Log.d("ChattingScreen", "ChattingScreen: 메시지 상태는 ${messageItem.chatMessage}  읽음 처리 ${messageItem.showReadStatus}")
+
                     val nextMessage = if (index < unifiedMessages.size - 1) {
                         unifiedMessages[index + 1].chatMessage
                     } else {
                         if (pagedMessages.itemCount > 0) pagedMessages.peek(0) else null
                     }
 
-                    if (shouldShowDateSeparator(messageItem.chatMessage, nextMessage)) {
-                        DateSeparator(date = messageItem.chatMessage.chatElement.createdAt.toHourMinuteString())
+                    if (shouldShowDateSeparator(messageItem.chatMessage,nextMessage)) {
+                        DateSeparator(date = messageItem.chatMessage.chatElement.createdAt.toFullDateString())
                     }
+
+
                 }
 
                 items(
@@ -248,17 +255,32 @@ fun ChattingScreen(
                         val isMyMessage = message.chatElement.senderID == viewModel.currentUserId
                         RenderMessage(
                             message = message,
-                            isMyMessage = message.chatElement.senderID == viewModel.currentUserId,
-                            showReadStatus =  isMyMessage && message.chatElement.isRead
+                            isMyMessage = isMyMessage,
+                            showReadStatus = isMyMessage && message.chatElement.isRead
                         )
 
-                        val nextMessage = if (index > 0) {
-                            pagedMessages.peek(index - 1) // reverseLayout이니까 index-1이 다음 메시지
+                        val nextMessage = if (index < pagedMessages.itemCount - 1) {
+                            pagedMessages.peek(index + 1)
                         } else null
 
                         if (shouldShowDateSeparator(message, nextMessage)) {
                             DateSeparator(date = message.chatElement.createdAt.toHourMinuteString())
                         }
+
+
+                    }
+                }
+
+                val oldestMessage = if (pagedMessages.itemCount > 0) {
+                    pagedMessages.peek(pagedMessages.itemCount - 1)
+                } else if (unifiedMessages.isNotEmpty()) {
+                    unifiedMessages.last().chatMessage
+                } else {
+                    null
+                }
+                if (oldestMessage != null) {
+                    item(key = "oldest_date_separator") {
+                        DateSeparator(date = oldestMessage.chatElement.createdAt.toHourMinuteString())
                     }
                 }
 
@@ -504,10 +526,16 @@ fun ChatHeader(
 
 @Composable
 fun DateSeparator(date: String) {
+    val today = LocalDate.now()
+    val yesterday = today.minusDays(1)
+    val formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일", Locale.KOREAN)
+    val todayFormatDate = today.format(formatter)
+    val yesterdayFormatDate =yesterday.format(formatter)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -516,8 +544,8 @@ fun DateSeparator(date: String) {
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Text(
-                text = date,
-                modifier = Modifier.padding(horizontal = 30.dp, vertical = 8.dp),
+                text = if(date==todayFormatDate) "오늘" else if(date==yesterdayFormatDate) "어제" else date,
+                modifier = Modifier.padding(horizontal = 30.dp, vertical = 5.dp),
                 style = MaterialTheme.typography.bodySmall,
                 fontSize = 11.sp,
                 color = Color.DarkGray
@@ -631,12 +659,14 @@ fun BlockedChat() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun shouldShowDateSeparator(currentMessage: ChatMessageItem, nextMessage: ChatMessageItem?): Boolean {
-    if (nextMessage == null) return true // 마지막 메시지면 날짜 표시
+    if (nextMessage == null) {
+        return false
+    }
 
     val currentDate = currentMessage.chatElement.createdAt.toHourMinuteString()
     val nextDate = nextMessage.chatElement.createdAt.toHourMinuteString()
 
-    return currentDate != nextDate // 날짜가 바뀌면 구분자 표시
+    return currentDate != nextDate
 }
 
 
