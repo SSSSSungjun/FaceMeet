@@ -345,12 +345,12 @@ fun PartnerProfileContent(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        DetailItem("얼굴형", result.faceShapeDesc, R.drawable.nose)
-        DetailItem("눈", result.eyeDesc, R.drawable.nose)
-        DetailItem("눈썹", result.eyebrowDesc, R.drawable.nose)
-        DetailItem("코", result.noseDesc, R.drawable.nose)
-        DetailItem("턱", result.chinDesc, R.drawable.nose)
-        DetailItem("입", result.mouthDesc, R.drawable.nose)
+        DetailItem("얼굴형", result.faceShapeDesc, R.drawable.ic_shape)
+        DetailItem("눈", result.eyeDesc, R.drawable.ic_eye)
+        DetailItem("눈썹", result.eyebrowDesc, R.drawable.ic_eyebrow)
+        DetailItem("코", result.noseDesc, R.drawable.ic_nose)
+        DetailItem("턱", result.chinDesc, R.drawable.ic_chin)
+        DetailItem("입", result.mouthDesc, R.drawable.ic_lips)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -541,9 +541,4 @@ fun PartnerProfilePreview() {
     )
 
 
-    PartnerProfileContent(
-        result = dummy, onBack = {},
-        roomId = 0,
-        partnerId = 0
-    )
 }

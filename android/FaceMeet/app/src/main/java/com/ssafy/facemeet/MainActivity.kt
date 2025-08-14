@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -50,7 +51,8 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             tokenExpirationNotifier.tokenExpiredEvent.collect {
-                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG)
+                    .show()
                 // 로그아웃
                 mainViewModel.logout()
 
@@ -61,9 +63,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             FacemeetTheme {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
-                if (isLoggedIn != null)
+                if (isLoggedIn != null) {
                     AppNavHost(isLoggedIn == true, mainViewModel)
+
+                    // NavHost 생성 완료 후 한 번 의도 전달(선택)
+                    LaunchedEffect(Unit) {
+                        handleNotificationIntent(intent)
+                        intent.removeExtra("deep_link")
+                        intent.removeExtra("settingId")
+                    }
+                }
             }
+
+
         }
     }
 
@@ -72,42 +84,29 @@ class MainActivity : ComponentActivity() {
         intent?.let { handleNotificationIntent(it) }
     }
 
+    // MainActivity
     private fun handleNotificationIntent(intent: Intent) {
         Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
-
-        lifecycleScope.launch {
-            delay(500)
-            when (intent.getStringExtra("deep_link")) {
-                "chat" -> {
-                    val roomId = intent.getLongExtra("roomId", -1L)
-                    Log.d("MainActivity", "Chat roomId: $roomId")
-                    if (roomId > 0) {
-                        mainViewModel.goToChat(roomId)
-                        // Intent 데이터 제거는 네비게이션 후에
-                        intent.removeExtra("deep_link")
-                        intent.removeExtra("roomId")
-                    }
-                }
-
-                "ticket_event" -> {
-                    val settingId = intent.getLongExtra("settingId", -1L).takeIf { it > 0 }
-                    mainViewModel.goToTicketEvent(settingId)
-                    intent.removeExtra("deep_link")
-                    intent.removeExtra("settingId")
-                }
-
-                "notification_center" -> {
-                    mainViewModel.goToNotificationCenter()
-                    intent.removeExtra("deep_link")
-                }
-
-                else -> {
-                    Log.d("MainActivity", "No deep_link or unknown type")
+        Log.d(TAG, "*handleNotificationIntent 진입")
+        when (intent.getStringExtra("deep_link")) {
+            "ticket_event" -> {
+                Log.d(TAG, "handleNotificationIntent: ticket_event")
+                val id = intent.getLongExtra("settingId", -1L)
+                Log.d(TAG, "handleNotificationIntent: ${id}")
+                if (id > 0) {
+                    Log.d(TAG, "id > 0")
+                    mainViewModel.setPendingTicketEvent(id)
                 }
             }
+
+            "chat" -> {
+                val roomId = intent.getLongExtra("roomId", -1L)
+                if (roomId > 0) mainViewModel.setPendingChat(roomId)
+            }
+
+            "notification_center" -> mainViewModel.setPendingNotificationCenter()
         }
     }
-
 
 }
 

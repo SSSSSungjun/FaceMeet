@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,7 +43,6 @@ fun AppNavHost(
 ) {
 
     val navController = rememberNavController()
-    val pending = mainViewModel.pendingNav.collectAsState().value
     val bottomNavController = rememberNavController()
 
     LaunchedEffect(isLoggedIn) {
@@ -60,36 +60,43 @@ fun AppNavHost(
     val cameraVM: CameraShotViewModel = hiltViewModel()
     val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
-    LaunchedEffect(isLoggedIn, pending) {
+    val pendingTicket by mainViewModel.pendingTicketEvent.collectAsState()
+    val pendingChat by mainViewModel.pendingChat.collectAsState()
+    val goNotif by mainViewModel.pendingNotificationCenter.collectAsState()
+
+    // ---- 라우팅 단일화: 로그인되면 여기서만 목적지 결정 ----
+    LaunchedEffect(isLoggedIn, pendingTicket, pendingChat, goNotif) {
         if (!isLoggedIn) return@LaunchedEffect
 
-        when (pending) {
-            is MainViewModel.PendingNav.Chat -> {
-                val roomId = pending.roomId
-                navController.navigate(ClientRoutes.Chat.createRoute(roomId)) {
-                    launchSingleTop = true
-                }
-                mainViewModel.consumePendingNavigation()
+        when {
+            pendingTicket != null -> {
+                val id = checkNotNull(pendingTicket)
+                Log.d(TAG, "AppNavHost: ${id}")
+                navController.goToWithMainAsBase(ClientRoutes.TicketEvent.createRoute(id))
+                mainViewModel.clearPendingTicketEvent()
             }
 
-            is MainViewModel.PendingNav.TicketEvent -> {
-                navController.navigate(ClientRoutes.TicketEvent.route) {
-                    launchSingleTop = true
-                }
-                mainViewModel.consumePendingNavigation()
+            pendingChat != null -> {
+                val roomId = checkNotNull(pendingChat)
+                navController.goToWithMainAsBase(ClientRoutes.Chat.createRoute(roomId))
+                mainViewModel.clearPendingChat()
             }
 
-            MainViewModel.PendingNav.NotificationCenter -> {
-                navController.navigate(ClientRoutes.Notification.route) {
-                    launchSingleTop = true
-                }
-                mainViewModel.consumePendingNavigation()
+            goNotif -> {
+                navController.goToWithMainAsBase(ClientRoutes.Notification.route)
+                mainViewModel.clearPendingNotificationCenter()
             }
 
-            MainViewModel.PendingNav.None -> Unit
-            else -> {}
+            else -> {
+                // 기본 진입: LoginGate (메인을 베이스로 깔 필요 X)
+                navController.navigate(AppRoutes.LoginGate.route) {
+                    launchSingleTop = true
+                    popUpTo(AppRoutes.Start.route) { inclusive = true }
+                }
+            }
         }
     }
+
 
     NavHost(
         navController = navController,
@@ -103,26 +110,13 @@ fun AppNavHost(
         Log.d(TAG, "AppNavHost: start")
         // 로그인 화면
         composable(AppRoutes.Start.route) {
-            LaunchedEffect(isLoggedIn) {
-                if (isLoggedIn) {
-                    navController.printBackStack()
-
-                    navController.navigate(AppRoutes.LoginGate.route) {
-                        launchSingleTop = true         // LoginGate 중복 방지
-                        // popUpTo 하지 않음 → Start가 백스택에 남아 바닥으로 깔림
-                    }
-                }
-            }
-
             if (isLoggedIn) {
-                // 스플래시/플레이스홀더 화면 (로고 넣어도 됨)
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color(0xFFF4F3ED))
                 )
             } else {
-                // 로그인 필요 시에만 진짜 LoginScreen 표시
                 LoginScreen(
                     onNavigateToKakaoLogin = {
                         navController.navigate(AppRoutes.WebLogin.createRoute("KAKAO"))
@@ -200,6 +194,31 @@ fun AppNavHost(
 
         settingNavHost(navController, cameraVM, analyzeVM)
         clientNavHost(navController, bottomNavController)
+    }
+}
+
+
+/**
+ * 메인을 백스택 바닥에 깔고 그 위에 targetRoute를 올린다.
+ * → 뒤로가면 항상 메인으로 복귀.
+ */
+private fun NavController.goToWithMainAsBase(targetRoute: String) {
+    // 이미 Main이 현재면 다시 깔지 않고 바로 타깃으로 가도 OK
+    val alreadyOnMain = currentDestination?.route == ClientRoutes.MainMenu.route
+
+    if (!alreadyOnMain) {
+        // 1) Start를 지우고 Main을 베이스로
+        navigate(ClientRoutes.MainMenu.route) {
+            popUpTo(AppRoutes.Start.route) { inclusive = true }
+            launchSingleTop = true
+            restoreState = false
+        }
+    }
+
+    // 2) 그 위에 타깃(티켓/채팅/알림센터) 올리기
+    navigate(targetRoute) {
+        launchSingleTop = true
+        // 메인을 베이스로 유지해야 하므로 popUpTo는 하지 않음
     }
 }
 

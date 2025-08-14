@@ -67,8 +67,6 @@ import com.ssafy.facemeet.client.ui.theme.FaceMeetTheme
 import com.ssafy.facemeet.client.ui.theme.TitleTextStyle
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
-private const val TAG = "MainMenuScreen"
-
 
 @Composable
 fun MainMenuScreen(
@@ -127,7 +125,7 @@ fun MainMenuScreen(
 
         Spacer(modifier = Modifier.padding(4.dp))
 
-        ProfileCardWithBackground(onProfile)
+        ProfileCardWithBackground(onProfile, onMatch)
         Spacer(modifier = Modifier.padding(10.dp))
 
         // 하단 버튼 2개
@@ -239,6 +237,7 @@ fun MainMenuScreen(
 @Composable
 fun ProfileCardWithBackground(
     onProfile: () -> Unit,
+    onMatch: () -> Unit = {},
     viewModel: MainMenuViewModel = hiltViewModel()
 ) {
 
@@ -347,8 +346,8 @@ fun ProfileCardWithBackground(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
-                                    .clickable {}
-                                    .padding(top = 12.dp, bottom = 22.dp),
+                                    .clickable { onMatch() }
+                                    .padding(top = 18.dp, bottom = 18.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(

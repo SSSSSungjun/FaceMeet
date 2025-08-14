@@ -2,6 +2,8 @@ package com.ssafy.facemeet.core.data.remote.dto.response
 
 data class FaceInfoResponse(
     val faceId: Int,
+    val name: String,
+    val nickname: String,
     val img: String,
     val title: String,
     val description: String,
