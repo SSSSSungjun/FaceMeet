@@ -3,6 +3,7 @@ package com.ssafy.facemeet
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +19,7 @@ import com.ssafy.facemeet.navigation.AppNavHost
 import com.ssafy.facemeet.service.OfflineNotifyService
 import com.ssafy.facemeet.theme.FacemeetTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,16 +40,17 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        handleNotificationIntent(intent)
+        lifecycleScope.launch {
+            delay(1000) // UI 완전 초기화 대기
+            handleNotificationIntent(intent)
+        }
 
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
         startService(serviceIntent)
 
         lifecycleScope.launch {
             tokenExpirationNotifier.tokenExpiredEvent.collect {
-                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG)
-                    .show()
-
+                Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG).show()
                 // 로그아웃
                 mainViewModel.logout()
 
@@ -66,26 +69,42 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleNotificationIntent(intent)
+        intent?.let { handleNotificationIntent(it) }
     }
 
     private fun handleNotificationIntent(intent: Intent) {
-        when (intent.getStringExtra("deep_link")) {
-            "chat" -> {
-                val roomId = intent.getLongExtra("roomId", -1L)
-                if (roomId > 0) mainViewModel.goToChat(roomId)
-            }
+        Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
 
-            "ticket_event" -> {
-                val settingId = intent.getLongExtra("settingId", -1L).takeIf { it > 0 }
-                mainViewModel.goToTicketEvent(settingId)
-            }
+        lifecycleScope.launch {
+            delay(500)
+            when (intent.getStringExtra("deep_link")) {
+                "chat" -> {
+                    val roomId = intent.getLongExtra("roomId", -1L)
+                    Log.d("MainActivity", "Chat roomId: $roomId")
+                    if (roomId > 0) {
+                        mainViewModel.goToChat(roomId)
+                        // Intent 데이터 제거는 네비게이션 후에
+                        intent.removeExtra("deep_link")
+                        intent.removeExtra("roomId")
+                    }
+                }
 
-            "notification_center" -> {
-                mainViewModel.goToNotificationCenter()
-            }
+                "ticket_event" -> {
+                    val settingId = intent.getLongExtra("settingId", -1L).takeIf { it > 0 }
+                    mainViewModel.goToTicketEvent(settingId)
+                    intent.removeExtra("deep_link")
+                    intent.removeExtra("settingId")
+                }
 
-            else -> Unit
+                "notification_center" -> {
+                    mainViewModel.goToNotificationCenter()
+                    intent.removeExtra("deep_link")
+                }
+
+                else -> {
+                    Log.d("MainActivity", "No deep_link or unknown type")
+                }
+            }
         }
     }
 

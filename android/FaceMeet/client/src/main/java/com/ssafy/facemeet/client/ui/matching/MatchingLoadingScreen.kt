@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.ui.matching
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -221,6 +222,7 @@ fun NoMoreMatchesScreen(
 }
 
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun FallingLeavesDiagonal(
     leafs: List<Int>,
