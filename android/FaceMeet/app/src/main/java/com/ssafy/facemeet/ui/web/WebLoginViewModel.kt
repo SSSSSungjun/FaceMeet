@@ -59,4 +59,12 @@ class WebLoginViewModel @Inject constructor(
         }
     }
 
+    internal fun initWebCache(){
+        viewModelScope.launch {
+            if(tokenManager.getAccessToken()==null){
+                WebViewUtils.clearWebViewData(context)
+            }
+        }
+    }
+
 }
