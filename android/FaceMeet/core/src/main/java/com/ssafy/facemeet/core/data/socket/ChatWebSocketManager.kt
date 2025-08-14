@@ -246,7 +246,7 @@ class ChatWebSocketManager @Inject constructor() {
         )
         enqueueStompMessage("/pub/chat.leave", gson.toJson(leaveRequest))
         Log.d("WebSocket", "나가기 처리 요청 완료 (큐에 추가): ${gson.toJson(leaveRequest)}")
-        unsubscribe(currentUserId)
+        //unsubscribe(currentUserId)
     }
 
     private fun parseStompMessage(message: String) {

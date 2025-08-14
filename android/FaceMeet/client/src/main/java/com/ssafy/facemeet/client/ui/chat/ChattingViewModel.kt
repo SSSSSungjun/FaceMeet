@@ -91,7 +91,6 @@ class ChattingViewModel @Inject constructor(
                 .debounce(50) // 💡 200ms 동안 메시지 수신이 없으면 한 번에 업데이트
                 .collect { batchedMessage ->
                     _unifiedMessages.update { current ->
-                        // 💡 이 로직이 모든 메시지를 처리합니다.
                         val messageItem = MessageItem(
                             chatMessage = batchedMessage,
                             status = if (batchedMessage.chatElement.senderID == currentUserId) MessageStatus.SENT else MessageStatus.RECEIVED,
@@ -202,24 +201,35 @@ class ChattingViewModel @Inject constructor(
     }
 
     // 💡 sendMessage 함수: 메시지를 Channel에 보내는 역할만 담당
+
     fun sendMessage() {
         val state = _uiState.value
         if (!state.canSendMessage || currentUserId == 0L) return
 
         val sentMessage = createSentMessage(state.messageText.trim(), state.roomInfo)
 
-        viewModelScope.launch {
-            messageUpdateChannel.send(sentMessage.chatMessage)
+        // 이전에 사용된 로컬 ID 생성 로직을 사용하여 메시지를 즉시 UI에 반영
+        val newItem = MessageItem(
+            chatMessage = sentMessage.chatMessage,
+            status = MessageStatus.SENT,
+            localId = generateLocalId(sentMessage.chatMessage.chatElement.content),
+            showReadStatus = false
+        )
+        _unifiedMessages.update { current ->
+            listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
         }
 
         _uiState.update {
             it.copy(
                 messageText = "",
-                canSendMessage = false,
-                scrollState = it.scrollState.copy(isAtBottom = true)
+                canSendMessage = false
             )
         }
-        triggerScroll(ScrollEvent.ToBottom)
+
+        // 💡 변경된 부분: 무조건 스크롤을 내리지 않고, 조건부로 실행
+        if (state.scrollState.isAtBottom) {
+            triggerScroll(ScrollEvent.ToBottom)
+        }
 
         viewModelScope.launch {
             try {

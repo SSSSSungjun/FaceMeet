@@ -65,7 +65,7 @@ fun AppNavHost(
 
         when (pending) {
             is MainViewModel.PendingNav.Chat -> {
-                val roomId = (pending as MainViewModel.PendingNav.Chat).roomId
+                val roomId = pending.roomId
                 navController.navigate(ClientRoutes.Chat.createRoute(roomId)) {
                     launchSingleTop = true
                 }
