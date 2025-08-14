@@ -14,7 +14,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
@@ -197,31 +196,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         Log.d("FCM", "handleChatNotification: $roomId")
         Log.d("FCM", "handleChatNotification: ${AppStateManager.getCurrentScreen()}")
-        if (roomId != null && AppStateManager.getCurrentScreen() == "ChattingScreen" && AppStateManager.isInChatRoom(
-                roomId
-            )
-        ) {
-            Log.d("FCM", "현재 채팅방($roomId)에 있어서 알림 스킵")
 
-            // 화면 갱신만
-            sendBroadcast(Intent("ACTION_REFRESH_CHAT").apply {
-                putExtra("roomId", roomId)
-            })
+        if (AppStateManager.getCurrentScreen() == "ChattingListScreen" || AppStateManager.getCurrentScreen() == "ChattingScreen") {
+            Log.d("FCM", "알림 스킵")
             return
         }
 
-        if (AppStateManager.getCurrentScreen() == "ChatListScreen") {
-            Log.d("FCM", "✅ 채팅 리스트 화면 감지됨")
-            Log.d("FCM", "📡 브로드캐스트 발송 중...")
-
-            val intent = Intent("ACTION_REFRESH_CHAT_LIST")
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
-
-            Log.d("FCM", "📡 브로드캐스트 발송 완료")
-            return
-        }
-
-        // 채팅방으로 이동하는 알림 생성
+        Log.d("FCM", "알림 생성: $title")
         sendNotification(title, body, roomId)
     }
 

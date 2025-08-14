@@ -54,7 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
-import com.ssafy.facemeet.client.ui.theme.ChosunGongseo
+import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
 import com.ssafy.facemeet.core.domain.model.ChatListItem
 
 private const val TAG = "ChattingListScreen"
@@ -65,7 +65,6 @@ fun ChattingListScreen(
     onItemClick: (ChatListItem) -> Unit = {},
     viewModel: ChattingListViewModel = hiltViewModel()
 ) {
-
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -82,12 +81,11 @@ fun ChattingListScreen(
                 .padding(15.dp),
             text = "채팅 목록",
             fontSize = 18.sp,
-            fontFamily = ChosunGongseo
+            fontFamily = ChosunSeirf
         )
         NoticeBanner()
 
         if (!uiState.isLoading) {
-            // 로딩 중일 때 로딩 인디케이터 등을 표시
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
             // 로딩이 완료되었을 때 LazyColumn을 표시

@@ -11,7 +11,7 @@ import javax.inject.Inject
 import javax.inject.Named
 
 @HiltViewModel
-class MapViewModel @Inject constructor(
+class   MapViewModel @Inject constructor(
     @Named("googleMapsApiKey") val apiKey: String,
     val mapDataStore: MapDataStore
 ) : ViewModel() {

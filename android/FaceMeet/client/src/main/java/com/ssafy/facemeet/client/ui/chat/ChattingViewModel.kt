@@ -24,6 +24,7 @@ import com.ssafy.facemeet.core.domain.model.ChatRoom
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesCurrentUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesLastUseCase
+import com.ssafy.facemeet.core.util.AppStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -81,6 +82,8 @@ class ChattingViewModel @Inject constructor(
     private val localIdCounter = AtomicLong(0)
 
     init {
+        AppStateManager.setCurrentScreen("ChattingScreen",currentRoomId)
+
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
         }
@@ -251,12 +254,12 @@ class ChattingViewModel @Inject constructor(
 
     fun sendMessage() {
         val state = _uiState.value
-        if (!state.canSendMessage || currentUserId == 0L) return
+        if (currentUserId == 0L) return
 
         val messageContent = state.messageText.trim()
+        if (messageContent.isBlank()) return
         val sentMessage = createSentMessage(messageContent, state.roomInfo)
 
-        // 💡 메시지 상태를 PENDING으로 설정하여 UI에 낙관적으로 업데이트
         val newItem = MessageItem(
             chatMessage = sentMessage.chatMessage,
             status = MessageStatus.PENDING, // 💡 PENDING 상태로 시작
@@ -270,36 +273,20 @@ class ChattingViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
-                messageText = "",
-                canSendMessage = false
+                messageText = ""
             )
         }
 
         triggerScroll(ScrollEvent.ToBottom)
 
         viewModelScope.launch {
-            try {
-                webSocketManager.sendMessage(
-                    content = sentMessage.chatMessage.chatElement.content,
-                    roomId = state.roomInfo.chatRoomID,
-                    senderId = currentUserId,
-                    receiverId = state.roomInfo.partnerID
-                )
-                Log.d(TAG, "Message sending request queued.")
-            } catch (e: Exception) {
-                Log.e(TAG, "Message sending failed before queueing", e)
-                _uiState.update { it.copy(error = "Message sending failed: ${e.message}") }
-                // 실패 시 PENDING 메시지를 FAILED 상태로 업데이트
-                _unifiedMessages.update { list ->
-                    list.map {
-                        if (it.localId == newItem.localId) {
-                            it.copy(status = MessageStatus.FAILED)
-                        } else {
-                            it
-                        }
-                    }
-                }
-            }
+            webSocketManager.sendMessage(
+                content = sentMessage.chatMessage.chatElement.content,
+                roomId = state.roomInfo.chatRoomID,
+                senderId = currentUserId,
+                receiverId = state.roomInfo.partnerID
+            )
+            Log.d(TAG, "Message sending request queued.")
         }
     }
 
@@ -491,6 +478,7 @@ class ChattingViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        AppStateManager.clearCurrentScreen()
         endChatRoom()
     }
 

@@ -36,7 +36,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -131,6 +130,14 @@ fun ChattingScreen(
 
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        AppStateManager.setCurrentScreen("ChattingScreen", roomId)
+        onDispose {
+            Log.d("ChattingScreen", "화면 나감 - AppStateManager 정리")
+            AppStateManager.clearCurrentScreen()
         }
     }
 
@@ -387,8 +394,8 @@ fun ChattingScreen(
                 messageText = uiState.messageText,
                 onMessageChange = viewModel::updateMessageText,
                 onSendClick = viewModel::sendMessage,
-                canSend = uiState.canSendMessage && connectionState == ConnectionState.CONNECTED,
-                isConnected = connectionState != ConnectionState.DISCONNECTED
+                //canSend = uiState.canSendMessage && connectionState == ConnectionState.CONNECTED,
+               // isConnected = connectionState != ConnectionState.DISCONNECTED
             )
         }
 
@@ -623,6 +630,8 @@ fun ChatHeader(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF8B5A2B),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clickable { onPartnerProfile() }
             )
         }
@@ -690,11 +699,10 @@ fun ChatEndMessage(content: String) {
 fun MessageInput(
     messageText: String,
     onMessageChange: (String) -> Unit,
-    onSendClick: () -> Unit,
-    canSend: Boolean,
-    isConnected: Boolean
+    onSendClick: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
+    val isButtonEnabled = messageText.isNotBlank()
 
     Box(modifier = Modifier.padding(5.dp)) {
         Row(
@@ -704,21 +712,23 @@ fun MessageInput(
                 .height(50.dp)
                 .background(color = Color.White, shape = RoundedCornerShape(28.dp))
                 .border(width = 1.dp, color = Color(0xFFE5E7EB), shape = RoundedCornerShape(28.dp))
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 3.dp)
         ) {
             BasicTextField(
                 value = messageText,
                 onValueChange = onMessageChange,
                 modifier = Modifier
                     .weight(1f)
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .clickable(onClick = {
+                        focusRequester.requestFocus()
+                    }),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
                 singleLine = false,
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Default,
                     keyboardType = KeyboardType.Text
                 ),
-                keyboardActions = KeyboardActions(onSend = { onSendClick() }),
                 decorationBox = { innerTextField ->
                     if (messageText.isEmpty()) {
                         Text(
@@ -729,25 +739,28 @@ fun MessageInput(
                     }
                     innerTextField()
                 },
-                enabled = isConnected
+                enabled = true // 항상 입력 가능하도록 설정
             )
 
-            if (canSend && isConnected) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(color = Color(0xFF824946), shape = CircleShape)
-                        .clickable { onSendClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Send",
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(
+                        color = if (isButtonEnabled) Color(0xFF824946) else Color(0xFFE0E0E0),
+                        shape = CircleShape
                     )
-                }
+                    .clickable(enabled = isButtonEnabled) {
+                        onSendClick()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Send",
+                    tint = if (isButtonEnabled) Color.White else Color(0xFF8F939C),
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }
@@ -813,7 +826,7 @@ fun tmpPreview() {
                     Toast.makeText(context, "메시지가 복사되었습니다", Toast.LENGTH_SHORT).show()
                 }
             ) {
-                Text(text= "복사")
+                Text(text = "복사")
             }
         },
         dismissButton = {

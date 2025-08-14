@@ -10,6 +10,7 @@ import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
+import com.ssafy.facemeet.core.util.AppStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,8 +34,9 @@ class ChattingListViewModel @Inject constructor(
     internal var selectedRoomId: Long = 0L
 
     init {
+        AppStateManager.setCurrentScreen("ChattingListScreen")
+
         viewModelScope.launch {
-            // ... (콜백 설정만 남겨두고)
             chatWebSocketManager.onNewMessageForList = {
                 Log.d(TAG, "✅ onNewMessageForList 콜백 실행됨!")
                 loadChattingList()
@@ -102,5 +104,10 @@ class ChattingListViewModel @Inject constructor(
                 Log.d(TAG, "방 나가기 실패")
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        AppStateManager.clearCurrentScreen()
     }
 }

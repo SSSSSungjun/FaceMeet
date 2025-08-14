@@ -24,6 +24,7 @@ class WebLoginViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+
     fun saveToken(refreshToken: String, accessToken: String) {
         viewModelScope.launch {
             tokenManager.saveTokens(accessToken, refreshToken)
@@ -56,14 +57,6 @@ class WebLoginViewModel @Inject constructor(
                 }
         } catch (e: Exception) {
             Log.e("FCM", "FCM 토큰 가져오기 실패", e)
-        }
-    }
-
-    internal fun initWebCache(){
-        viewModelScope.launch {
-            if(tokenManager.getAccessToken()==null){
-                WebViewUtils.clearWebViewData(context)
-            }
         }
     }
 

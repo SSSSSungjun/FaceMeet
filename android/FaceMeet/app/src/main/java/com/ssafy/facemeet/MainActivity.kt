@@ -20,7 +20,6 @@ import com.ssafy.facemeet.navigation.AppNavHost
 import com.ssafy.facemeet.service.OfflineNotifyService
 import com.ssafy.facemeet.theme.FacemeetTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,11 +39,7 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { mainViewModel.isLoading.value }
 
         super.onCreate(savedInstanceState)
-
-        lifecycleScope.launch {
-            delay(1000) // UI 완전 초기화 대기
-            handleNotificationIntent(intent)
-        }
+        handleNotificationIntent(intent)
 
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
         startService(serviceIntent)
@@ -81,31 +76,34 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent?.let { handleNotificationIntent(it) }
+        handleNotificationIntent(intent)
     }
 
     // MainActivity
     private fun handleNotificationIntent(intent: Intent) {
-        Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
-        Log.d(TAG, "*handleNotificationIntent 진입")
-        when (intent.getStringExtra("deep_link")) {
-            "ticket_event" -> {
-                Log.d(TAG, "handleNotificationIntent: ticket_event")
-                val id = intent.getLongExtra("settingId", -1L)
-                Log.d(TAG, "handleNotificationIntent: ${id}")
-                if (id > 0) {
-                    Log.d(TAG, "id > 0")
-                    mainViewModel.setPendingTicketEvent(id)
+        lifecycleScope.launch {
+            Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
+            Log.d(TAG, "*handleNotificationIntent 진입")
+            when (intent.getStringExtra("deep_link")) {
+                "ticket_event" -> {
+                    Log.d(TAG, "handleNotificationIntent: ticket_event")
+                    val id = intent.getLongExtra("settingId", -1L)
+                    Log.d(TAG, "handleNotificationIntent: ${id}")
+                    if (id > 0) {
+                        Log.d(TAG, "id > 0")
+                        mainViewModel.setPendingTicketEvent(id)
+                    }
                 }
-            }
 
-            "chat" -> {
-                val roomId = intent.getLongExtra("roomId", -1L)
-                if (roomId > 0) mainViewModel.setPendingChat(roomId)
-            }
+                "chat" -> {
+                    val roomId = intent.getLongExtra("roomId", -1L)
+                    if (roomId > 0) mainViewModel.setPendingChat(roomId)
+                }
 
-            "notification_center" -> mainViewModel.setPendingNotificationCenter()
+                "notification_center" -> mainViewModel.setPendingNotificationCenter()
+            }
         }
+
     }
 
 }

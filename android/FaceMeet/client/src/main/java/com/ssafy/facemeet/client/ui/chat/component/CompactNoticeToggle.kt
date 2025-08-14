@@ -189,7 +189,7 @@ fun EnhancedCompactNoticeButton(
                         brush = Brush.linearGradient(
                             colors = listOf(
                                 Color(0xFFB8935E),
-                                Color(0xFF8F6D32)
+                                Color(0xFF824946)
                             )
                         )
                     ),

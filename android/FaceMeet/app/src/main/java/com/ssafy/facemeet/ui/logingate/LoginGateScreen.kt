@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ssafy.facemeet.core.util.constant.CommonColor
 
 private const val TAG = "LoginGateScreen"
 
@@ -67,8 +65,8 @@ fun LoginGateScreen(
     ) {
         if (ui.loading) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(color = CommonColor.Gray100)
-                Spacer(Modifier.height(12.dp))
+                //CircularProgressIndicator(color = CommonColor.Gray100)
+                //Spacer(Modifier.height(12.dp))
                 Text("상태 확인 중…")
             }
         } else if (ui.error != null) {
@@ -86,7 +84,7 @@ fun LoginGateScreen(
             }
         } else {
             // 아주 잠깐 비는 상태: 로딩 표시 유지
-            CircularProgressIndicator()
+            //CircularProgressIndicator()
         }
     }
 }
