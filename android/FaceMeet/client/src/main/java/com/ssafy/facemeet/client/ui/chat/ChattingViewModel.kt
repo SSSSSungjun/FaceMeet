@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 @HiltViewModel
@@ -76,28 +77,45 @@ class ChattingViewModel @Inject constructor(
     private val _isScreenActive = MutableStateFlow(false)
     val isScreenActive: StateFlow<Boolean> = _isScreenActive.asStateFlow()
 
-    // 💡 모든 메시지 (수신 및 발신)를 위한 단일 채널
-    private val messageUpdateChannel = Channel<ChatMessageItem>(Channel.UNLIMITED)
+    private val incomingMessageChannel = Channel<ChatMessageItem>(Channel.UNLIMITED)
+    private val localIdCounter = AtomicLong(0)
 
     init {
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
         }
 
-        // 💡 모든 메시지를 모아서 UI에 업데이트하는 단일 `Flow`
         viewModelScope.launch {
-            messageUpdateChannel
+            incomingMessageChannel
                 .receiveAsFlow()
-                .debounce(50) // 💡 200ms 동안 메시지 수신이 없으면 한 번에 업데이트
+                .debounce(50)
                 .collect { batchedMessage ->
                     _unifiedMessages.update { current ->
-                        val messageItem = MessageItem(
-                            chatMessage = batchedMessage,
-                            status = if (batchedMessage.chatElement.senderID == currentUserId) MessageStatus.SENT else MessageStatus.RECEIVED,
-                            localId = generateLocalId(batchedMessage.chatElement.content),
-                            showReadStatus = false
-                        )
-                        listOf(messageItem) + current.take(REALTIME_MESSAGE_LIMIT)
+                        val existingMessageIndex = current.indexOfFirst {
+                            it.chatMessage.chatElement.senderID == batchedMessage.chatElement.senderID &&
+                                    it.chatMessage.chatElement.content == batchedMessage.chatElement.content
+                        }
+
+                        if (existingMessageIndex != -1) {
+                            Log.d(TAG, "🔄 기존 메시지 업데이트: ${batchedMessage.chatElement.content}")
+                            current.toMutableList().also { list ->
+                                list[existingMessageIndex] = MessageItem(
+                                    chatMessage = batchedMessage,
+                                    status = MessageStatus.RECEIVED,
+                                    localId = list[existingMessageIndex].localId,
+                                    showReadStatus = false
+                                )
+                            }.toList()
+                        } else {
+                            Log.d(TAG, "➕ 새로운 메시지 추가: ${batchedMessage.chatElement.content}")
+                            val messageItem = MessageItem(
+                                chatMessage = batchedMessage,
+                                status = MessageStatus.RECEIVED,
+                                localId = generateLocalId(batchedMessage.chatElement.content),
+                                showReadStatus = false
+                            )
+                            listOf(messageItem) + current.take(REALTIME_MESSAGE_LIMIT)
+                        }
                     }
                 }
         }
@@ -178,7 +196,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 💡 handleNewMessage 함수: 메시지를 Channel에 보내는 역할만 담당
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
             if (newMessage.chatElement.roomID != currentRoomId || newMessage.chatElement.senderID == currentUserId) {
@@ -186,21 +203,46 @@ class ChattingViewModel @Inject constructor(
                 return@launch
             }
             Log.d(TAG, "📩 새로운 메시지 수신: ${newMessage.chatElement.content}")
-            messageUpdateChannel.send(newMessage)
-            if (newMessage.chatElement.senderID != currentUserId && !uiState.value.scrollState.isAtBottom) {
+
+            if (uiState.value.scrollState.isAtBottom) {
+                _unifiedMessages.update { current ->
+                    // 💡 즉시 업데이트 로직에도 중복 체크 추가
+                    val existingMessageIndex = current.indexOfFirst {
+                        it.chatMessage.chatElement.senderID == newMessage.chatElement.senderID &&
+                                it.chatMessage.chatElement.content == newMessage.chatElement.content
+                    }
+                    if (existingMessageIndex != -1) {
+                        // 이미 존재하는 메시지이므로 업데이트
+                        current.toMutableList().also { list ->
+                            list[existingMessageIndex] = MessageItem(
+                                chatMessage = newMessage,
+                                status = MessageStatus.RECEIVED,
+                                localId = list[existingMessageIndex].localId,
+                                showReadStatus = false
+                            )
+                        }.toList()
+                    } else {
+                        val messageItem = MessageItem(
+                            chatMessage = newMessage,
+                            status = MessageStatus.RECEIVED,
+                            localId = generateLocalId(newMessage.chatElement.content),
+                            showReadStatus = false
+                        )
+                        listOf(messageItem) + current.take(REALTIME_MESSAGE_LIMIT)
+                    }
+                }
+                triggerScroll(ScrollEvent.ToBottom)
+            } else {
+                incomingMessageChannel.send(newMessage)
                 _uiState.update { it.copy(newMessageContent = newMessage.chatElement.content) }
             }
+
             if (_isScreenActive.value) {
                 Log.d(TAG, "🟢 handleNewMessage: 화면 활성화 상태, markAsRead() 호출 시작")
                 markAsRead()
             }
-            if (_uiState.value.scrollState.isAtBottom) {
-                triggerScroll(ScrollEvent.ToBottom)
-            }
         }
     }
-
-    // 💡 sendMessage 함수: 메시지를 Channel에 보내는 역할만 담당
 
     fun sendMessage() {
         val state = _uiState.value
@@ -208,7 +250,6 @@ class ChattingViewModel @Inject constructor(
 
         val sentMessage = createSentMessage(state.messageText.trim(), state.roomInfo)
 
-        // 이전에 사용된 로컬 ID 생성 로직을 사용하여 메시지를 즉시 UI에 반영
         val newItem = MessageItem(
             chatMessage = sentMessage.chatMessage,
             status = MessageStatus.SENT,
@@ -216,7 +257,19 @@ class ChattingViewModel @Inject constructor(
             showReadStatus = false
         )
         _unifiedMessages.update { current ->
-            listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
+            // 💡 낙관적 업데이트 시에도 기존 메시지 업데이트 로직 사용
+            val existingMessageIndex = current.indexOfFirst {
+                it.chatMessage.chatElement.senderID == sentMessage.chatMessage.chatElement.senderID &&
+                        it.chatMessage.chatElement.content == sentMessage.chatMessage.chatElement.content
+            }
+
+            if (existingMessageIndex != -1) {
+                current.toMutableList().also { list ->
+                    list[existingMessageIndex] = newItem
+                }.toList()
+            } else {
+                listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
+            }
         }
 
         _uiState.update {
@@ -226,10 +279,7 @@ class ChattingViewModel @Inject constructor(
             )
         }
 
-        // 💡 변경된 부분: 무조건 스크롤을 내리지 않고, 조건부로 실행
-        if (state.scrollState.isAtBottom) {
-            triggerScroll(ScrollEvent.ToBottom)
-        }
+        triggerScroll(ScrollEvent.ToBottom)
 
         viewModelScope.launch {
             try {
@@ -311,7 +361,7 @@ class ChattingViewModel @Inject constructor(
 
     private fun generateLocalId(content: String): String {
         val safeContent = content ?: "empty"
-        return "local_${currentUserId}_${System.currentTimeMillis()}_${safeContent.hashCode()}"
+        return "local_${currentUserId}_${System.nanoTime()}_${localIdCounter.incrementAndGet()}_${safeContent.hashCode()}"
     }
 
     fun onScrollStateChanged(isScrolling: Boolean, firstVisibleItemIndex: Int) {

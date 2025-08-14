@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -123,7 +124,7 @@ private fun ExpandedNoticeCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "관상 궁합 ${similar}%로 매칭되었습니다 ✨\n" +
+                    text = "관상 궁합 ${similar}점으로 매칭되었습니다 ✨\n" +
                             "프로필을 눌러 상대방의 관상을 살펴보세요",
                     textAlign = TextAlign.Center,
                     fontSize = 14.sp,
@@ -184,7 +185,14 @@ fun EnhancedCompactNoticeButton(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF8F6D32)),
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFB8935E),
+                                Color(0xFF8F6D32)
+                            )
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

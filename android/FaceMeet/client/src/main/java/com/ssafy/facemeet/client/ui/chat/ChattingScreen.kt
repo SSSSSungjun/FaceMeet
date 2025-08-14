@@ -1,12 +1,18 @@
 package com.ssafy.facemeet.client.ui.chat
 
+import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +42,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +52,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -52,13 +60,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -91,6 +106,7 @@ import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -133,7 +149,10 @@ fun ChattingScreen(
 
 
     LaunchedEffect(listState.isScrollInProgress, listState.firstVisibleItemIndex) {
-        viewModel.onScrollStateChanged(listState.isScrollInProgress, listState.firstVisibleItemIndex)
+        viewModel.onScrollStateChanged(
+            listState.isScrollInProgress,
+            listState.firstVisibleItemIndex
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -235,7 +254,7 @@ fun ChattingScreen(
                         if (pagedMessages.itemCount > 0) pagedMessages.peek(0) else null
                     }
 
-                    if (shouldShowDateSeparator(messageItem.chatMessage,nextMessage)) {
+                    if (shouldShowDateSeparator(messageItem.chatMessage, nextMessage)) {
                         DateSeparator(date = messageItem.chatMessage.chatElement.createdAt.toFullDateString())
                     }
 
@@ -280,18 +299,22 @@ fun ChattingScreen(
                 }
                 if (oldestMessage != null) {
                     item(key = "oldest_date_separator") {
-                        DateSeparator(date = oldestMessage.chatElement.createdAt.toHourMinuteString())
+                        DateSeparator(date = oldestMessage.chatElement.createdAt.toFullDateString())
                     }
                 }
 
                 when (pagedMessages.loadState.append) {
                     is LoadState.Loading -> {
                         item {
-                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 CircularProgressIndicator()
                             }
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -386,7 +409,10 @@ private fun RenderMessage(
     showReadStatus: Boolean = false
 ) {
     if (isMyMessage) {
-        Log.d("WebSocket-ReadStatus", "🎨 UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus messageState : $messageStatus")
+        Log.d(
+            "WebSocket-ReadStatus",
+            "🎨 UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus messageState : $messageStatus"
+        )
     }
     when (message.messageType) {
         MessageType.TEXT -> {
@@ -397,12 +423,14 @@ private fun RenderMessage(
                 showReadStatus = showReadStatus
             )
         }
+
         MessageType.DATE -> DateSeparator(date = message.chatElement.content.toString())
         MessageType.CHAT_END -> ChatEndMessage(message.chatElement.content)
         MessageType.SYSTEM -> {}
     }
 }
 
+@SuppressLint("ServiceCast")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChatMessageBubble(
@@ -411,15 +439,31 @@ fun ChatMessageBubble(
     messageStatus: MessageStatus,
     showReadStatus: Boolean
 ) {
+    var showCopyDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
+
     val isFailed = messageStatus == MessageStatus.FAILED
     val bubbleColor = when (isMyMessage) {
         true -> if (isFailed) Color(0xFFFFCDD2) else Color(0xFF824946)
         false -> Color.White
     }
-    val textColor = if (isMyMessage && isFailed) Color.Black else if (isMyMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+    val textColor =
+        if (isMyMessage && isFailed) Color.Black else if (isMyMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
     val bubbleShape = when (isMyMessage) {
-        true -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 12.dp, bottomEnd = 4.dp)
-        false -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 4.dp, bottomEnd = 12.dp)
+        true -> RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 12.dp,
+            bottomStart = 12.dp,
+            bottomEnd = 4.dp
+        )
+
+        false -> RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 12.dp,
+            bottomStart = 4.dp,
+            bottomEnd = 12.dp
+        )
     }
 
     Box(
@@ -446,16 +490,42 @@ fun ChatMessageBubble(
                         )
                     }
                     when (messageStatus) {
-                        MessageStatus.PENDING -> Text(text = "전송중", style = MaterialTheme.typography.bodySmall, color = Color.Gray, fontSize = 10.sp)
-                        MessageStatus.FAILED -> Text(text = "전송실패", style = MaterialTheme.typography.bodySmall, color = Color.Red, fontSize = 10.sp)
+                        MessageStatus.PENDING -> Text(
+                            text = "전송중",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            fontSize = 10.sp
+                        )
+
+                        MessageStatus.FAILED -> Text(
+                            text = "전송실패",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Red,
+                            fontSize = 10.sp
+                        )
+
                         else -> {}
                     }
-                    Text(text = message.createdAt.toHourMinuteString(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, fontSize = 10.sp)
+                    Text(
+                        text = message.createdAt.toHourMinuteString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        fontSize = 10.sp
+                    )
                 }
             }
 
             Card(
-                modifier = Modifier.widthIn(max = 240.dp),
+                modifier = Modifier
+                    .widthIn(max = 240.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                showCopyDialog = true
+                            }
+                        )
+                    },
                 colors = CardDefaults.cardColors(containerColor = bubbleColor),
                 shape = bubbleShape
             ) {
@@ -478,6 +548,41 @@ fun ChatMessageBubble(
             }
         }
     }
+
+    // 복사 다이얼로그
+    if (showCopyDialog) {
+        AlertDialog(
+            containerColor = Color.White,
+            titleContentColor = Color.Black,
+            textContentColor = Color.Black,
+            onDismissRequest = { showCopyDialog = false },
+            text = {
+                Text("이 메시지를 복사하시겠습니까?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val clipboard =
+                            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("message", message.content.toString())
+                        clipboard.setPrimaryClip(clip)
+
+                        Toast.makeText(context, "메시지가 복사되었습니다", Toast.LENGTH_SHORT).show()
+                        showCopyDialog = false
+                    }
+                ) {
+                    Text("복사")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showCopyDialog = false }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
 }
 
 
@@ -487,7 +592,7 @@ fun ChatHeader(
     compatibilityScore: Long,
     onBack: () -> Unit,
     onPartnerProfile: () -> Unit,
-    uiState : ChatUiState
+    uiState: ChatUiState
 ) {
     Row(
         modifier = Modifier
@@ -498,10 +603,17 @@ fun ChatHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF374151))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xFF374151)
+            )
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier=Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Image(
                 painter = rememberAsyncImagePainter(model = uiState.roomInfo.imgURL),
                 contentDescription = "Profile image",
@@ -517,7 +629,7 @@ fun ChatHeader(
         }
 
         Text(
-            text = "궁합 $compatibilityScore%",
+            text = "궁합 ${compatibilityScore}점",
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF6B7280)
         )
@@ -530,7 +642,7 @@ fun DateSeparator(date: String) {
     val yesterday = today.minusDays(1)
     val formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일", Locale.KOREAN)
     val todayFormatDate = today.format(formatter)
-    val yesterdayFormatDate =yesterday.format(formatter)
+    val yesterdayFormatDate = yesterday.format(formatter)
 
     Box(
         modifier = Modifier
@@ -544,7 +656,7 @@ fun DateSeparator(date: String) {
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Text(
-                text = if(date==todayFormatDate) "오늘" else if(date==yesterdayFormatDate) "어제" else date,
+                text = if (date == todayFormatDate) "오늘" else if (date == yesterdayFormatDate) "어제" else date,
                 modifier = Modifier.padding(horizontal = 30.dp, vertical = 5.dp),
                 style = MaterialTheme.typography.bodySmall,
                 fontSize = 11.sp,
@@ -574,6 +686,7 @@ fun ChatEndMessage(content: String) {
     }
 }
 
+
 @Composable
 fun MessageInput(
     messageText: String,
@@ -582,6 +695,8 @@ fun MessageInput(
     canSend: Boolean,
     isConnected: Boolean
 ) {
+    val focusRequester = remember { FocusRequester() }
+
     Box(modifier = Modifier.padding(5.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -595,7 +710,9 @@ fun MessageInput(
             BasicTextField(
                 value = messageText,
                 onValueChange = onMessageChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
                 singleLine = false,
                 keyboardOptions = KeyboardOptions(
@@ -658,7 +775,10 @@ fun BlockedChat() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun shouldShowDateSeparator(currentMessage: ChatMessageItem, nextMessage: ChatMessageItem?): Boolean {
+fun shouldShowDateSeparator(
+    currentMessage: ChatMessageItem,
+    nextMessage: ChatMessageItem?
+): Boolean {
     if (nextMessage == null) {
         return false
     }
@@ -672,33 +792,37 @@ fun shouldShowDateSeparator(currentMessage: ChatMessageItem, nextMessage: ChatMe
 
 @Preview
 @Composable
-fun tmpPreview(){
-    FloatingActionButton(
-        onClick = {  },
-        modifier = Modifier.padding(bottom = 10.dp),
-        containerColor = Color.White.copy(alpha = 0.8f),
-        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 10.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "New message",
-                tint = Color.Gray,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+fun tmpPreview() {
+    val context = LocalContext.current
 
-            Text(
-                text = "uiState.newMessageContent.toString()",
-                color = Color.Gray,
-                fontSize = 14.sp,
-                maxLines = 1, // 한 줄로 표시
-                overflow = TextOverflow.Ellipsis // 너무 길면 ...으로 표시
-            )
+    AlertDialog(
+        containerColor = Color.White,
+        titleContentColor = Color.Black,
+        textContentColor = Color.Black,
+        onDismissRequest = { },
+        text = {
+            Text("이 메시지를 복사하시겠습니까?")
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val clipboard =
+                        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("message", " message.content.toString()")
+                    clipboard.setPrimaryClip(clip)
+
+                    Toast.makeText(context, "메시지가 복사되었습니다", Toast.LENGTH_SHORT).show()
+                }
+            ) {
+                Text(text= "복사")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { }
+            ) {
+                Text("취소")
+            }
         }
-    }
+    )
 }

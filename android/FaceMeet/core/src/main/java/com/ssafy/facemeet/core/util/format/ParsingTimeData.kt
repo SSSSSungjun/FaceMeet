@@ -25,13 +25,13 @@ object ParsingTimeData {
             val yesterday = today.minusDays(1)
 
             val result = when (inputDate) {
-                today -> localDateTime.format(DateTimeFormatter.ofPattern("H:m"))
+                today -> localDateTime.format(DateTimeFormatter.ofPattern("H:mm"))
                 yesterday -> "어제"
                 else -> {
                     if (inputDate.year == today.year) {
-                        localDateTime.format(DateTimeFormatter.ofPattern("M월 d일"))
+                        localDateTime.format(DateTimeFormatter.ofPattern("M월 dd일"))
                     } else {
-                        localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일"))
+                        localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 M월 dd일"))
                     }
                 }
             }
@@ -51,13 +51,13 @@ object ParsingTimeData {
                 val yesterday = today.minusDays(1)
 
                 when (inputDate) {
-                    today -> localDateTime.format(DateTimeFormatter.ofPattern("H:m"))
+                    today -> localDateTime.format(DateTimeFormatter.ofPattern("H:mm"))
                     yesterday -> "어제"
                     else -> {
                         if (inputDate.year == today.year) {
-                            localDateTime.format(DateTimeFormatter.ofPattern("M월 d일"))
+                            localDateTime.format(DateTimeFormatter.ofPattern("M월 dd일"))
                         } else {
-                            localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일"))
+                            localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 M월 dd일"))
                         }
                     }
                 }

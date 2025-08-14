@@ -266,7 +266,7 @@ fun PartnerProfileContent(
 
                 // 궁합도
                 Text(
-                    text = "${result.compatibility}%",
+                    text = "${result.compatibility}점",
                     style = TextStyle(
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
