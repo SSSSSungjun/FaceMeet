@@ -24,12 +24,12 @@ private const val TAG = "FaceMeetApplication"
 class FaceMeetApplication : Application() {
     @Inject
     lateinit var tokenManager: TokenManager
-
     @Inject
     lateinit var chatWebSocketManager: ChatWebSocketManager
-
     @Inject
     lateinit var userRepository: UserRepository
+
+    //방 다시 들어가 떄 갱신되도록해야한다.
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -43,6 +43,13 @@ class FaceMeetApplication : Application() {
         override fun onStart(owner: LifecycleOwner) {
             Log.d(TAG, "앱이 포그라운드로 전환되었습니다. WebSocket 재연결 시도")
             connectWebSocket()
+            applicationScope.launch {
+                userRepository.postOnline()
+            }
+        }
+
+        override fun onResume(owner: LifecycleOwner) {
+            super.onResume(owner)
             applicationScope.launch {
                 userRepository.postOnline()
             }

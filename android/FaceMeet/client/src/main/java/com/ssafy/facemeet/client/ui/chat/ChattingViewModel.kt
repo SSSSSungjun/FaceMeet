@@ -25,15 +25,19 @@ import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesCurrentUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesLastUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 @HiltViewModel
@@ -46,131 +50,232 @@ class ChattingViewModel @Inject constructor(
     private val getChattingListUseCase: GetChattingListUseCase,
 ) : ViewModel() {
 
-    // 현재 사용자 및 방 정보
     internal var currentUserId: Long = 0L
     private var currentRoomId: Long = 0L
+    private var currentPartnerId : Long = 0L
 
-    // UI 상태 관리
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     private val _listUiState = MutableStateFlow(ChatListUiState())
     val listUiState = _listUiState.asStateFlow()
 
-    // 메시지 관련 상태 관리
     private val _messageState = MutableStateFlow(MessageState())
     val messageState: StateFlow<MessageState> = _messageState.asStateFlow()
 
-    // UI 이벤트 (네비게이션, 스크롤)
     private val _naviEvent = MutableSharedFlow<ChatNaviEvent?>()
     val naviEvent: SharedFlow<ChatNaviEvent?> = _naviEvent.asSharedFlow()
 
     private val _scrollEvent = MutableSharedFlow<ScrollEvent>()
     val scrollEvent: SharedFlow<ScrollEvent> = _scrollEvent.asSharedFlow()
 
-    // WebSocket 연결 상태
     val connectionState: LiveData<ConnectionState> = webSocketManager.connectionState
 
-    // 통합 메시지 리스트
     private val _unifiedMessages = MutableStateFlow<List<MessageItem>>(emptyList())
     val unifiedMessages: StateFlow<List<MessageItem>> = _unifiedMessages.asStateFlow()
+
+    private val _isScreenActive = MutableStateFlow(false)
+    val isScreenActive: StateFlow<Boolean> = _isScreenActive.asStateFlow()
+
+    private val incomingMessageChannel = Channel<ChatMessageItem>(Channel.UNLIMITED)
+    private val localIdCounter = AtomicLong(0)
 
     init {
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
         }
-    }
 
-    // 채팅방 초기화 및 연결
-    fun initializeChat(roomId: Long) {
-        webSocketManager.disconnect()
         viewModelScope.launch {
-            currentRoomId = roomId
-            _uiState.update { it.copy(isLoading = true) }
-            loadChatRoomInfo(roomId)
-            loadInitialMessages(roomId)
-            setupWebSocketCallbacks()
-            connectToChat()
+            incomingMessageChannel
+                .receiveAsFlow()
+                .debounce(50)
+                .collect { batchedMessage ->
+                    _unifiedMessages.update { current ->
+                        val existingMessageIndex = current.indexOfFirst {
+                            it.chatMessage.chatElement.senderID == batchedMessage.chatElement.senderID &&
+                                    it.chatMessage.chatElement.content == batchedMessage.chatElement.content
+                        }
+
+                        if (existingMessageIndex != -1) {
+                            Log.d(TAG, "🔄 기존 메시지 업데이트: ${batchedMessage.chatElement.content}")
+                            current.toMutableList().also { list ->
+                                list[existingMessageIndex] = MessageItem(
+                                    chatMessage = batchedMessage,
+                                    status = MessageStatus.RECEIVED,
+                                    localId = list[existingMessageIndex].localId,
+                                    showReadStatus = false
+                                )
+                            }.toList()
+                        } else {
+                            Log.d(TAG, "➕ 새로운 메시지 추가: ${batchedMessage.chatElement.content}")
+                            val messageItem = MessageItem(
+                                chatMessage = batchedMessage,
+                                status = MessageStatus.RECEIVED,
+                                localId = generateLocalId(batchedMessage.chatElement.content),
+                                showReadStatus = false
+                            )
+                            listOf(messageItem) + current.take(REALTIME_MESSAGE_LIMIT)
+                        }
+                    }
+                }
         }
     }
 
-    // 초기 메시지 로드 (페이징)
+    fun onScreenResume() {
+        _isScreenActive.value = true
+        if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
+            Log.d("ChatDebug", "상대방 앱: '읽음' 알림 전송")
+            markAsRead()
+        }
+    }
+
+    fun onScreenPause() {
+        _isScreenActive.value = false
+    }
+
+    fun initializeChat(roomId: Long ) {
+        webSocketManager.disconnect()
+        viewModelScope.launch {
+            loadChatRoomInfo(roomId)
+            currentRoomId = roomId
+            currentPartnerId = uiState.value.roomInfo.partnerID
+            _uiState.update { it.copy(isLoading = true) }
+            loadInitialMessages(roomId)
+            setupWebSocketCallbacks()
+            connectToChat()
+            Log.d(TAG, "STOMP connection successful. Marking as read.")
+        }
+    }
+
     private fun loadInitialMessages(roomId: Long) {
         viewModelScope.launch {
             Log.d(TAG, "Starting to load initial messages: roomId=$roomId")
-            val pagingFlow =
-                getChattingMessagesCurrentUseCase.invoke(roomId).cachedIn(viewModelScope)
+            val pagingFlow = getChattingMessagesCurrentUseCase.invoke(roomId).cachedIn(viewModelScope)
             _messageState.update { it.copy(pagedMessages = pagingFlow) }
-            _unifiedMessages.value = emptyList() // Clear old messages
+            _unifiedMessages.value = emptyList()
             Log.d(TAG, "Initial message load complete")
         }
     }
 
-    // WebSocket 콜백 설정
     private fun setupWebSocketCallbacks() {
         webSocketManager.setOnNewMessageCallback(::handleNewMessage)
         webSocketManager.onReadNotification = {
-            Log.d(TAG, "✅ 단계 2 - 서버로부터 '읽음' 알림 수신!")
-            viewModelScope.launch { updateReadStatusInUI() }
+            Log.d("ChatDebug", "내 앱: 서버로부터 '읽음' 알림 받음!")
+            viewModelScope.launch {
+                updateReadStatusInUI()
+            }
         }
         webSocketManager.setOnStompConnectedCallback {
-            Log.d(TAG, "STOMP connection successful. Marking as read.")
-            markAsRead()
+            if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
+                markAsRead()
+            }
         }
-//        webSocketManager.onNewMessageForList = {
-//            viewModelScope.launch {
-//                getChattingListUseCase().onSuccess { chatList ->
-//                    Log.d(TAG, "loadChattingList: 로드 성공 $chatList")
-//                    _listUiState.value = _listUiState.value.copy(
-//                        chatList = chatList,
-//                        isLoading = false
-//                    )
-//                }.onFailure {
-//                    Log.d(TAG, "${it.message} 방 리스트 불러오기 실패")
-//                }
-//            }
-//        }
+        webSocketManager.onNewMessageForList={
+            Log.d(TAG, "onNewMessageForList")
+        }
+        webSocketManager.onNewMessageLeaved ={
+            Log.d(TAG, "onNewMessageLeaved")
+            addNewMessage(it, MessageStatus.RECEIVED)
+            try {
+                webSocketManager.sendMessage(
+                    content = it.chatElement.content,
+                    roomId = it.chatElement.roomID?.toLong() ?: -1L,
+                    senderId = -1L,
+                    receiverId =  currentUserId
+                )
+                Log.d(TAG, "Message sent successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Message sending failed", e)
+                _uiState.update { it.copy(error = "Message sending failed: ${e.message}") }
+            }
+            _uiState.update { currentState ->
+                currentState.copy(
+                    roomInfo = currentState.roomInfo.copy(blocked = true)
+                )
+            }
+        }
     }
 
-    // 새 메시지 수신 처리
     private fun handleNewMessage(newMessage: ChatMessageItem) {
         viewModelScope.launch {
-
             if (newMessage.chatElement.roomID != currentRoomId || newMessage.chatElement.senderID == currentUserId) {
                 Log.w(TAG, "Ignoring message for a different room or from self.")
                 return@launch
             }
+            Log.d(TAG, "📩 새로운 메시지 수신: ${newMessage.chatElement.content}")
 
-            Log.d(TAG, "📩 Processing new message from partner: ${newMessage.chatElement.content}")
-
-            val messageKey = generateMessageKey(newMessage.chatElement)
-            if (_unifiedMessages.value.any { generateMessageKey(it.chatMessage.chatElement) == messageKey }) {
-                Log.d(TAG, "Ignoring duplicate message: $messageKey")
-                return@launch
+            if (uiState.value.scrollState.isAtBottom) {
+                _unifiedMessages.update { current ->
+                    // 💡 즉시 업데이트 로직에도 중복 체크 추가
+                    val existingMessageIndex = current.indexOfFirst {
+                        it.chatMessage.chatElement.senderID == newMessage.chatElement.senderID &&
+                                it.chatMessage.chatElement.content == newMessage.chatElement.content
+                    }
+                    if (existingMessageIndex != -1) {
+                        // 이미 존재하는 메시지이므로 업데이트
+                        current.toMutableList().also { list ->
+                            list[existingMessageIndex] = MessageItem(
+                                chatMessage = newMessage,
+                                status = MessageStatus.RECEIVED,
+                                localId = list[existingMessageIndex].localId,
+                                showReadStatus = false
+                            )
+                        }.toList()
+                    } else {
+                        val messageItem = MessageItem(
+                            chatMessage = newMessage,
+                            status = MessageStatus.RECEIVED,
+                            localId = generateLocalId(newMessage.chatElement.content),
+                            showReadStatus = false
+                        )
+                        listOf(messageItem) + current.take(REALTIME_MESSAGE_LIMIT)
+                    }
+                }
+                triggerScroll(ScrollEvent.ToBottom)
+            } else {
+                incomingMessageChannel.send(newMessage)
+                _uiState.update { it.copy(newMessageContent = newMessage.chatElement.content) }
             }
 
-            addNewMessage(newMessage, MessageStatus.RECEIVED)
-
-            markAsRead()
-            if (_uiState.value.scrollState.isAtBottom) {
-                triggerScroll(ScrollEvent.ToBottom)
+            if (_isScreenActive.value) {
+                Log.d(TAG, "🟢 handleNewMessage: 화면 활성화 상태, markAsRead() 호출 시작")
+                markAsRead()
             }
         }
     }
 
-    // 메시지 전송
     fun sendMessage() {
         val state = _uiState.value
         if (!state.canSendMessage || currentUserId == 0L) return
 
         val sentMessage = createSentMessage(state.messageText.trim(), state.roomInfo)
-        addNewMessage(sentMessage.chatMessage, MessageStatus.SENT)
+
+        val newItem = MessageItem(
+            chatMessage = sentMessage.chatMessage,
+            status = MessageStatus.SENT,
+            localId = generateLocalId(sentMessage.chatMessage.chatElement.content),
+            showReadStatus = false
+        )
+        _unifiedMessages.update { current ->
+            // 💡 낙관적 업데이트 시에도 기존 메시지 업데이트 로직 사용
+            val existingMessageIndex = current.indexOfFirst {
+                it.chatMessage.chatElement.senderID == sentMessage.chatMessage.chatElement.senderID &&
+                        it.chatMessage.chatElement.content == sentMessage.chatMessage.chatElement.content
+            }
+
+            if (existingMessageIndex != -1) {
+                current.toMutableList().also { list ->
+                    list[existingMessageIndex] = newItem
+                }.toList()
+            } else {
+                listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
+            }
+        }
 
         _uiState.update {
             it.copy(
                 messageText = "",
-                canSendMessage = false,
-                scrollState = it.scrollState.copy(isAtBottom = true)
+                canSendMessage = false
             )
         }
 
@@ -192,7 +297,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 새 메시지를 리스트에 추가
     private fun addNewMessage(message: ChatMessageItem, status: MessageStatus) {
         _unifiedMessages.update { current ->
             val newItem = MessageItem(
@@ -206,7 +310,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 메시지 읽음 처리
     private fun markAsRead() {
         val currentPartnerId = uiState.value.roomInfo.partnerID
         viewModelScope.launch {
@@ -219,27 +322,25 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // UI에서 읽음 상태 업데이트
     private fun updateReadStatusInUI() {
         Log.d("WebSocket-ReadStatus", "⚙️ updateReadStatusInUI() 함수 호출 시작")
+        if (uiState.value.roomInfo.deleted || uiState.value.roomInfo.blocked) {
+            return
+        }
         _unifiedMessages.update { current ->
-            var isLastSentMessageFound = false
-            current.map { item ->
-                if (!isLastSentMessageFound &&
-                    item.chatMessage.chatElement.senderID == currentUserId &&
-                    item.status == MessageStatus.SENT) {
-                    isLastSentMessageFound = true
-
+            val updatedList = current.map { item ->
+                if (item.chatMessage.chatElement.senderID == currentUserId && item.status == MessageStatus.SENT && !item.showReadStatus) {
                     Log.d("WebSocket-ReadStatus", "✅ 메시지 상태 업데이트: 메시지 [${item.chatMessage.chatElement.content}]의 showReadStatus를 true로 변경")
                     item.copy(showReadStatus = true)
                 } else {
-                    item.copy(showReadStatus = false)
+                    item
                 }
             }
+            Log.d("UpdateDebug", "최종 업데이트 리스트 상태: ${updatedList.firstOrNull()?.showReadStatus}")
+            updatedList
         }
     }
 
-    // 전송할 메시지 생성
     private fun createSentMessage(content: String, roomInfo: ChatRoom): MessageItem {
         val chatElement = ChatElement(
             content = content,
@@ -254,17 +355,15 @@ class ChattingViewModel @Inject constructor(
         return MessageItem(chatMessage = messageItem, status = MessageStatus.SENT)
     }
 
-    // 메시지 키 생성
     private fun generateMessageKey(chatElement: ChatElement): String {
         return "${chatElement.senderID}_${chatElement.roomID}_${chatElement.content}_${chatElement.createdAt}"
     }
 
-    // 로컬 ID 생성
     private fun generateLocalId(content: String): String {
-        return "local_${currentUserId}_${System.currentTimeMillis()}_${content.hashCode()}"
+        val safeContent = content ?: "empty"
+        return "local_${currentUserId}_${System.nanoTime()}_${localIdCounter.incrementAndGet()}_${safeContent.hashCode()}"
     }
 
-    // 스크롤 상태 변경 처리
     fun onScrollStateChanged(isScrolling: Boolean, firstVisibleItemIndex: Int) {
         val isAtBottom = firstVisibleItemIndex <= 2
         _uiState.update {
@@ -277,35 +376,34 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 초기 로드 완료 처리
     fun onInitialLoadComplete() {
         triggerScroll(ScrollEvent.ToBottom)
     }
 
-    // 키보드 표시시 처리
     fun onKeyboardShown() {
         if (_uiState.value.scrollState.isAtBottom) {
             triggerScroll(ScrollEvent.WithKeyboard)
         }
     }
 
-    // 수동으로 하단 스크롤
     fun scrollToBottomManually() {
-        _uiState.update { it.copy(scrollState = it.scrollState.copy(isAtBottom = true)) }
+        _uiState.update { currentState ->
+            currentState.copy(
+                scrollState = currentState.scrollState.copy(isAtBottom = true),
+                newMessageContent = null
+            )
+        }
         triggerScroll(ScrollEvent.ToBottom)
     }
 
-    // 스크롤 이벤트 트리거
     private fun triggerScroll(event: ScrollEvent) {
         viewModelScope.launch { _scrollEvent.emit(event) }
     }
 
-    // 공지사항 토글
     fun toggleNotice() {
         _uiState.update { it.copy(isNoticeOpen = !it.isNoticeOpen) }
     }
 
-    // 채팅방 정보 로드
     private suspend fun loadChatRoomInfo(roomId: Long) {
         getChattingMessagesLastUseCase.invoke(roomId, 30)
             .onSuccess { chattingAll ->
@@ -318,13 +416,12 @@ class ChattingViewModel @Inject constructor(
             }
     }
 
-    // 채팅 연결
     fun connectToChat() {
         viewModelScope.launch {
             try {
                 val token = tokenManager.getAccessToken()
                 if (token != null) {
-                    webSocketManager.connect(currentUserId, token, currentRoomId)
+                    webSocketManager.connect(currentUserId, token, currentRoomId,currentPartnerId)
                 }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
@@ -333,7 +430,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 메시지 텍스트 업데이트
     fun updateMessageText(text: String) {
         _uiState.update { currentState ->
             currentState.copy(
@@ -343,7 +439,6 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 연결 상태 업데이트
     fun updateConnectionState(connectionState: ConnectionState) {
         _uiState.update { currentState ->
             currentState.copy(
@@ -353,17 +448,14 @@ class ChattingViewModel @Inject constructor(
         }
     }
 
-    // 채팅방 종료
     fun endChatRoom() {
         _unifiedMessages.value = emptyList()
     }
 
-    // 에러 초기화
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
 
-    // 네비게이션
     fun navigateToBack() {
         viewModelScope.launch { _naviEvent.emit(ChatNaviEvent.ToBack) }
     }

@@ -51,7 +51,7 @@ fun WebLoginScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                    configureKakaoWebView(
+                    configureWebView(
                         onTokenExtracted = { accessToken, refreshToken, hasInfo, hasFace ->
                             mainHandler.post {
                                 Toast.makeText(context, "로그인 성공하였습니다.", Toast.LENGTH_SHORT).show()

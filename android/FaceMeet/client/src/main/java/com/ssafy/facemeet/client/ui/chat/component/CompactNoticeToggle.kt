@@ -22,8 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.WheelchairPickup
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,7 +47,7 @@ fun CompactNoticeToggle(
     modifier: Modifier = Modifier,
     isNoticeOpen: Boolean, // uiState에서 받아옴
     onToggleNotice: () -> Unit, // viewModel::toggleNotice
-    similar: Int = 89
+    similar: Int
 ) {
     Box(
         modifier = modifier.wrapContentSize(),
@@ -123,7 +124,7 @@ private fun ExpandedNoticeCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "관상 궁합 ${similar}%로 매칭되었습니다 ✨\n" +
+                    text = "관상 궁합 ${similar}점으로 매칭되었습니다 ✨\n" +
                             "프로필을 눌러 상대방의 관상을 살펴보세요",
                     textAlign = TextAlign.Center,
                     fontSize = 14.sp,
@@ -184,11 +185,18 @@ fun EnhancedCompactNoticeButton(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF8F6D32)),
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFB8935E),
+                                Color(0xFF8F6D32)
+                            )
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.WheelchairPickup,
+                    imageVector = Icons.Default.AutoAwesome,
                     contentDescription = "공지사항 보기",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
@@ -203,7 +211,8 @@ fun EnhancedCompactNoticeButton(
 fun CompactNoticeTogglePreview() {
     CompactNoticeToggle(
         isNoticeOpen = true,
-        onToggleNotice = {}
+        onToggleNotice = {},
+        similar = 89
     )
 }
 

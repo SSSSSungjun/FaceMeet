@@ -8,6 +8,7 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.Locale
 
 object ParsingTimeData {
 
@@ -24,13 +25,13 @@ object ParsingTimeData {
             val yesterday = today.minusDays(1)
 
             val result = when (inputDate) {
-                today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                today -> localDateTime.format(DateTimeFormatter.ofPattern("H:mm"))
                 yesterday -> "어제"
                 else -> {
                     if (inputDate.year == today.year) {
-                        localDateTime.format(DateTimeFormatter.ofPattern("MM월 dd일"))
+                        localDateTime.format(DateTimeFormatter.ofPattern("M월 dd일"))
                     } else {
-                        localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                        localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 M월 dd일"))
                     }
                 }
             }
@@ -50,13 +51,13 @@ object ParsingTimeData {
                 val yesterday = today.minusDays(1)
 
                 when (inputDate) {
-                    today -> localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    today -> localDateTime.format(DateTimeFormatter.ofPattern("H:mm"))
                     yesterday -> "어제"
                     else -> {
                         if (inputDate.year == today.year) {
-                            localDateTime.format(DateTimeFormatter.ofPattern("MM월 dd일"))
+                            localDateTime.format(DateTimeFormatter.ofPattern("M월 dd일"))
                         } else {
-                            localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                            localDateTime.format(DateTimeFormatter.ofPattern("yyyy년 M월 dd일"))
                         }
                     }
                 }
@@ -88,39 +89,27 @@ object ParsingTimeData {
 
     fun String.toFullDateString(): String {
         Log.d(TAG, "toFullDateString() 시작 - 입력값: '$this'")
-        return try {
 
-            val result = Instant.parse(this)
-                .atZone(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-            Log.d(TAG, "toFullDateString() Instant.parse() 성공 - 결과: '$result'")
+        // ✅ 한국 시간(KST)을 명시적으로 지정
+        val koreaZoneId = ZoneId.of("Asia/Seoul")
+
+        return try {
+            val result = LocalDateTime.parse(this)
+                .atZone(koreaZoneId)
+                .format(DateTimeFormatter.ofPattern("yyyy년 M월 d일", Locale.KOREAN))
+            Log.d(TAG, "toFullDateString() LocalDateTime.parse() 성공 - 결과: '$result'")
             result
         } catch (e: DateTimeParseException) {
-            Log.w(TAG, "toFullDateString() Instant.parse() 실패 - ZonedDateTime 시도", e)
+            Log.w(TAG, "toFullDateString() 파싱 실패 - 재시도 시작", e)
             try {
-                // ZonedDateTime.parse() 재시도
-                val result = ZonedDateTime.parse(this)
-                    .withZoneSameInstant(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-                Log.d(TAG, "toFullDateString() ZonedDateTime.parse() 성공 - 결과: '$result'")
+                val result = Instant.parse(this)
+                    .atZone(koreaZoneId) // ✅ Instant 파싱 후에도 한국 시간 적용
+                    .format(DateTimeFormatter.ofPattern("yyyy년 M월 d일", Locale.KOREAN))
+                Log.d(TAG, "toFullDateString() Instant.parse() 성공 - 결과: '$result'")
                 result
-            } catch (e2: DateTimeParseException) {
-                Log.w(
-                    TAG,
-                    "toFullDateString() ZonedDateTime.parse() 실패 - parseFlexibleDateTime 시도",
-                    e2
-                )
-                // 파싱 실패 시 parseFlexibleDateTime으로 재시도
-                parseFlexibleDateTime()
-                    ?.withZoneSameInstant(ZoneId.systemDefault())
-                    ?.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-                    ?.also { result ->
-                        Log.d(TAG, "toFullDateString() parseFlexibleDateTime 성공 - 결과: '$result'")
-                    }
-                    ?: run {
-                        Log.e(TAG, "toFullDateString() 모든 시도 실패 - 기본값 반환")
-                        "날짜 오류"
-                    }
+            } catch (e2: Exception) {
+                Log.e(TAG, "toFullDateString() 모든 시도 실패 - 기본값 반환", e2)
+                "날짜 오류"
             }
         } catch (e: Exception) {
             Log.e(TAG, "toFullDateString() 예상치 못한 오류", e)

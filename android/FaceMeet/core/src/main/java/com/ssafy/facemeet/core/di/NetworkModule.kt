@@ -8,7 +8,6 @@ import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
 import com.ssafy.facemeet.core.data.remote.interceptor.TokenAuthenticator
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
-import com.ssafy.facemeet.core.data.socket.SystemMessageManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -68,14 +67,6 @@ object NetworkModule {
     fun provideChatWebSocketManager(): ChatWebSocketManager {
         return ChatWebSocketManager()
     }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    @Provides
-    @Singleton
-    fun provideSystemMessageManager(chatWebSocketManager: ChatWebSocketManager): SystemMessageManager {
-        return SystemMessageManager(chatWebSocketManager)
-    }
-
 
     @Provides
     @Singleton

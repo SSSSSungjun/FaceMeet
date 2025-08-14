@@ -20,6 +20,7 @@ import com.ssafy.facemeet.navigation.AppNavHost
 import com.ssafy.facemeet.service.OfflineNotifyService
 import com.ssafy.facemeet.theme.FacemeetTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,7 +41,10 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        handleNotificationIntent(intent)
+        lifecycleScope.launch {
+            delay(1000) // UI 완전 초기화 대기
+            handleNotificationIntent(intent)
+        }
 
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
         startService(serviceIntent)
@@ -49,7 +53,6 @@ class MainActivity : ComponentActivity() {
             tokenExpirationNotifier.tokenExpiredEvent.collect {
                 Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG)
                     .show()
-
                 // 로그아웃
                 mainViewModel.logout()
 
@@ -78,11 +81,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleNotificationIntent(intent)
+        intent?.let { handleNotificationIntent(it) }
     }
 
     // MainActivity
     private fun handleNotificationIntent(intent: Intent) {
+        Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
         Log.d(TAG, "*handleNotificationIntent 진입")
         when (intent.getStringExtra("deep_link")) {
             "ticket_event" -> {
@@ -103,7 +107,6 @@ class MainActivity : ComponentActivity() {
             "notification_center" -> mainViewModel.setPendingNotificationCenter()
         }
     }
-
 
 }
 

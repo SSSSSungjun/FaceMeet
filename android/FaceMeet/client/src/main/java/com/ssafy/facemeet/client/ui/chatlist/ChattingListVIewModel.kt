@@ -92,8 +92,10 @@ class ChattingListViewModel @Inject constructor(
     }
 
     fun exitRoom(chatRoomId: Long) {
+        chatWebSocketManager.leaveRoom()
         viewModelScope.launch {
             postChattingLeaveUseCase(chatRoomId).onSuccess {
+                loadChattingList()
                 Log.d(TAG, "방 나가기 성공")
 
             }.onFailure {

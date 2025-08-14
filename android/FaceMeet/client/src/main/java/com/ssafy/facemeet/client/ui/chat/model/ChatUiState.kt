@@ -11,7 +11,8 @@ data class ChatUiState(
     val isNoticeOpen: Boolean = false,
     val error: String? = null,
     val connectionState: ConnectionState = ConnectionState.DISCONNECTED,
-    val scrollState: ScrollState = ScrollState()
+    val scrollState: ScrollState = ScrollState(),
+    val newMessageContent: String? = null
 )
 
 data class ScrollState(

@@ -61,6 +61,7 @@ class PartnerProfileViewModel @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun exitChatRoom(roomId: Long) {
+        chatWebSocketManager.leaveRoom()
         viewModelScope.launch {
             postChattingLeaveUseCase.invoke(roomId).onSuccess {
                 _exitRoomEvent.emit(Unit)

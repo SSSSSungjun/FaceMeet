@@ -1,9 +1,11 @@
 package com.ssafy.facemeet.ui.web
 
+import android.content.Context
 import android.util.Log
 import android.view.View
+import android.webkit.CookieManager
+import android.webkit.WebStorage
 import android.webkit.WebView
-import com.google.firebase.installations.remote.TokenResult
 
 private const val TAG = "WebViewUtils"
 
@@ -91,6 +93,29 @@ object WebViewUtils {
         } catch (e: Exception) {
             Log.e(TAG, "토큰 파싱 중 예외 발생", e)
             null
+        }
+    }
+
+    fun clearWebViewData(context: Context) {
+        try {
+            val webView = WebView(context)
+
+            // 쿠키 삭제
+            val cookieManager = CookieManager.getInstance()
+            cookieManager.removeAllCookies(null) // 모든 쿠키 삭제
+            cookieManager.flush() // 동기화
+
+            // 캐시 삭제
+            webView.clearCache(true)
+
+            // 웹 스토리지 삭제 (DOM Storage)
+            WebStorage.getInstance().deleteAllData()
+
+            // 기타 데이터 삭제
+            webView.clearHistory()
+            webView.clearFormData()
+        } catch (e: Exception) {
+            Log.e(TAG, "clearWebViewData: ${e.message}", )
         }
     }
 
