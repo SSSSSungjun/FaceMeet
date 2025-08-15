@@ -3,15 +3,18 @@ package com.ssafy.facemeet.client.ui.mainmenu
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.domain.usecase.GetHomeInfoUseCase
+import com.ssafy.facemeet.core.domain.usecase.GetUnreadNotificationCountUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MainMenuViewModel @Inject constructor(
-    private val getHomeInfoUseCase: GetHomeInfoUseCase
+    private val getHomeInfoUseCase: GetHomeInfoUseCase,
+    private val getUnreadNotificationCountUseCase: GetUnreadNotificationCountUseCase
 ) : ViewModel() {
 
     data class UiState(
@@ -20,7 +23,8 @@ class MainMenuViewModel @Inject constructor(
         val title: String = "",
         val remainingMatchTickets: Int = 0,
         val loading: Boolean = false,
-        val error: String? = null
+        val error: String? = null,
+        val unreadCount: Int = 0
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -45,4 +49,16 @@ class MainMenuViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(loading = false, error = e.message)
         }
     }
+
+    fun refreshUnreadCount() = viewModelScope.launch {
+        getUnreadNotificationCountUseCase()
+            .onSuccess { count ->
+                _uiState.update { it.copy(unreadCount = count) }
+            }
+            .onFailure {
+                // 뱃지 정도는 실패 시 0으로 폴백
+                _uiState.update { it.copy(unreadCount = 0) }
+            }
+    }
+
 }

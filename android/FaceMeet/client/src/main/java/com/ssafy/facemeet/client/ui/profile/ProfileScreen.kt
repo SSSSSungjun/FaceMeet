@@ -19,12 +19,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,11 +32,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -97,7 +102,7 @@ fun ProfileScreen(
 
     when {
         isLoading -> {
-            Text("불러오는 중...")
+            Text("불러오는 중...", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         }
 
         error != null -> {
@@ -111,6 +116,7 @@ fun ProfileScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreenContent(
     onHome: () -> Unit,
@@ -122,23 +128,44 @@ fun ProfileScreenContent(
 
     var globalBusy by remember { mutableStateOf(false) }
 
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFFAF9F4))
-            .statusBarsPadding()
-    ) {
-
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onHome) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Home",
+                            tint = CommonColor.Brown500
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = "관상 분석 결과",
+                        fontSize = 24.sp,
+                        fontFamily = ChosunCentennial,
+                        color = CommonColor.Brown500
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = CommonColor.Beige100,
+                    titleContentColor = CommonColor.Brown500,
+                    navigationIconContentColor = CommonColor.Brown500
+                )
+            )
+        },
+        containerColor = CommonColor.Beige100,
+        contentWindowInsets = WindowInsets(0)
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFAF9F4))
-                .statusBarsPadding()
-                .padding(24.dp)
+                .background(CommonColor.Beige100)
+                .padding(innerPadding)
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            TopBarSection(onHome = onHome)
 
             Spacer(modifier = Modifier.height(30.dp))
 
@@ -313,11 +340,13 @@ fun ProfileScreenContent(
             MatchingStartButton(onMatching = onMatching, buttonText = "매칭 시작하기", tickets = tickets)
 
 
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
 
         GlobalLoadingOverlay(visible = globalBusy, text = "이미지 생성중…")
     }
+
 
 }
 
@@ -371,7 +400,7 @@ fun DetailItem(
                     contentDescription = null,
                     modifier = Modifier.size(14.dp)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = title,
                     fontSize = 14.sp,
@@ -387,7 +416,11 @@ fun DetailItem(
 
 @Composable
 fun PersonalityDetail(title: String, desc: String) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
         Text(
             text = title,
             fontSize = 16.sp,

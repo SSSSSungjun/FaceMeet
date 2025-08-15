@@ -21,15 +21,11 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.R
-import com.ssafy.facemeet.core.data.database.NotificationDao
-import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
-import com.ssafy.facemeet.core.data.database.entity.NotificationType
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.domain.usecase.RegisterDeviceUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
 import com.ssafy.facemeet.fcm.FcmAlarmHandler.triggerEvent
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -50,8 +46,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var registerDeviceUseCase: RegisterDeviceUseCase
 
-    @Inject
-    lateinit var notificationDao: NotificationDao
 
     private val handler = Handler(Looper.getMainLooper())
     private val scheduledEvents = mutableMapOf<String, Runnable>()
@@ -149,7 +143,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
                 triggerEvent(
                     context = this,
-                    dao = notificationDao,
                     settingId = settingId.toLong(),
                     eventDataStr = eventDataStr,
                     title = data["title"],
@@ -183,8 +176,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         // ✅ 공용 함수 사용
         FcmAlarmHandler.sendEventNotification(this, title, body, settingId)
-
-        saveNotificationToRoom(title, body, System.currentTimeMillis(), settingId = settingId)
     }
 
 
@@ -383,26 +374,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-
-    private fun saveNotificationToRoom(
-        title: String,
-        body: String,
-        triggerTime: Long,
-        settingId: Long?
-    ) {
-        Log.d(TAG, "saveNotificationToRoom: $")
-        CoroutineScope(Dispatchers.IO).launch {
-            val notification = NotificationEntity(
-                title = title,
-                body = body,
-                triggerTime = triggerTime,
-                type = NotificationType.TICKET,
-                settingId = settingId
-            )
-            notificationDao.insert(notification)
-        }
-    }
-
     private fun scheduleLocalEvent(
         context: Context,
         settingId: String,
@@ -446,13 +417,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
 
-            FcmAlarmHandler.saveNotificationToRoom(
-                notificationDao,
-                title,
-                body,
-                System.currentTimeMillis(),
-                settingId = settingId.toLong()
-            )
             storeEvent(settingId.toLong(), triggerTime, eventDataStr, title, body)
             Log.d("FCM", "알람 예약 성공: $settingId")
         } catch (e: SecurityException) {
@@ -505,7 +469,6 @@ object FcmAlarmHandler {
     // ... (기존 triggerEvent는 아래처럼 이 공용 함수를 호출)
     fun triggerEvent(
         context: Context,
-        dao: NotificationDao,
         settingId: Long,
         eventDataStr: String,
         title: String?,
@@ -517,30 +480,8 @@ object FcmAlarmHandler {
         // ✅ 공용 함수 호출
         sendEventNotification(context, finalTitle, finalBody, settingId)
 
-        saveNotificationToRoom(
-            dao,
-            finalTitle,
-            finalBody,
-            System.currentTimeMillis(),
-            settingId = settingId
-        )
     }
 
-    fun saveNotificationToRoom(
-        dao: NotificationDao, title: String, body: String, time: Long, settingId: Long
-    ) {
-        Log.d(TAG, "saveNotificationToRoom: ")
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.insert(
-                NotificationEntity(
-                    title = title,
-                    body = body,
-                    triggerTime = time,
-                    type = NotificationType.TICKET,
-                    settingId = settingId
-                )
-            )
-        }
-    }
+
 }
 

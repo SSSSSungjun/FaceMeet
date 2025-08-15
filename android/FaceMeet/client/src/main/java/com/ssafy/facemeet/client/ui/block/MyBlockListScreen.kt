@@ -85,7 +85,8 @@ fun MyBlockListScreen(
                 }
             )
         },
-        snackbarHost = { SnackbarHost(snack) }
+        snackbarHost = { SnackbarHost(snack) },
+        modifier = Modifier.background(color = CommonColor.Beige100)
     ) { innerPadding ->
         when {
             loading -> Box(

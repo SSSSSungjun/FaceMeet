@@ -7,9 +7,12 @@ import com.ssafy.facemeet.core.data.repository.UserRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.UserRepository
 import com.ssafy.facemeet.core.domain.usecase.DeleteUserUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetHomeInfoUseCase
+import com.ssafy.facemeet.core.domain.usecase.GetNotificationsUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetPartnerFaceInfoUseCase
+import com.ssafy.facemeet.core.domain.usecase.GetUnreadNotificationCountUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetUserInfoUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetUserStatusUseCase
+import com.ssafy.facemeet.core.domain.usecase.ReadNotificationUseCase
 import com.ssafy.facemeet.core.domain.usecase.SetUserOfflineUseCase
 import com.ssafy.facemeet.core.domain.usecase.SetUserOnlineUseCase
 import com.ssafy.facemeet.core.domain.usecase.UpdateUserInfoUseCase
@@ -95,9 +98,26 @@ object UserModule {
         return GetUserStatusUseCase(userRepository)
     }
 
+
     @Provides
     @Singleton
     fun provideGetHomeInfoUseCase(userRepository: UserRepository): GetHomeInfoUseCase {
         return GetHomeInfoUseCase(userRepository)
     }
+
+    @Provides
+    @Singleton
+    fun provideGetNotificationsUseCase(userRepository: UserRepository) =
+        GetNotificationsUseCase(userRepository)
+
+    @Provides
+    @Singleton
+    fun provideReadNotificationUseCase(userRepository: UserRepository) =
+        ReadNotificationUseCase(userRepository)
+
+    @Provides
+    @Singleton
+    fun provideGetUnreadNotificationCountUseCase(userRepository: UserRepository) =
+        GetUnreadNotificationCountUseCase(userRepository)
+
 }
