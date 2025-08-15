@@ -226,14 +226,6 @@ class ChatWebSocketManager @Inject constructor() {
         receiverId: Long,
         tempId: Long? = null
     ) {
-        // 💡 연결이 끊어져 있으면 즉시 재연결을 시도합니다.
-        if (!isStompConnected) {
-            Log.w("WebSocket", "STOMP 연결이 끊어져 있습니다. 메시지 전송을 위해 즉시 재연결 시도.")
-            // 재시도 횟수를 초기화하고 즉시 연결을 시작
-            reconnectAttempt = 0
-            reconnect()
-        }
-
         val messageRequest = mapOf(
             "roomId" to roomId,
             "senderId" to senderId,
@@ -241,9 +233,15 @@ class ChatWebSocketManager @Inject constructor() {
             "content" to content,
         )
 
-        // 💡 메시지를 일단 큐에 넣어둡니다.
         enqueueStompMessage("/pub/chat.private", gson.toJson(messageRequest))
         Log.d("WebSocket", "메시지 전송 요청 완료 (큐에 추가) - ${gson.toJson(messageRequest)}")
+
+        if (!isStompConnected) {
+            Log.w("WebSocket", "STOMP 연결이 끊어져 있습니다. 메시지 전송을 위해 즉시 재연결 시도.")
+            // 재시도 횟수를 초기화하고 즉시 연결을 시작
+            reconnectAttempt = 0
+            reconnect()
+        }
     }
 
     fun markAsRead(roomId: Long, userId: Long, senderId: Long) {
