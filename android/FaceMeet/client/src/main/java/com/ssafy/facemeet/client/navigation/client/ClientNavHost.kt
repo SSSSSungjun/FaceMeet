@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.ssafy.facemeet.client.navigation.CurrentBottomNavState
 import com.ssafy.facemeet.client.navigation.bottom.BottomNavRoutes
 import com.ssafy.facemeet.client.navigation.bottom.MainScreenWithBottomNav
@@ -27,7 +28,11 @@ fun NavGraphBuilder.clientNavHost(
     bottomNavController: NavHostController
 ) {
 
-    composable(ClientRoutes.MainMenu.route) {
+    composable(
+        route = ClientRoutes.MainMenu.route,
+        deepLinks = listOf(
+            navDeepLink { uriPattern = "facemeet://app/main" }
+        )) {
         MainScreenWithBottomNav(
             mainNavController = navController,
             //bottomNavController = bottomNavController
@@ -35,7 +40,11 @@ fun NavGraphBuilder.clientNavHost(
     }
 
 
-    composable(ClientRoutes.Notification.route) {
+    composable(
+        route = ClientRoutes.Notification.route,
+        deepLinks = listOf(
+            navDeepLink { uriPattern = "facemeet://app/notification" }
+        )) {
         NotificationScreen(
             onBackClick = { navController.popBackStack() },
             onNavigateToTicketEvent = { settingId: Long ->
@@ -44,7 +53,11 @@ fun NavGraphBuilder.clientNavHost(
         )
     }
 
-    composable(ClientRoutes.Profile.route) {
+    composable(
+        route = ClientRoutes.Profile.route,
+        deepLinks = listOf(
+            navDeepLink { uriPattern = "facemeet://app/profile" }
+        )) {
         ProfileScreen(onHome = {
             navController.navigate(ClientRoutes.MainMenu.route) {
                 popUpTo(ClientRoutes.MainMenu.route) { inclusive = false }
@@ -57,7 +70,11 @@ fun NavGraphBuilder.clientNavHost(
         })
     }
 
-    composable(ClientRoutes.MatchingLoading.route) {
+    composable(
+        route = ClientRoutes.MatchingLoading.route,
+        deepLinks = listOf(
+            navDeepLink { uriPattern = "facemeet://app/matching_loading" }
+        )) {
         MatchingLoadingScreen(
             onCancel = { navController.popBackStack() },
             onMatchFound = { matchedChatRoomId ->
@@ -97,6 +114,9 @@ fun NavGraphBuilder.clientNavHost(
                 type = NavType.LongType
                 defaultValue = 0L // 기본값 설정 가능
             },
+        ),
+        deepLinks = listOf(
+            navDeepLink { uriPattern = "facemeet://app/chat/{roomId}" }
         )
     ) { backStackEntry ->
         val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0
@@ -118,6 +138,9 @@ fun NavGraphBuilder.clientNavHost(
         arguments = listOf(
             navArgument("partnerId") { type = NavType.LongType },
             navArgument("roomId") { type = NavType.LongType }
+        ),
+        deepLinks = listOf(
+            navDeepLink { uriPattern = "facemeet://app/partner_profile/{partnerId}/{roomId}" }
         )
     ) {
         val partnerId = it.arguments?.getLong("partnerId") ?: return@composable
@@ -148,6 +171,12 @@ fun NavGraphBuilder.clientNavHost(
         arguments = listOf(
             navArgument(ClientRoutes.TicketEvent.ARG_SETTING_ID) {
                 type = NavType.LongType
+            }
+        ),
+        deepLinks = listOf(
+            navDeepLink {
+                uriPattern =
+                    "facemeet://app/ticket_event/{${ClientRoutes.TicketEvent.ARG_SETTING_ID}}"
             }
         )
     ) { backStackEntry ->

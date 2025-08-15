@@ -142,7 +142,7 @@ fun MainMenuScreen(
                         },
                         actions = {
                             IconButton(onClick = onNotification) {
-                                BadgedBox(badge = { if (ui.unreadCount > 0) Badge() }) {
+                                BadgedBox(badge = { if (ui.unreadCount > 0) Badge(containerColor = CommonColor.Orange) }) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.ic_notification),
                                         contentDescription = "알림",

@@ -8,14 +8,11 @@ import com.ssafy.facemeet.fcm.FcmAlarmHandler
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-
-
         val settingId = intent.getStringExtra("settingId") ?: return
-        val eventDataStr = intent.getStringExtra("eventDataStr") ?: return
         val title = intent.getStringExtra("title")
         val body = intent.getStringExtra("body")
 
-        FcmAlarmHandler.triggerEvent(context, settingId.toLong(), eventDataStr, title, body)
+        FcmAlarmHandler.triggerEvent(context, settingId.toLong(), title, body)
     }
 
 }

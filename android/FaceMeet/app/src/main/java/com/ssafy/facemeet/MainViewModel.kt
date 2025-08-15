@@ -36,6 +36,15 @@ class MainViewModel @Inject constructor(
     private val _pendingNav = MutableStateFlow<PendingNav>(PendingNav.None)
     val pendingNav: StateFlow<PendingNav> = _pendingNav.asStateFlow()
 
+
+    // VM에
+    private val _initialRouted = MutableStateFlow(false)
+    val initialRouted = _initialRouted
+    fun markInitialRouted() {
+        _initialRouted.value = true
+    }
+
+
     // 이미 쓰고 있는 로그인 상태 등은 그대로 두고,
     // 딥링크 대기 상태만 추가
     private val _pendingTicketEvent = MutableStateFlow<Long?>(null)
