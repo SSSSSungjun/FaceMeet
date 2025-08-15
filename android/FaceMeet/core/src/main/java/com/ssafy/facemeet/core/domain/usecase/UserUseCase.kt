@@ -71,3 +71,24 @@ class GetHomeInfoUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(): Result<HomeInfoResponse> = userRepository.getHomeInfo()
 }
+
+// core/domain/usecase/GetNotificationsUseCase.kt
+class GetNotificationsUseCase @Inject constructor(
+    private val repo: UserRepository
+) {
+    suspend operator fun invoke() = repo.getNotifications()
+}
+
+// core/domain/usecase/ReadNotificationUseCase.kt
+class ReadNotificationUseCase @Inject constructor(
+    private val repo: UserRepository
+) {
+    suspend operator fun invoke(notificationId: Long) = repo.readNotification(notificationId)
+}
+
+// core/domain/usecase/GetUnreadNotificationCountUseCase.kt
+class GetUnreadNotificationCountUseCase @Inject constructor(
+    private val repo: UserRepository
+) {
+    suspend operator fun invoke() = repo.getUnreadNotificationCount()
+}

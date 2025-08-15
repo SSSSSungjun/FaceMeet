@@ -6,30 +6,20 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.R
-import com.ssafy.facemeet.core.data.database.NotificationDao
-import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
-import com.ssafy.facemeet.core.data.database.entity.NotificationType
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.domain.usecase.RegisterDeviceUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
 import com.ssafy.facemeet.fcm.FcmAlarmHandler.triggerEvent
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -39,7 +29,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 
-private const val TAG = "MyFirebaseMessagingServ"
+private const val TAG = "FCM"
 
 @AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
@@ -49,19 +39,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject
     lateinit var registerDeviceUseCase: RegisterDeviceUseCase
-
-    @Inject
-    lateinit var notificationDao: NotificationDao
-
-    private val handler = Handler(Looper.getMainLooper())
-    private val scheduledEvents = mutableMapOf<String, Runnable>()
-    private lateinit var sharedPreferences: SharedPreferences
-
-    override fun onCreate() {
-        super.onCreate()
-        sharedPreferences = getSharedPreferences("scheduled_events", Context.MODE_PRIVATE)
-        restoreScheduledEvents()
-    }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -85,6 +62,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("FCM", "메시지 notification: ${remoteMessage.notification}")
         Log.d("FCM", "메시지 data: ${remoteMessage.data}")
+
+        Log.d("FCM", "type: ${remoteMessage.data["type"]}")
 
         if (remoteMessage.data.isNotEmpty()) {
             when (remoteMessage.data["type"]) {
@@ -116,13 +95,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun handleScheduledEvent(
         data: Map<String, String>
     ) {
-
-        Log.d("FCM", "data: ${data.keys}")
+        Log.d("FCM", "handleScheduledEvent함수호출")
+        Log.d("FCM", "data: ${data.entries}")
 
         try {
             val settingId = data["settingId"] ?: return
             val triggerTimeStr = data["triggerTime"] ?: return
-            val eventDataStr = data["eventData"] ?: return
 
             val triggerTime = parseDateTime(triggerTimeStr)
             val now = Date()
@@ -149,9 +127,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
                 triggerEvent(
                     context = this,
-                    dao = notificationDao,
                     settingId = settingId.toLong(),
-                    eventDataStr = eventDataStr,
                     title = data["title"],
                     body = data["body"]
                 )
@@ -162,7 +138,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     context = this, // `MyFirebaseMessagingService`는 Context 상속받음
                     settingId = settingId,
                     triggerTime = triggerTime,
-                    eventDataStr = eventDataStr,
                     title = data["title"] ?: "없음",
                     body = data["body"] ?: "없음"
                 )
@@ -183,8 +158,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         // ✅ 공용 함수 사용
         FcmAlarmHandler.sendEventNotification(this, title, body, settingId)
-
-        saveNotificationToRoom(title, body, System.currentTimeMillis(), settingId = settingId)
     }
 
 
@@ -228,76 +201,78 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     fun sendNotification(title: String, body: String) {
         val channelId = "ticket_channel"
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("facemeet://app/main")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-
-        val pendingIntent = PendingIntent.getActivity(
+        val pending = PendingIntent.getActivity(
             this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel =
-                NotificationChannel(channelId, "이벤트 티켓 알림", NotificationManager.IMPORTANCE_HIGH)
-            notificationManager.createNotificationChannel(channel)
+            nm.createNotificationChannel(
+                NotificationChannel(
+                    channelId,
+                    "이벤트 티켓 알림",
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+            )
         }
 
-        val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.icon_small).setContentTitle(title)
-            .setContentText(body).setAutoCancel(true)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
+        val noti = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.icon_small)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pending)
+            .build()
 
-        val notificationId = System.currentTimeMillis().toInt()
-        notificationManager.notify(notificationId, builder.build())
+        nm.notify(System.currentTimeMillis().toInt(), noti)
     }
 
-    // 방 드가는 버전
+
     private fun sendNotification(title: String, body: String, roomId: Long? = null) {
         val channelId = "ticket_channel"
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            // 채팅 알림인 경우에만 딥링크 정보 추가
-            roomId?.let {
-                putExtra("deep_link", "chat")
-                putExtra("roomId", it)
-            }
+        val uri = if (roomId != null)
+            Uri.parse("facemeet://app/chat/$roomId")
+        else
+            Uri.parse("facemeet://app/main")
+
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this, roomId?.toInt() ?: 0, // 각 채팅방마다 다른 ID 사용
+        val pending = PendingIntent.getActivity(
+            this, (roomId ?: 0L).toInt(),
             intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // 채널 설정 강화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId, "채팅 알림", NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "채팅 메시지 알림"
-                enableLights(true)
-                enableVibration(true)
-                setShowBadge(true)
-            }
-            notificationManager.createNotificationChannel(channel)
+            nm.createNotificationChannel(
+                NotificationChannel(channelId, "채팅 알림", NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "채팅 메시지 알림"
+                    enableLights(true); enableVibration(true); setShowBadge(true)
+                }
+            )
         }
 
-        val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.icon_small).setContentTitle(title)
-            .setContentText(body).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
+        val noti = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.icon_small)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE).setContentIntent(pendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setContentIntent(pending)
+            .build()
 
-        notificationManager.notify(
-            roomId?.toInt() ?: System.currentTimeMillis().toInt(), builder.build()
-        )
+        nm.notify((roomId ?: System.currentTimeMillis()).toInt(), noti)
     }
+
 
     private fun parseDateTime(dateTimeStr: String): Date? {
         // ISO 8601 형식과 다양한 형식 지원
@@ -332,82 +307,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
 
-    private fun storeEvent(
-        settingId: Long, triggerTime: Date, eventDataStr: String, title: String?, body: String?
-    ) {
-        val eventInfo = mapOf(
-            "settingId" to settingId,
-            "triggerTime" to triggerTime.time.toString(),
-            "eventData" to eventDataStr,
-            "title" to title.orEmpty(),
-            "body" to body.orEmpty()
-        )
-        val json = Gson().toJson(eventInfo)
-        sharedPreferences.edit().putString("event_$settingId", json).apply()
-    }
-
-    private fun removeStoredEvent(settingId: String) {
-        sharedPreferences.edit().remove("event_$settingId").apply()
-    }
-
-    private fun restoreScheduledEvents() {
-        try {
-            val keys = sharedPreferences.all.keys.filter { it.startsWith("event_") }
-            for (key in keys) {
-                val json = sharedPreferences.getString(key, null) ?: continue
-                val eventInfo = Gson().fromJson<Map<String, String>>(
-                    json, object : TypeToken<Map<String, String>>() {}.type
-                )
-                val settingId = eventInfo["settingId"] ?: continue
-                val triggerTime =
-                    eventInfo["triggerTime"]?.toLongOrNull()?.let { Date(it) } ?: continue
-                val eventDataStr = eventInfo["eventData"] ?: continue
-                val title = eventInfo["title"] ?: "없음"
-                val body = eventInfo["body"] ?: "없음"
-
-                if (triggerTime.time > System.currentTimeMillis()) {
-                    scheduleLocalEvent(
-                        context = this, // ✅ 요놈 추가하셈 돌대가리야
-                        settingId = settingId,
-                        triggerTime = triggerTime,
-                        eventDataStr = eventDataStr,
-                        title = title,
-                        body = body
-                    )
-                } else {
-                    removeStoredEvent(settingId)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("FCM", "저장된 예약 복원 실패", e)
-        }
-    }
-
-
-    private fun saveNotificationToRoom(
-        title: String,
-        body: String,
-        triggerTime: Long,
-        settingId: Long?
-    ) {
-        Log.d(TAG, "saveNotificationToRoom: $")
-        CoroutineScope(Dispatchers.IO).launch {
-            val notification = NotificationEntity(
-                title = title,
-                body = body,
-                triggerTime = triggerTime,
-                type = NotificationType.TICKET,
-                settingId = settingId
-            )
-            notificationDao.insert(notification)
-        }
-    }
-
     private fun scheduleLocalEvent(
         context: Context,
         settingId: String,
         triggerTime: Date,
-        eventDataStr: String,
         title: String,
         body: String
     ) {
@@ -416,7 +319,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(context, com.ssafy.facemeet.AlarmReceiver::class.java).apply {
             putExtra("settingId", settingId)
-            putExtra("eventDataStr", eventDataStr)
             putExtra("title", title)
             putExtra("body", body)
         }
@@ -446,14 +348,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
 
-            FcmAlarmHandler.saveNotificationToRoom(
-                notificationDao,
-                title,
-                body,
-                System.currentTimeMillis(),
-                settingId = settingId.toLong()
-            )
-            storeEvent(settingId.toLong(), triggerTime, eventDataStr, title, body)
             Log.d("FCM", "알람 예약 성공: $settingId")
         } catch (e: SecurityException) {
             Log.e("FCM", "알람 예약 중 SecurityException 발생", e)
@@ -465,17 +359,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
 object FcmAlarmHandler {
-
     // ✅ 공용: 이벤트 페이지로 진입하는 알림 (public)
     fun sendEventNotification(context: Context, title: String, body: String, settingId: Long) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "ticket_channel"
 
-        val intent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("deep_link", "ticket_event")
-            putExtra("settingId", settingId)
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse("facemeet://app/ticket_event/$settingId")).apply {
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
         val pending = PendingIntent.getActivity(
             context, settingId.toInt(),
             intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -505,9 +397,7 @@ object FcmAlarmHandler {
     // ... (기존 triggerEvent는 아래처럼 이 공용 함수를 호출)
     fun triggerEvent(
         context: Context,
-        dao: NotificationDao,
         settingId: Long,
-        eventDataStr: String,
         title: String?,
         body: String?
     ) {
@@ -517,30 +407,8 @@ object FcmAlarmHandler {
         // ✅ 공용 함수 호출
         sendEventNotification(context, finalTitle, finalBody, settingId)
 
-        saveNotificationToRoom(
-            dao,
-            finalTitle,
-            finalBody,
-            System.currentTimeMillis(),
-            settingId = settingId
-        )
     }
 
-    fun saveNotificationToRoom(
-        dao: NotificationDao, title: String, body: String, time: Long, settingId: Long
-    ) {
-        Log.d(TAG, "saveNotificationToRoom: ")
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.insert(
-                NotificationEntity(
-                    title = title,
-                    body = body,
-                    triggerTime = time,
-                    type = NotificationType.TICKET,
-                    settingId = settingId
-                )
-            )
-        }
-    }
+
 }
 

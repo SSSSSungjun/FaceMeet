@@ -14,5 +14,7 @@ data class BlockResponse(
     @SerializedName("birth")
     val birth: String,
     @SerializedName("isDeleted")
-    val isDeleted: Boolean
+    val isDeleted: Boolean,
+    @SerializedName("img")
+    val img: String
 )

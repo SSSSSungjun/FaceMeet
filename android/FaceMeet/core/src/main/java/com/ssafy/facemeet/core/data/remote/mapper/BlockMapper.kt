@@ -10,7 +10,8 @@ fun BlockResponse.toDomain(): Block {
         name = this.name,
         gender = this.gender,
         birth = this.birth,
-        isDeleted = this.isDeleted
+        isDeleted = this.isDeleted,
+        img = this.img
     )
 }
 

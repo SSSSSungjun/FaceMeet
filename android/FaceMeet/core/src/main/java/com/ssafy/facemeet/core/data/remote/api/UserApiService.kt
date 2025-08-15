@@ -2,6 +2,7 @@ package com.ssafy.facemeet.core.data.remote.api
 
 import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.NotificationResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
@@ -38,6 +39,18 @@ interface UserApiService {
     @GET("/api/v1/users/home")
     suspend fun getHomeInfo(): Response<HomeInfoResponse>
 
+    // 받은 알림 목록 조회
+    @GET("/api/v1/users/me/notifications")
+    suspend fun getMyNotifications(): Response<List<NotificationResponse>>
+
+    // 알림 읽음 처리
+    @POST("/api/v1/users/me/notifications/{notificationId}")
+    suspend fun readNotification(@Path("notificationId") id: Long): Response<Unit>
+
+    // 읽지 않은 알림 수 조회
+    @GET("/api/v1/users/me/notifications/unread-count")
+    suspend fun getUnreadNotificationCount(): Response<Int>
+    
 //    @GET("/api/v1/users/status")
 //    suspend fun getUserStatus(): Response<AuthResponse<Unit>>
 }

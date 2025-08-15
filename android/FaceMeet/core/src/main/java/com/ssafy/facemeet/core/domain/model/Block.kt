@@ -6,5 +6,6 @@ data class Block(
     val name: String,
     val gender: String,
     val birth: String,
-    val isDeleted: Boolean
+    val isDeleted: Boolean,
+    val img: String
 )

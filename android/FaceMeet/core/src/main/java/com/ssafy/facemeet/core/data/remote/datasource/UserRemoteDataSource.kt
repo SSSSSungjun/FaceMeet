@@ -2,6 +2,7 @@ package com.ssafy.facemeet.core.data.remote.datasource
 
 import com.ssafy.facemeet.core.data.remote.api.UserApiService
 import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
+import com.ssafy.facemeet.core.data.remote.dto.response.NotificationResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
@@ -40,6 +41,15 @@ class UserRemoteDataSource @Inject constructor(
     }
 
     suspend fun getHomeInfo() = userApiService.getHomeInfo()
+
+    suspend fun getMyNotifications(): Response<List<NotificationResponse>> =
+        userApiService.getMyNotifications()
+
+    suspend fun readNotification(notificationId: Long): Response<Unit> =
+        userApiService.readNotification(notificationId)
+
+    suspend fun getUnreadNotificationCount(): Response<Int> =
+        userApiService.getUnreadNotificationCount()
 
     // 필요 시 주석 해제
 //    suspend fun getUserStatus(): Response<AuthResponse<Unit>> {
