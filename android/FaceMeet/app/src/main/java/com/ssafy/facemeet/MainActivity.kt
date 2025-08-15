@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                         withFrameNanos { }
                         val route = mapDeepLinkToRoute(intent?.data)
                         if (route != null) {
-                            nc.goToWithMainAsBase(route)
+                            nc.goToWithMainThenNotification(route)
                         } else if (isLoggedIn == true && !hasInitialDeepLink) {
                             // 딥링크 없이 진입 시 기본 진입(예: LoginGate나 Main)
                             nc.navigate(com.ssafy.facemeet.navigation.AppRoutes.LoginGate.route) {
@@ -102,11 +102,11 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (!this::navController.isInitialized) return
-        val route = mapDeepLinkToRoute(intent.data)
-        if (route != null) {
-            navController.goToWithMainAsBase(route)
-        }
+        val route = mapDeepLinkToRoute(intent.data) ?: return
+
+        navController.goToWithMainThenNotification(route)
     }
+
 }
 
 
@@ -145,17 +145,38 @@ private fun mapDeepLinkToRoute(data: android.net.Uri?): String? {
     }
 }
 
-private fun androidx.navigation.NavController.goToWithMainAsBase(targetRoute: String) {
-    val alreadyOnMain = currentDestination
+
+// 어디든 공용 위치 (예: AppNavHost 파일 하단)
+private fun androidx.navigation.NavController.goToWithMainThenNotification(
+    targetRoute: String
+) {
+    val isOnMain = currentDestination
         ?.hierarchy
         ?.any { it.route == com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route } == true
 
-    if (!alreadyOnMain) {
+    // 1) 메인을 베이스로
+    if (!isOnMain) {
         navigate(com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route) {
             popUpTo(com.ssafy.facemeet.navigation.AppRoutes.Start.route) { inclusive = true }
             launchSingleTop = true
             restoreState = false
         }
     }
-    navigate(targetRoute) { launchSingleTop = true }
+
+    // 2) 알림목록 (타깃이 알림목록 자체가 아닐 때만)
+    if (targetRoute != com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route) {
+        val alreadyOnNoti = currentDestination
+            ?.hierarchy
+            ?.any { it.route == com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route } == true
+        if (!alreadyOnNoti) {
+            navigate(com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route) {
+                launchSingleTop = true
+            }
+        }
+    }
+
+    // 3) 타깃 화면
+    navigate(targetRoute) {
+        launchSingleTop = true
+    }
 }

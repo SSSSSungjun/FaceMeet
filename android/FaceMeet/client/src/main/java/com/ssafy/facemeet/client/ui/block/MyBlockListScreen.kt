@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,9 +42,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.block.dialog.UnblockDialog
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
+import com.ssafy.facemeet.core.domain.model.Block
 import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +74,7 @@ fun MyBlockListScreen(
                         "차단목록",
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = ChosunCentennial,
-                        color = CommonColor.Gray900,
+                        color = CommonColor.Brown500,
                         fontSize = 16.sp
                     )
                 },
@@ -82,11 +85,15 @@ fun MyBlockListScreen(
                             contentDescription = "뒤로가기"
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = CommonColor.Beige100,
+                )
             )
         },
         snackbarHost = { SnackbarHost(snack) },
-        modifier = Modifier.background(color = CommonColor.Beige100)
+        containerColor = CommonColor.Beige100,
+        contentColor = CommonColor.Beige100
     ) { innerPadding ->
         when {
             loading -> Box(
@@ -101,7 +108,7 @@ fun MyBlockListScreen(
                     .fillMaxSize()
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
-            ) { Text("차단한 사용자가 없습니다", color = Color.Gray) }
+            ) { Text("차단한 사용자가 없습니다", color = CommonColor.Gray400) }
 
             else -> LazyColumn(
                 modifier = Modifier
@@ -110,7 +117,7 @@ fun MyBlockListScreen(
             ) {
                 itemsIndexed(items) { idx, block ->
                     BlockRow(
-                        nickname = block.nickName, // 매퍼에서 이미 "탈퇴한 사용자" 처리됨
+                        blockItem = block,
                         onUnblockClick = {
                             pendingUnblockUserId = block.userId.toLong()
                             showDialog = true
@@ -139,7 +146,7 @@ fun MyBlockListScreen(
 
 @Composable
 private fun BlockRow(
-    nickname: String,
+    blockItem: Block,
     onUnblockClick: () -> Unit
 ) {
     Row(
@@ -153,19 +160,19 @@ private fun BlockRow(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFF7F4EE)),
+                .background(Color(0xFFF0DBB7)),
             contentAlignment = Alignment.Center
         ) {
             // drawable 아이콘 사용
             Image(
-                painter = painterResource(id = R.drawable.temp_face),
+                painter = rememberAsyncImagePainter(model = blockItem.img),
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
         Spacer(Modifier.width(12.dp))
         Text(
-            text = nickname, // name 절대 사용 안 함
+            text = blockItem.nickName, // name 절대 사용 안 함
             modifier = Modifier.weight(1f),
             color = CommonColor.Gray900,
             fontSize = 14.sp
@@ -175,7 +182,7 @@ private fun BlockRow(
             modifier = Modifier
                 .clickable { onUnblockClick() }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
-            color = CommonColor.Gray400,
+            color = CommonColor.BrownGray600,
             fontSize = 12.sp
         )
     }

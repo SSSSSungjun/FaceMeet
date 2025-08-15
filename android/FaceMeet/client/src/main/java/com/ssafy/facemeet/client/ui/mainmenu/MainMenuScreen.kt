@@ -101,8 +101,6 @@ fun MainMenuScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadHome()
-        viewModel.refreshUnreadCount() // ✅ 진입 시 한 번 조회
-        // (원하면 포그라운드 재진입 등에도 재조회 트리거 추가 가능)
     }
 
     when {

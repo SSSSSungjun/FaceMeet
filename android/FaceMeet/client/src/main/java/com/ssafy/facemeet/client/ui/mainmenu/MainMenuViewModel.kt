@@ -22,9 +22,9 @@ class MainMenuViewModel @Inject constructor(
         val nickname: String = "",
         val title: String = "",
         val remainingMatchTickets: Int = 0,
+        val unreadCount: Int = 0,
         val loading: Boolean = false,
         val error: String? = null,
-        val unreadCount: Int = 0
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -40,6 +40,7 @@ class MainMenuViewModel @Inject constructor(
                     nickname = home.nickname,
                     title = home.title,
                     remainingMatchTickets = home.remainingMatchTickets,
+                    unreadCount = home.unreadCount,
                     loading = false
                 )
             }.onFailure {
