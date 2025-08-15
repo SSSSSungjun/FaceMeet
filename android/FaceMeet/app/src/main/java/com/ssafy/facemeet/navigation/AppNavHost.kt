@@ -59,7 +59,7 @@ fun AppNavHost(
     // 알림 및 딥링크 처리 로직
     LaunchedEffect(isLoggedIn, pendingTicket, pendingChat, goNotif) {
         if (!isLoggedIn) return@LaunchedEffect
-        Log.d(TAG, "AppNavHost: 로그인 성공 후 추가 라우팅 확인")
+        Log.d(TAG, "AppNavHost: 로그인 성공 후 추가 라우팅 확인 ${pendingChat ?:"null"} ")
         when {
             pendingTicket != null -> {
                 val id = checkNotNull(pendingTicket)
@@ -69,6 +69,7 @@ fun AppNavHost(
 
             pendingChat != null -> {
                 val roomId = checkNotNull(pendingChat)
+                Log.d(TAG, "AppNavHost: pendingChat roomID : ${roomId}")
                 navController.goToWithMainAsBase(ClientRoutes.Chat.createRoute(roomId))
                 mainViewModel.clearPendingChat()
             }

@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
-import com.ssafy.facemeet.core.data.socket.model.ConnectionState
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
@@ -49,14 +48,13 @@ class ChattingListViewModel @Inject constructor(
             val currentState = chatWebSocketManager.connectionState.value
             Log.d(TAG, "현재 WebSocket 상태: $currentState")
 
-            // 연결이 필요할 경우에만 connect를 호출합니다.
-            if (currentState == ConnectionState.CONNECTING || currentState == ConnectionState.DISCONNECTED) {
-                chatWebSocketManager.connect(
-                    tokenManager.getUserPK()?.toLong() ?: 0L,
-                    tokenManager.getAccessToken().toString(),
-                    0L
-                )
-            }
+            chatWebSocketManager.disconnect()
+            chatWebSocketManager.connect(
+                tokenManager.getUserPK()?.toLong() ?: 0L,
+                tokenManager.getAccessToken().toString(),
+                0L
+            )
+
             chatWebSocketManager.onNewMessageForList = {
                 Log.d(TAG, "✅ onNewMessageForList 콜백 실행됨!")
                 loadChattingList()

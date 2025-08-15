@@ -236,50 +236,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notificationManager.notify(notificationId, builder.build())
     }
 
-    // 방 드가는 버전
-    private fun sendNotification(title: String, body: String, roomId: Long? = null) {
-        val channelId = "ticket_channel"
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            // 채팅 알림인 경우에만 딥링크 정보 추가
-            roomId?.let {
-                putExtra("deep_link", "chat")
-                putExtra("roomId", it)
-            }
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this, roomId?.toInt() ?: 0, // 각 채팅방마다 다른 ID 사용
-            intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // 채널 설정 강화
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId, "채팅 알림", NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "채팅 메시지 알림"
-                enableLights(true)
-                enableVibration(true)
-                setShowBadge(true)
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.icon_small).setContentTitle(title)
-            .setContentText(body).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE).setContentIntent(pendingIntent)
-
-        notificationManager.notify(
-            roomId?.toInt() ?: System.currentTimeMillis().toInt(), builder.build()
-        )
-    }
-
     private fun parseDateTime(dateTimeStr: String): Date? {
         // ISO 8601 형식과 다양한 형식 지원
         val formats = listOf(
@@ -442,6 +398,50 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.e("FCM", "알람 예약 중 알 수 없는 예외 발생", e)
         }
     }
+}
+
+// 방 드가는 버전
+private fun MyFirebaseMessagingService.sendNotification(title: String, body: String, roomId: Long? = null) {
+    val channelId = "ticket_channel"
+    val notificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    val intent = Intent(this, MainActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        // 채팅 알림인 경우에만 딥링크 정보 추가
+        roomId?.let {
+            putExtra("deep_link", "chat")
+            putExtra("roomId", it)
+        }
+    }
+
+    val pendingIntent = PendingIntent.getActivity(
+        this, roomId?.toInt() ?: 0, // 각 채팅방마다 다른 ID 사용
+        intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    // 채널 설정 강화
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId, "채팅 알림", NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "채팅 메시지 알림"
+            enableLights(true)
+            enableVibration(true)
+            setShowBadge(true)
+        }
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val builder = NotificationCompat.Builder(this, channelId)
+        .setSmallIcon(R.drawable.icon_small).setContentTitle(title)
+        .setContentText(body).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setDefaults(NotificationCompat.DEFAULT_ALL)
+        .setCategory(NotificationCompat.CATEGORY_MESSAGE).setContentIntent(pendingIntent)
+
+    notificationManager.notify(
+        roomId?.toInt() ?: System.currentTimeMillis().toInt(), builder.build()
+    )
 }
 
 
