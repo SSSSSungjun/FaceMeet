@@ -334,18 +334,14 @@ class ChattingViewModel @Inject constructor(
     private fun updateMessageStatusFromPendingToSent(content: String, senderId: Long) {
         _unifiedMessages.update { current ->
             current.map { item ->
-
-                val contentHashId = generateLocalId(content)
-
-                if (item.localId == contentHashId && item.status == MessageStatus.PENDING) {
+                // 동일한 발신자 ID와 내용을 가진 PENDING 메시지를 찾습니다.
+                if (item.chatMessage.chatElement.senderID == senderId &&
+                    item.chatMessage.chatElement.content == content &&
+                    item.status == MessageStatus.PENDING
+                ) {
                     Log.d(TAG, "✅ 메시지 상태 업데이트: [${content}] 전송 완료로 변경")
-                    // 상태를 SENT로 변경하고, 원본 메시지 내용으로 복원
-                    item.copy(
-                        status = MessageStatus.SENT,
-                        chatMessage = item.chatMessage.copy(
-                            chatElement = item.chatMessage.chatElement.copy(content = content)
-                        )
-                    )
+                    // 상태를 SENT로 변경한 새로운 객체를 반환
+                    item.copy(status = MessageStatus.SENT)
                 } else {
                     item
                 }
