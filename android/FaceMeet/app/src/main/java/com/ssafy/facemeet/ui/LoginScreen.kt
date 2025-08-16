@@ -53,11 +53,11 @@ fun LoginScreen(
         Spacer(modifier = Modifier.padding(20.dp))
 
         Image(
-            painter = painterResource(id = R.drawable.logo),
+            painter = painterResource(id = R.drawable.login_logo),
             contentDescription = "로고",
             modifier = Modifier
-                .width(200.dp)
-                .height(200.dp)
+                .width(250.dp)
+                .height(250.dp)
         )
 
         Spacer(modifier = Modifier.padding(20.dp))
