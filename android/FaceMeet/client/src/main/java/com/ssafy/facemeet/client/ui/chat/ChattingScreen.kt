@@ -751,7 +751,7 @@ fun MessageInput(
                 decorationBox = { innerTextField ->
                     if (messageText.isEmpty()) {
                         Text(
-                            "Enter a message...",
+                            "메시지를 입력해주세요...",
                             color = Color(0xFF8F939C),
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -790,14 +790,14 @@ fun BlockedChat() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 8.dp)
-            .background(color = Color(0xFFDDDDDD), RoundedCornerShape(10.dp)),
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .background(color = Color(0xFFDDDDDD), RoundedCornerShape(15.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "상대방과 더 이상 채팅을 할 수 없습니다.",
             color = Color(0xFF666666),
-            fontSize = 16.sp,
+            fontSize = 14.sp,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.padding(10.dp)

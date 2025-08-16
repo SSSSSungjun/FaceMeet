@@ -54,8 +54,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
-import com.ssafy.facemeet.client.ui.theme.ChosunSeirf
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.domain.model.ChatListItem
+import kotlin.math.abs
 
 private const val TAG = "ChattingListScreen"
 
@@ -81,7 +82,7 @@ fun ChattingListScreen(
                 .padding(15.dp),
             text = "채팅 목록",
             fontSize = 18.sp,
-            fontFamily = ChosunSeirf
+            fontFamily = ChosunCentennial
         )
         NoticeBanner()
 
@@ -208,10 +209,9 @@ fun ChatListElementItem(
             Box(
                 modifier = Modifier
                     .wrapContentSize()
-                    .background(color = Color.White, RoundedCornerShape(50.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFF9F8772),
+                    .background(color = Color.White, RoundedCornerShape(50.dp)).border(
+                        width =1.5.dp,
+                        color = getColorForUserId(item.nickName),
                         shape = RoundedCornerShape(50.dp)
                     ),
                 contentAlignment = Alignment.Center
@@ -279,32 +279,20 @@ fun ChatListElementItem(
     }
 }
 
+val userColors = listOf(
+    Color(0xFFF0C7B7), // Red
+    Color(0xFFB7F0DF), // Green
+    Color(0xFFC4E0FB), // Blue
+    Color(0xFFF0DBB7), // Orange
+    Color(0xFFDCC8F7), // Light Purple
+    Color(0xFFE4E5EA)  // Light Grey
+)
 
-//@Preview(showBackground = true)
-//@Composable
-//fun ChatListPreview() {
-//    Box(
-//        modifier = Modifier.background(color = Color(0xFFF4F3ED))
-//    ) {
-//        ChatListElementItem(
-//            ChatListItem(
-//                nickName = "윤성준",
-//                lastActivatedTime = "ㅇㅇ",
-//                isOnline = true,
-//                imgUrl = "",
-//                chatRoomId = 7,
-//                chatRoomStringId = "7",
-//                lastMessage = "dfs\nsfsf\nsfs",
-//                lastSendMessageTime = "",
-//                nonReadCnt = 400,
-//                blocked = false,
-//                userId = 3,
-//                deleted = false,
-//            )
-//        ) { }
-//    }
-//
-//}
+fun getColorForUserId(userId: String): Color {
+    val hash = userId.hashCode()
+    val colorIndex = abs(hash) % userColors.size
+    return userColors[colorIndex]
+}
 
 @Preview(showBackground = true)
 @Composable

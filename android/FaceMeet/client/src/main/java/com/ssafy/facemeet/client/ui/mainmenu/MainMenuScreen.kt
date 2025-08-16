@@ -70,7 +70,7 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 
 @Composable
 fun MainMenuScreen(
-    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {},
+    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {}, onChat : () -> Unit = {}
 ) {
     DoubleBackToExit()
 
@@ -182,7 +182,7 @@ fun MainMenuScreen(
                 }
             }
             Button(
-                onClick = { /* 채팅 클릭 */ },
+                onClick = { onChat() },
                 modifier = Modifier
                     .weight(1f)
                     .shadow(

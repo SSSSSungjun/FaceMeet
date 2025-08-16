@@ -101,7 +101,13 @@ fun PartnerProfileScreen(
 
         error != null -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("에러: $error")
+                Text(
+                    text="상대방의 프로필을 볼 수 없습니다. ㅠㅠ ",
+                    color=CommonColor.RedBrown,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = ChosunCentennial
+                )
             }
         }
 
