@@ -184,6 +184,11 @@ private fun NavController.goToWithMainAsBase(targetRoute: String) {
         }
     }
     navigate(targetRoute) {
+//        if (targetRoute.contains("chat", ignoreCase = true)){
+//            popUpTo(ClientRoutes.Chat.route) {
+//                inclusive = false // MainMenu 라우트는 제거하지 않고 남겨둠
+//            }
+//        }
         launchSingleTop = true
     }
 }

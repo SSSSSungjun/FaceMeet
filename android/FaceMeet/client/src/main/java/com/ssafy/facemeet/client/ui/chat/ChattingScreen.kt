@@ -7,6 +7,8 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -115,6 +117,21 @@ fun ChattingScreen(
     onPartnerProfile: (partnerId: Long) -> Unit = {},
     viewModel: ChattingViewModel = hiltViewModel()
 ) {
+
+    val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val onBackPressedCallback = remember {
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                onBackClick() // Call the same lambda as your UI back button
+            }
+        }
+    }
+    DisposableEffect(key1 = Unit) {
+        dispatcher?.addCallback(onBackPressedCallback)
+        onDispose {
+            onBackPressedCallback.remove()
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 

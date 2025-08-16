@@ -212,6 +212,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             deepLink?.let { putExtra("deep_link", it) }
+            Log.d(TAG, "deepLink: $deepLink")
             when (deepLink) {
                 "chat" -> id?.let { putExtra("roomId", it) }
                 "ticket_event" -> id?.let { putExtra("settingId", it) }

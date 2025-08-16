@@ -40,6 +40,10 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/icon_small" />
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="chat_channel_id" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

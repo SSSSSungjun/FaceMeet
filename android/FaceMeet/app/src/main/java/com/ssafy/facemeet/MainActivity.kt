@@ -34,13 +34,21 @@ class MainActivity : ComponentActivity() {
     lateinit var tokenExpirationNotifier: TokenExpirationNotifier
 
 
-
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { mainViewModel.isLoading.value }
 
         super.onCreate(savedInstanceState)
+
+        val extras = intent.extras
+        if (extras != null) {
+            for (key in extras.keySet()) {
+                val value = extras.get(key)
+                Log.d("FCM_EXTRA", "$key: key , $value : value")
+            }
+        }
+
         handleNotificationIntent(intent)
 
         val serviceIntent = Intent(this, OfflineNotifyService::class.java)
@@ -64,7 +72,7 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(isLoggedIn == true, mainViewModel)
 
                     // NavHost 생성 완료 후 한 번 의도 전달(선택)
-                    LaunchedEffect(Unit) {
+                    LaunchedEffect(intent) {
                         handleNotificationIntent(intent)
                         intent.removeExtra("deep_link")
                         intent.removeExtra("settingId")
@@ -87,7 +95,12 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
             Log.d(TAG, "*handleNotificationIntent 진입")
-            when (intent.getStringExtra("deep_link")) {
+            var deepLink = intent.getStringExtra("deep_link")
+            if(deepLink == null){
+                deepLink = intent.getStringExtra("type")
+            }
+            Log.d(TAG, "deepLink: $deepLink")
+            when (deepLink) {
                 "ticket_event" -> {
                     Log.d(TAG, "handleNotificationIntent: ticket_event")
                     val id = intent.getLongExtra("settingId", -1L)
@@ -98,11 +111,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                "chat" -> {
-                    val roomId = intent.getLongExtra("roomId", 0L)
-                    mainViewModel.setPendingChat(roomId)
+                "CHAT" -> {
+                    val roomId = intent.getStringExtra("roomId")?.toLong()
+                    Log.d(TAG, "deepLink: $roomId")
+                    mainViewModel.setPendingChat(roomId?: 0L)
                 }
-
                 "notification_center" -> mainViewModel.setPendingNotificationCenter()
             }
         }

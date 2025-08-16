@@ -102,10 +102,17 @@ fun NavGraphBuilder.clientNavHost(
         val roomId = backStackEntry.arguments?.getLong("roomId") ?: 0
 
         ChattingScreen(
-            roomId = roomId,
-            onBackClick = {
-                navController.popBackStack()
-            },
+                roomId = roomId,
+                onBackClick = {
+                    CurrentBottomNavState.currentBottomTab= BottomNavRoutes.ChattingList.route
+                    navController.navigate(ClientRoutes.MainMenu.route){
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+
+                },
             onPartnerProfile = { partnerId ->
                 navController.navigate(ClientRoutes.PartnerProfile.routeWithArgs(partnerId, roomId))
             }
