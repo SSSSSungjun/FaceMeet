@@ -33,6 +33,8 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var tokenExpirationNotifier: TokenExpirationNotifier
 
+
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -76,6 +78,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleNotificationIntent(intent)
     }
 
@@ -96,8 +99,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 "chat" -> {
-                    val roomId = intent.getLongExtra("roomId", -1L)
-                    if (roomId > 0) mainViewModel.setPendingChat(roomId)
+                    val roomId = intent.getLongExtra("roomId", 0L)
+                    mainViewModel.setPendingChat(roomId)
                 }
 
                 "notification_center" -> mainViewModel.setPendingNotificationCenter()

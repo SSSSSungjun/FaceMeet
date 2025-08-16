@@ -619,7 +619,8 @@ fun ChatHeader(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier=Modifier.weight(1f)
+            modifier=Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center
         ) {
             Image(
                 painter = rememberAsyncImagePainter(model = uiState.roomInfo.imgURL),

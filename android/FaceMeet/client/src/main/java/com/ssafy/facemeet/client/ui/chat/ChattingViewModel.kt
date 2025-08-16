@@ -212,10 +212,9 @@ class ChattingViewModel @Inject constructor(
 
             if (uiState.value.scrollState.isAtBottom) {
                 _unifiedMessages.update { current ->
-                    // 💡 즉시 업데이트 로직에도 중복 체크 추가
                     val existingMessageIndex = current.indexOfFirst {
                         it.chatMessage.chatElement.senderID == newMessage.chatElement.senderID &&
-                                it.chatMessage.chatElement.content == newMessage.chatElement.content
+                                it.chatMessage.chatElement.createdAt == newMessage.chatElement.createdAt
                     }
                     if (existingMessageIndex != -1) {
                         // 이미 존재하는 메시지이므로 업데이트
