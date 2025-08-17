@@ -3,6 +3,7 @@ package com.ssafy.facemeet
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,12 +13,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ssafy.facemeet.core.data.remote.interceptor.TokenExpirationNotifier
 import com.ssafy.facemeet.navigation.AppNavHost
@@ -75,18 +72,25 @@ class MainActivity : ComponentActivity() {
             FacemeetTheme {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
                 val nc = rememberNavController()
-                LaunchedEffect(Unit) { this@MainActivity.navController = nc }
-
-                    // NavHost 생성 완료 후 한 번 의도 전달(선택)
-                    LaunchedEffect(intent) {
-                        handleNotificationIntent(intent)
-                        intent.removeExtra("deep_link")
-                        intent.removeExtra("settingId")
-                    }
+//                LaunchedEffect(Unit) { this@MainActivity.navController = nc } // NavHost 생성 완료 후 한 번 의도 전달(선택)
+                LaunchedEffect(intent) {
+                    handleNotificationIntent(intent)
+                    intent.removeExtra("deep_link")
+                    intent.removeExtra("settingId")
                 }
+
+                AppNavHost(
+                    isLoggedIn == true,
+                    mainViewModel,
+                    nc,
+                    startIntent.getBooleanExtra("hasInitialDeepLink", false)
+                )
+
+
             }
         }
     }
+
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -100,7 +104,7 @@ class MainActivity : ComponentActivity() {
             Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
             Log.d(TAG, "*handleNotificationIntent 진입")
             var deepLink = intent.getStringExtra("deep_link")
-            if(deepLink == null){
+            if (deepLink == null) {
                 deepLink = intent.getStringExtra("type")
             }
             Log.d(TAG, "deepLink: $deepLink")
@@ -118,8 +122,9 @@ class MainActivity : ComponentActivity() {
                 "CHAT" -> {
                     val roomId = intent.getStringExtra("roomId")?.toLong()
                     Log.d(TAG, "deepLink: $roomId")
-                    mainViewModel.setPendingChat(roomId?: 0L)
+                    mainViewModel.setPendingChat(roomId ?: 0L)
                 }
+
                 "notification_center" -> mainViewModel.setPendingNotificationCenter()
             }
         }
@@ -129,73 +134,73 @@ class MainActivity : ComponentActivity() {
 }
 
 
-// MainActivity.kt (또는 적절한 파일)
-private fun mapDeepLinkToRoute(data: android.net.Uri?): String? {
-    data ?: return null
-    // facemeet://app/<path>...
-    val segments = data.pathSegments
-    if (segments.isEmpty()) return null
+//// MainActivity.kt (또는 적절한 파일)
+//private fun mapDeepLinkToRoute(data: android.net.Uri?): String? {
+//    data ?: return null
+//    // facemeet://app/<path>...
+//    val segments = data.pathSegments
+//    if (segments.isEmpty()) return null
+//
+//    return when (segments[0]) {
+//        "main" -> com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route
+//        "notification" -> com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route
+//        "chat" -> {
+//            val roomId = segments.getOrNull(1)?.toLongOrNull() ?: return null
+//            com.ssafy.facemeet.client.navigation.client.ClientRoutes.Chat.createRoute(roomId)
+//        }
+//
+//        "ticket_event" -> {
+//            val settingId = segments.getOrNull(1)?.toLongOrNull() ?: return null
+//            com.ssafy.facemeet.client.navigation.client.ClientRoutes.TicketEvent.createRoute(
+//                settingId
+//            )
+//        }
+//
+//        "partner_profile" -> {
+//            val partnerId = segments.getOrNull(1)?.toLongOrNull() ?: return null
+//            val roomId = segments.getOrNull(2)?.toLongOrNull() ?: return null
+//            com.ssafy.facemeet.client.navigation.client.ClientRoutes.PartnerProfile.routeWithArgs(
+//                partnerId,
+//                roomId
+//            )
+//        }
+//
+//        else -> null
+//    }
+//}
 
-    return when (segments[0]) {
-        "main" -> com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route
-        "notification" -> com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route
-        "chat" -> {
-            val roomId = segments.getOrNull(1)?.toLongOrNull() ?: return null
-            com.ssafy.facemeet.client.navigation.client.ClientRoutes.Chat.createRoute(roomId)
-        }
 
-        "ticket_event" -> {
-            val settingId = segments.getOrNull(1)?.toLongOrNull() ?: return null
-            com.ssafy.facemeet.client.navigation.client.ClientRoutes.TicketEvent.createRoute(
-                settingId
-            )
-        }
-
-        "partner_profile" -> {
-            val partnerId = segments.getOrNull(1)?.toLongOrNull() ?: return null
-            val roomId = segments.getOrNull(2)?.toLongOrNull() ?: return null
-            com.ssafy.facemeet.client.navigation.client.ClientRoutes.PartnerProfile.routeWithArgs(
-                partnerId,
-                roomId
-            )
-        }
-
-        else -> null
-    }
-}
-
-
-// 어디든 공용 위치 (예: AppNavHost 파일 하단)
-private fun androidx.navigation.NavController.goToWithMainThenNotification(
-    targetRoute: String
-) {
-    val isOnMain = currentDestination
-        ?.hierarchy
-        ?.any { it.route == com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route } == true
-
-    // 1) 메인을 베이스로
-    if (!isOnMain) {
-        navigate(com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route) {
-            popUpTo(com.ssafy.facemeet.navigation.AppRoutes.Start.route) { inclusive = true }
-            launchSingleTop = true
-            restoreState = false
-        }
-    }
-
-    // 2) 알림목록 (타깃이 알림목록 자체가 아닐 때만)
-    if (targetRoute != com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route) {
-        val alreadyOnNoti = currentDestination
-            ?.hierarchy
-            ?.any { it.route == com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route } == true
-        if (!alreadyOnNoti) {
-            navigate(com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route) {
-                launchSingleTop = true
-            }
-        }
-    }
-
-    // 3) 타깃 화면
-    navigate(targetRoute) {
-        launchSingleTop = true
-    }
-}
+//// 어디든 공용 위치 (예: AppNavHost 파일 하단)
+//private fun androidx.navigation.NavController.goToWithMainThenNotification(
+//    targetRoute: String
+//) {
+//    val isOnMain = currentDestination
+//        ?.hierarchy
+//        ?.any { it.route == com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route } == true
+//
+//    // 1) 메인을 베이스로
+//    if (!isOnMain) {
+//        navigate(com.ssafy.facemeet.client.navigation.client.ClientRoutes.MainMenu.route) {
+//            popUpTo(com.ssafy.facemeet.navigation.AppRoutes.Start.route) { inclusive = true }
+//            launchSingleTop = true
+//            restoreState = false
+//        }
+//    }
+//
+//    // 2) 알림목록 (타깃이 알림목록 자체가 아닐 때만)
+//    if (targetRoute != com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route) {
+//        val alreadyOnNoti = currentDestination
+//            ?.hierarchy
+//            ?.any { it.route == com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route } == true
+//        if (!alreadyOnNoti) {
+//            navigate(com.ssafy.facemeet.client.navigation.client.ClientRoutes.Notification.route) {
+//                launchSingleTop = true
+//            }
+//        }
+//    }
+//
+//    // 3) 타깃 화면
+//    navigate(targetRoute) {
+//        launchSingleTop = true
+//    }
+//}

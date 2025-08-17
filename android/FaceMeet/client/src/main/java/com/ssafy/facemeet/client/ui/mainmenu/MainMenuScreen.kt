@@ -78,7 +78,11 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
-    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {}, onChat : () -> Unit = {}
+    onProfile: () -> Unit = {},
+    onNotification: () -> Unit = {},
+    onMatch: () -> Unit = {},
+    onChat: () -> Unit = {},
+    viewModel: MainMenuViewModel = hiltViewModel()
 ) {
     DoubleBackToExit()
 
@@ -96,6 +100,8 @@ fun MainMenuScreen(
                 context.startActivity(intent)
             }
         }
+
+        viewModel.loadHome()
     }
 
 
@@ -134,7 +140,7 @@ fun MainMenuScreen(
 
         Spacer(modifier = Modifier.padding(4.dp))
 
-        ProfileCardWithBackground(onProfile, onMatch)
+        ProfileCardWithBackground(onProfile, onMatch, ui)
         Spacer(modifier = Modifier.padding(10.dp))
 
         // 하단 버튼 2개

@@ -14,8 +14,11 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.google.common.reflect.TypeToken
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.gson.Gson
+import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.R
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.domain.usecase.RegisterDeviceUseCase
@@ -39,8 +42,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var registerDeviceUseCase: RegisterDeviceUseCase
 
-    @Inject
-    lateinit var notificationDao: NotificationDao
+//    @Inject
+//    lateinit var notificationDao: NotificationDao
 
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -143,7 +146,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val body = data["body"] ?: "없음"
         val settingId = data["settingId"]!!.toLong()
         sendHeadsUpNotification(title, body, "ticket_event", settingId)
-        saveNotificationToRoom(title, body, System.currentTimeMillis(), settingId = settingId)
+       //saveNotificationToRoom(title, body, System.currentTimeMillis(), settingId = settingId)
     }
 
     private fun handleChatNotification(data: Map<String, String>) {
@@ -327,7 +330,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         context = this,
                         settingId = settingId,
                         triggerTime = triggerTime,
-                        eventDataStr = eventDataStr,
                         title = title,
                         body = body
                     )
@@ -337,25 +339,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             }
         } catch (e: Exception) {
             Log.e("FCM", "저장된 예약 복원 실패", e)
-        }
-    }
-
-    private fun saveNotificationToRoom(
-        title: String,
-        body: String,
-        triggerTime: Long,
-        settingId: Long?
-    ) {
-        Log.d(TAG, "saveNotificationToRoom")
-        CoroutineScope(Dispatchers.IO).launch {
-            val notification = NotificationEntity(
-                title = title,
-                body = body,
-                triggerTime = triggerTime,
-                type = NotificationType.TICKET,
-                settingId = settingId
-            )
-            notificationDao.insert(notification)
         }
     }
 
@@ -481,20 +464,4 @@ object FcmAlarmHandler {
 
     }
 
-    fun saveNotificationToRoom(
-        dao: NotificationDao, title: String, body: String, time: Long, settingId: Long
-    ) {
-        Log.d(TAG, "saveNotificationToRoom")
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.insert(
-                NotificationEntity(
-                    title = title,
-                    body = body,
-                    triggerTime = time,
-                    type = NotificationType.TICKET,
-                    settingId = settingId
-                )
-            )
-        }
-    }
 }
