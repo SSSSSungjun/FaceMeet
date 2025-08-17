@@ -2,7 +2,6 @@ package com.ssafy.facemeet.navigation
 
 import LoginScreen
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -11,7 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,10 +36,12 @@ private const val TAG = "MainNavHost"
 fun AppNavHost(
     isLoggedIn: Boolean,
     mainViewModel: MainViewModel,
+    navController: NavHostController,
+    hasInitialDeepLink: Boolean,                     // ✅ 추가
 ) {
-
-    val navController = rememberNavController()
     val bottomNavController = rememberNavController()
+    val cameraVM: CameraShotViewModel = hiltViewModel()
+    val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
     // isLoggedIn 상태에 따라 NavHost의 시작 지점을 바로 결정
     val startDestination = if (isLoggedIn) {
@@ -84,7 +85,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = AppRoutes.Start.route,
         enterTransition = NavigationAnimations.defaultEnterTransition(),
         exitTransition = NavigationAnimations.defaultExitTransition(),
         popEnterTransition = NavigationAnimations.defaultEnterTransition(),
@@ -113,9 +114,7 @@ fun AppNavHost(
                 provider = provider,
                 onLoginSuccess = { hasInfo, hasFace ->
                     navController.navigate(AppRoutes.LoginGate.route) {
-                        popUpTo(AppRoutes.Start.route) {
-                            inclusive = false
-                        }
+                        popUpTo(AppRoutes.Start.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },

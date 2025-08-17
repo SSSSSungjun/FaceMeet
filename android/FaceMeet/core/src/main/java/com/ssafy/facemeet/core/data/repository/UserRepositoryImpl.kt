@@ -4,6 +4,7 @@ import android.util.Log
 import com.ssafy.facemeet.core.data.remote.datasource.UserRemoteDataSource
 import com.ssafy.facemeet.core.data.remote.dto.request.UserInfoModRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.HomeInfoResponse
+import com.ssafy.facemeet.core.data.remote.dto.response.NotificationResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.UserStatusResponse
@@ -98,4 +99,27 @@ class UserRepositoryImpl @Inject constructor(
         Result.failure(e)
     }
 
+    override suspend fun getNotifications(): Result<List<NotificationResponse>> =
+        runCatching { userDataRemoteDataSource.getMyNotifications() }
+            .mapCatching { res ->
+                if (res.isSuccessful) res.body() ?: emptyList()
+                else throw Exception("getNotifications failed: ${res.code()}")
+            }
+            .onFailure { Log.e(TAG, "getNotifications error", it) }
+
+    override suspend fun readNotification(notificationId: Long): Result<Unit> =
+        runCatching { userDataRemoteDataSource.readNotification(notificationId) }
+            .mapCatching { res ->
+                if (res.isSuccessful) Unit
+                else throw Exception("readNotification failed: ${res.code()}")
+            }
+            .onFailure { Log.e(TAG, "readNotification error", it) }
+
+    override suspend fun getUnreadNotificationCount(): Result<Int> =
+        runCatching { userDataRemoteDataSource.getUnreadNotificationCount() }
+            .mapCatching { res ->
+                if (res.isSuccessful) res.body() ?: 0
+                else throw Exception("getUnreadNotificationCount failed: ${res.code()}")
+            }
+            .onFailure { Log.e(TAG, "getUnreadNotificationCount error", it) }
 }

@@ -4,5 +4,6 @@ data class HomeInfoResponse(
     val img: String?,
     val nickname: String,
     val title: String,
-    val remainingMatchTickets: Int
+    val remainingMatchTickets: Int,
+    val unreadCount: Int = 0
 )

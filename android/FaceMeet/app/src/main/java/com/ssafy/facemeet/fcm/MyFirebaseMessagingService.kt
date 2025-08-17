@@ -16,19 +16,12 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.ssafy.facemeet.MainActivity
 import com.ssafy.facemeet.R
-import com.ssafy.facemeet.core.data.database.NotificationDao
-import com.ssafy.facemeet.core.data.database.entity.NotificationEntity
-import com.ssafy.facemeet.core.data.database.entity.NotificationType
 import com.ssafy.facemeet.core.data.remote.dto.request.fcm.FcmTokenRequest
 import com.ssafy.facemeet.core.domain.usecase.RegisterDeviceUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
 import com.ssafy.facemeet.fcm.FcmAlarmHandler.triggerEvent
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -38,7 +31,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 
-private const val TAG = "MyFirebaseMessagingServ"
+private const val TAG = "FCM"
 
 @AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
@@ -108,7 +101,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         try {
             val settingId = data["settingId"] ?: return
             val triggerTimeStr = data["triggerTime"] ?: return
-            val eventDataStr = data["eventData"] ?: return
 
             val triggerTime = parseDateTime(triggerTimeStr)
             val now = Date()
@@ -127,9 +119,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
                 triggerEvent(
                     context = this,
-                    dao = notificationDao,
                     settingId = settingId.toLong(),
-                    eventDataStr = eventDataStr,
                     title = data["title"],
                     body = data["body"]
                 )
@@ -139,7 +129,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     context = this,
                     settingId = settingId,
                     triggerTime = triggerTime,
-                    eventDataStr = eventDataStr,
                     title = data["title"] ?: "없음",
                     body = data["body"] ?: "없음"
                 )
@@ -269,6 +258,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         sendHeadsUpNotification(title, body)
     }
 
+
     private fun parseDateTime(dateTimeStr: String): Date? {
         val formats = listOf(
             "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
@@ -373,7 +363,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         context: Context,
         settingId: String,
         triggerTime: Date,
-        eventDataStr: String,
         title: String,
         body: String
     ) {
@@ -382,7 +371,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(context, com.ssafy.facemeet.AlarmReceiver::class.java).apply {
             putExtra("settingId", settingId)
-            putExtra("eventDataStr", eventDataStr)
             putExtra("title", title)
             putExtra("body", body)
         }
@@ -410,14 +398,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
 
-            FcmAlarmHandler.saveNotificationToRoom(
-                notificationDao,
-                title,
-                body,
-                System.currentTimeMillis(),
-                settingId = settingId.toLong()
-            )
-            storeEvent(settingId.toLong(), triggerTime, eventDataStr, title, body)
             Log.d("FCM", "알람 예약 성공: $settingId")
         } catch (e: SecurityException) {
             Log.e("FCM", "알람 예약 중 SecurityException 발생", e)
@@ -490,9 +470,7 @@ object FcmAlarmHandler {
 
     fun triggerEvent(
         context: Context,
-        dao: NotificationDao,
         settingId: Long,
-        eventDataStr: String,
         title: String?,
         body: String?
     ) {
@@ -501,13 +479,6 @@ object FcmAlarmHandler {
 
         sendEventNotification(context, finalTitle, finalBody, settingId)
 
-        saveNotificationToRoom(
-            dao,
-            finalTitle,
-            finalBody,
-            System.currentTimeMillis(),
-            settingId = settingId
-        )
     }
 
     fun saveNotificationToRoom(
