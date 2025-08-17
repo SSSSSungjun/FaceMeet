@@ -150,6 +150,7 @@ class MyPageViewModel @Inject constructor(
         return try {
             userLogoutUseCase().onSuccess {
                 tokenManager.clearTokens()
+                deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
             }.onFailure { e ->
                 tokenManager.clearTokens()
                 Log.d(TAG, "logout: ${e.message}")
@@ -163,6 +164,7 @@ class MyPageViewModel @Inject constructor(
         return try {
             userDeleteUserUseCase().onSuccess {
                 tokenManager.clearTokens()
+                deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
             }.onFailure { e ->
                 Log.d(TAG, "logout: ${e.message}")
             }.isSuccess

@@ -151,7 +151,7 @@ fun ChattingScreen(
     }
 
     DisposableEffect(Unit) {
-        AppStateManager.setCurrentScreen("ChattingScreen", roomId)
+        AppStateManager.isInChatRoom(roomId)
         onDispose {
             Log.d("ChattingScreen", "화면 나감 - AppStateManager 정리")
             AppStateManager.clearCurrentScreen()

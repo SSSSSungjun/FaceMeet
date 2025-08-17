@@ -95,6 +95,8 @@ class TokenAuthenticator @Inject constructor(
                     runBlocking { tokenExpirationNotifier.notifyTokenExpired() }
                     return null
                 }
+
+              //  val newAccessToken = newTokenData.accessToken
                 val responseRefreshToken = newTokenData.refreshToken
                 val finalRefreshToken =
                     if (responseRefreshToken != null && responseRefreshToken != currentRefreshToken) {

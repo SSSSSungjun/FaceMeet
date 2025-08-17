@@ -85,14 +85,18 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppRoutes.Start.route,
+        startDestination = startDestination,
         enterTransition = NavigationAnimations.defaultEnterTransition(),
         exitTransition = NavigationAnimations.defaultExitTransition(),
         popEnterTransition = NavigationAnimations.defaultEnterTransition(),
         popExitTransition = NavigationAnimations.defaultExitTransition()
     ) {
 
-        composable(AppRoutes.Start.route) {
+        composable(
+            route = AppRoutes.Start.route,
+            enterTransition = NavigationAnimations.defaultEnterTransition(),
+            exitTransition = NavigationAnimations.defaultExitTransition()
+        ) {
             LoginScreen(
                 onNavigateToKakaoLogin = {
                     navController.navigate(AppRoutes.WebLogin.createRoute("KAKAO"))

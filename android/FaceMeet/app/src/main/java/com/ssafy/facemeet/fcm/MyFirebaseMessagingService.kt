@@ -153,13 +153,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val roomId = data["roomId"]?.toLongOrNull() ?: return
         val title = data["title"] ?: "채팅 알림"
         val body = data["body"] ?: ""
-
+        Log.d(TAG, "handleChatNotification: roomId $roomId currentScreenRoomId ${AppStateManager.getCurrentRoomId()}")
         val currentScreenInfo = AppStateManager.getCurrentScreen()
-//        if (currentScreenInfo.first == "ChattingScreen" && currentScreenInfo.second == roomId) {
-//            // 이미 해당 채팅방을 보고 있으므로 알림을 보내지 않음
-//            Log.d("FCM", "사용자가 이미 채팅방에 있으므로 알림을 보내지 않음")
-//            return
-//        }
+        val currentScreenRoomId = AppStateManager.getCurrentRoomId()
+        if (currentScreenInfo == "ChattingScreen" && currentScreenRoomId == roomId) {
+            // 이미 해당 채팅방을 보고 있으므로 알림을 보내지 않음
+            Log.d("FCM", "사용자가 이미 채팅방에 있으므로 알림을 보내지 않음")
+            return
+        }
         // 알림 ID를 roomId로 고정하여 겹치지 않고 갱신되도록 함
         sendHeadsUpNotification(title, body, "chat", roomId)
         Log.d("FCM", "채팅 알림 전송: $title (Room ID: $roomId)")
@@ -188,13 +189,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 channelName,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "백그라운드 헤드업 알림"
+                description = "백그라운드 알림"
                 enableLights(true)
-                lightColor = Color.BLUE
+                lightColor = Color.BLUE // 눈에 편한 색상으로 변경
                 enableVibration(true)
-                vibrationPattern = longArrayOf(0, 300, 200, 300)
+                vibrationPattern = longArrayOf(0, 100) // 진동 패턴을 짧고 한 번만 울리도록 수정
                 setShowBadge(true)
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                lockscreenVisibility = Notification.VISIBILITY_PRIVATE // 잠금화면에서 내용 숨기기
                 setBypassDnd(false)
             }
             notificationManager.createNotificationChannel(channel)
@@ -404,12 +405,14 @@ object FcmAlarmHandler {
                 "이벤트 티켓 알림",
                 NotificationManager.IMPORTANCE_HIGH // 헤드업을 위해 HIGH
             ).apply {
+                description = "백그라운드 알림"
                 enableLights(true)
-                lightColor = Color.BLUE
+                lightColor = Color.BLUE // 눈에 편한 색상으로 변경
                 enableVibration(true)
-                vibrationPattern = longArrayOf(0, 300, 200, 300)
+                vibrationPattern = longArrayOf(0, 100) // 진동 패턴을 짧고 한 번만 울리도록 수정
                 setShowBadge(true)
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                lockscreenVisibility = Notification.VISIBILITY_PRIVATE // 잠금화면에서 내용 숨기기
+                setBypassDnd(false)
             }
             nm.createNotificationChannel(channel)
         }
