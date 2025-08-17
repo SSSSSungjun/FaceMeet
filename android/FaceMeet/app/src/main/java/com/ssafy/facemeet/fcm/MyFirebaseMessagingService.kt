@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
-import android.media.RingtoneManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
@@ -222,21 +221,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(when (deepLink) {
+
                 "chat" -> NotificationCompat.CATEGORY_MESSAGE
                 "ticket_event" -> NotificationCompat.CATEGORY_EVENT
                 else -> NotificationCompat.CATEGORY_MESSAGE
+
             })
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pendingIntent)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            .setVibrate(longArrayOf(0, 300, 200, 300))
-            .setLights(Color.BLUE, 1000, 1000)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setWhen(System.currentTimeMillis())
             .setShowWhen(true)
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             builder.setFullScreenIntent(pendingIntent, true)
         } else {

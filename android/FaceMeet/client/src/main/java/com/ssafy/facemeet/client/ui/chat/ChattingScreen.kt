@@ -135,26 +135,33 @@ fun ChattingScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, roomId) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onScreenResume()
-            } else if (event == Lifecycle.Event.ON_PAUSE) {
-                viewModel.onScreenPause()
+            when (event) {
+
+                Lifecycle.Event.ON_RESUME  -> {
+                    AppStateManager.setCurrentScreen("ChattingScreen", roomId)
+                    viewModel.onScreenResume()
+                }
+
+                Lifecycle.Event.ON_PAUSE -> {
+                    AppStateManager.clearCurrentScreen()
+                    viewModel.onScreenPause()
+                }
+                Lifecycle.Event.ON_STOP->{
+                    AppStateManager.clearCurrentScreen()
+                    viewModel.onScreenPause()
+                }
+                else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
 
-    DisposableEffect(Unit) {
-        AppStateManager.isInChatRoom(roomId)
-        onDispose {
             Log.d("ChattingScreen", "화면 나감 - AppStateManager 정리")
             AppStateManager.clearCurrentScreen()
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 

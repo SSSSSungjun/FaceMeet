@@ -145,6 +145,7 @@ class ChatWebSocketManager @Inject constructor() {
                 subscribeToPrivateChannel("/sub/private/$currentUserId")
                 onStompConnected?.invoke()
             }
+
             message.startsWith("MESSAGE") -> parseStompMessage(message)
             message.startsWith("RECEIPT") -> handleReceipt(message)
             message.startsWith("ERROR") -> Log.e("WebSocket", "❌ STOMP 오류: $message")
@@ -152,7 +153,9 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     private fun handleReceipt(message: String) {
-        val receiptId = message.lines().find { it.startsWith("receipt-id:") }?.substringAfter("receipt-id:")?.trim()
+        val receiptId =
+            message.lines().find { it.startsWith("receipt-id:") }?.substringAfter("receipt-id:")
+                ?.trim()
         if (receiptId != null) {
             Log.d("WebSocket", "✅ 메시지 전송 확인 (Receipt): $receiptId")
             awaitingReceipts.remove(receiptId)
@@ -174,7 +177,11 @@ class ChatWebSocketManager @Inject constructor() {
         processQueue()
     }
 
-    private fun buildStompFrame(destination: String, body: String, receiptId: String? = null): String {
+    private fun buildStompFrame(
+        destination: String,
+        body: String,
+        receiptId: String? = null
+    ): String {
         val headers = mutableListOf("destination:$destination", "content-type:application/json")
         receiptId?.let { headers.add("receipt:$it") }
         val headerString = headers.joinToString("\n")
@@ -187,7 +194,8 @@ class ChatWebSocketManager @Inject constructor() {
                 while (messageQueue.isNotEmpty() || awaitingReceipts.isNotEmpty()) {
                     val frameToSend = messageQueue.peek()
                     if (frameToSend != null) {
-                        val receiptId = frameToSend.lines().find { it.startsWith("receipt:") }?.substringAfter("receipt:")?.trim()
+                        val receiptId = frameToSend.lines().find { it.startsWith("receipt:") }
+                            ?.substringAfter("receipt:")?.trim()
                         if (awaitingReceipts.containsKey(receiptId)) {
                             delay(50)
                             continue
@@ -262,14 +270,15 @@ class ChatWebSocketManager @Inject constructor() {
         )
         enqueueStompMessage("/pub/chat.leave", gson.toJson(leaveRequest))
         Log.d("WebSocket", "나가기 처리 요청 완료 (큐에 추가): ${gson.toJson(leaveRequest)}")
-        unsubscribe(currentUserId)
+//       unsubscribe(currentUserId)
     }
 
     private fun parseStompMessage(message: String) {
         val lines = message.split("\n")
         val bodyStart = lines.indexOfFirst { it.isEmpty() }
         if (bodyStart != -1 && bodyStart + 1 < lines.size) {
-            val body = lines.subList(bodyStart + 1, lines.size).joinToString("\n").replace("\u0000", "")
+            val body =
+                lines.subList(bodyStart + 1, lines.size).joinToString("\n").replace("\u0000", "")
             Log.d("WebSocket", "수신된 메시지 바디: $body")
             try {
                 if (body.startsWith("{")) {
@@ -280,21 +289,29 @@ class ChatWebSocketManager @Inject constructor() {
                             Log.d("WebSocket", "✅ 읽음 처리 성공 메시지 파싱: $body")
                             onReadNotification?.invoke()
                         }
+
                         "USER_LEFT" -> {
-                            val leaveResponse = gson.fromJson(body, LeaveMessageResponse::class.java)
+                            val leaveResponse =
+                                gson.fromJson(body, LeaveMessageResponse::class.java)
                             Log.d("WebSocket", "✅ 나가기 성공 메시지 파싱: $leaveResponse")
                             handleLeaveMessage(leaveResponse)
                         }
+
                         "LEAVE_ERROR" -> {
-                            val leaveResponse = gson.fromJson(body, LeaveMessageResponse::class.java)
+                            val leaveResponse =
+                                gson.fromJson(body, LeaveMessageResponse::class.java)
                             Log.d("WebSocket", "❌ 나가기 오류 메시지 파싱: $leaveResponse")
                         }
+
                         "MESSAGE" -> {
                             val messageResponse = gson.fromJson(body, ChatElement::class.java)
                             Log.d("WebSocket", "💬 일반 메시지 파싱: $messageResponse")
                             handleChatMessage(messageResponse)
                             if (messageResponse.senderID == currentUserId) {
-                                onMessageSentConfirmation?.invoke(messageResponse.content.toString(), messageResponse.senderID)
+                                onMessageSentConfirmation?.invoke(
+                                    messageResponse.content.toString(),
+                                    messageResponse.senderID
+                                )
                             }
                         }
                     }
@@ -324,7 +341,8 @@ class ChatWebSocketManager @Inject constructor() {
             isRead = false,
             readAt = " ",
         )
-        val messageItem = ChatMessageItem(chatElement = tmpChatElement, messageType = MessageType.CHAT_END)
+        val messageItem =
+            ChatMessageItem(chatElement = tmpChatElement, messageType = MessageType.CHAT_END)
         onNewMessageLeaved?.invoke(messageItem)
     }
 

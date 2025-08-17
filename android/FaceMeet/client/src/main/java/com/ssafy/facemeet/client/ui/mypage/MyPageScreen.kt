@@ -323,7 +323,9 @@ fun ImportantSection(
             })
 
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
-            ImportantRow(label = "탈퇴하기", onClick = onClickWithdraw, color = CommonColor.Orange)
+            ImportantRow(label = "탈퇴하기", onClick = {
+                onClickWithdraw()
+            }, color = CommonColor.Orange)
 
         }
     }
@@ -333,6 +335,7 @@ fun ImportantSection(
             onConfirm = {
                 onDelete()
                 onDismissDialog()
+                Toast.makeText(context, "회원 탈퇴 되었습니다.", Toast.LENGTH_SHORT).show()
             },
             onDismiss = onDismissDialog
         )
