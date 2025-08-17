@@ -25,7 +25,7 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        slideIntoContainer(towards = direction, animationSpec = tween(500))
+        slideIntoContainer(towards = direction, animationSpec = tween(1000))
     }
 
     fun getBottomNavExitTransition(animationDirection: String): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
@@ -35,7 +35,7 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        slideOutOfContainer(towards = direction, animationSpec = tween(500))
+        slideOutOfContainer(towards = direction, animationSpec = tween(1000))
     }
 
 }

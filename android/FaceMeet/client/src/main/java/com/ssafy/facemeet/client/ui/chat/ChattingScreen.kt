@@ -122,7 +122,7 @@ fun ChattingScreen(
     val onBackPressedCallback = remember {
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                onBackClick() // Call the same lambda as your UI back button
+                onBackClick()
             }
         }
     }
@@ -456,7 +456,7 @@ private fun RenderMessage(
         }
 
         MessageType.DATE -> DateSeparator(date = message.chatElement.content.toString())
-        MessageType.CHAT_END -> ChatEndMessage(message.chatElement.content)
+        MessageType.CHAT_END -> {} // ChatEndMessage(message.chatElement.content)
         MessageType.SYSTEM -> {}
     }
 }
@@ -625,6 +625,9 @@ fun ChatHeader(
     onPartnerProfile: () -> Unit,
     uiState: ChatUiState
 ) {
+
+    val context =LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -658,7 +661,13 @@ fun ChatHeader(
                 color = Color(0xFF8B5A2B),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.clickable { onPartnerProfile() }
+                modifier = Modifier.clickable {
+                    if(!uiState.roomInfo.blocked || !uiState.roomInfo.deleted){
+                        onPartnerProfile()
+                    }else{
+                        Toast.makeText(context, "상대방의 프로필을 볼 수 없습니다..", Toast.LENGTH_SHORT).show()
+                    }
+                }
             )
         }
 

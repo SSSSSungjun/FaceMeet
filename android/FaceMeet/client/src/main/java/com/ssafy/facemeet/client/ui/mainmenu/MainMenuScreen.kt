@@ -196,6 +196,7 @@ fun MainMenuScreen(
                     Text("관상 궁합으로 찾기", fontSize = 12.sp, color = CommonColor.Gray400)
                 }
             }
+
             Button(
                 onClick = { onChat() },
                 modifier = Modifier
@@ -374,7 +375,7 @@ fun MainMenuScreen(
                             }
                         }
                         Button(
-                            onClick = { /* 채팅 클릭 */ },
+                            onClick = { onChat() },
                             modifier = Modifier
                                 .weight(1f)
                                 .shadow(

@@ -124,7 +124,7 @@ class ChattingViewModel @Inject constructor(
 
     fun onScreenResume() {
         _isScreenActive.value = true
-        loadInitialMessages(currentRoomId)
+        //loadInitialMessages(currentRoomId)
         if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
             Log.d("ChatDebug", "상대방 앱: '읽음' 알림 전송")
             markAsRead()

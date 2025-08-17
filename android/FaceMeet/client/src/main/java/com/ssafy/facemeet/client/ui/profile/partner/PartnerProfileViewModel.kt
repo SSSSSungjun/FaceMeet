@@ -98,12 +98,12 @@ class PartnerProfileViewModel @Inject constructor(
         viewModelScope.launch {
             postBlockUserUseCase.invoke(partnerId).onSuccess {
                 _blockResult.value = true
-                chatWebSocketManager.leaveRoom()
                 Toast.makeText(context, "차단 요청 완료!!", Toast.LENGTH_SHORT).show()
             }.onFailure {
                 _blockResult.value = false
             }
         }
+
     }
 
     fun fetchCategories() {

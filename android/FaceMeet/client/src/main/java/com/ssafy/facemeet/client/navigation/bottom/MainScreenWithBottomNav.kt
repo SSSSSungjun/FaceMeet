@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,7 +40,6 @@ import com.ssafy.facemeet.client.ui.matching.MatchingScreen
 import com.ssafy.facemeet.client.ui.mypage.MyPageScreen
 import com.ssafy.facemeet.core.util.Animation.NavigationAnimations
 import com.ssafy.facemeet.core.util.constant.CommonColor
-import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -124,10 +122,9 @@ fun MainScreenWithBottomNav(
                         }
                     },
                     onChat = {
-
                         val homeIndex = bottomItems.indexOf(BottomNavRoutes.Home.route)
                         val chatIndex = bottomItems.indexOf(BottomNavRoutes.ChattingList.route)
-
+                        Log.d("MainScreenWithBottomNav", "MainScreenWithBottomNav: 버튼 인지하긴함")
                         animationDirection = if (chatIndex > homeIndex) "left" else "right"
 
                         CurrentBottomNavState.currentBottomTab =
@@ -242,15 +239,15 @@ fun BottomNavigationBar(
 
                         CurrentBottomNavState.currentBottomTab = item.route
 
-                        lifecycleOwner.lifecycleScope.launch {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
+
 
                     }
                 },

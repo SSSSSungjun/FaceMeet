@@ -1,11 +1,14 @@
 package com.ssafy.facemeet.client.ui.mypage
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.client.ui.mypage.model.MyPageNaviEvent
 import com.ssafy.facemeet.client.ui.mypage.model.MyPageUiState
 import com.ssafy.facemeet.core.data.datastore.TokenManager
+import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.domain.usecase.DeleteSubscriptionUseCase
 import com.ssafy.facemeet.core.domain.usecase.DeleteUserUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetDeviceTokensUseCase
@@ -29,6 +32,7 @@ private const val TAG = "MyPageViewModel"
 class MyPageViewModel @Inject constructor(
     private val userInfoUserUseCase: GetUserInfoUseCase,
     private val tokenManager: TokenManager,
+    private val chatWebSocketManager: ChatWebSocketManager,
     private val userLogoutUseCase: LogoutUseCase,
     private val userDeleteUserUseCase: DeleteUserUseCase,
     private val postSubscriptionUseCase: PostSubscriptionUseCase,
@@ -146,10 +150,12 @@ class MyPageViewModel @Inject constructor(
             }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun logout(): Boolean {
         return try {
             userLogoutUseCase().onSuccess {
                 tokenManager.clearTokens()
+                chatWebSocketManager.disconnect()
                 deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
             }.onFailure { e ->
                 tokenManager.clearTokens()
@@ -160,10 +166,12 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun withdraw(): Boolean {
         return try {
             userDeleteUserUseCase().onSuccess {
                 tokenManager.clearTokens()
+                chatWebSocketManager.disconnect()
                 deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
             }.onFailure { e ->
                 Log.d(TAG, "logout: ${e.message}")
