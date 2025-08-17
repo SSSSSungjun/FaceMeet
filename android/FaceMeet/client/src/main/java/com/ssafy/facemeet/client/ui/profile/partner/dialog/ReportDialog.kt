@@ -214,12 +214,12 @@ fun ReportDialog(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    val selectedId = categories.indexOf(selectedCategory)
-                    val enabled = selectedId >= 0 && reason.isNotBlank()
+                    val selectedId = selectedCategory?.id
+                    val enabled = selectedId != null && reason.isNotBlank()
 
                     TextButton(
                         onClick = {
-                            onReportSubmit(selectedId, reason)
+                            onReportSubmit(selectedId!!, reason)
                             onDismiss()
                         },
                         enabled = enabled
@@ -229,6 +229,7 @@ fun ReportDialog(
                             color = if (enabled) CommonColor.Orange else CommonColor.Gray400
                         )
                     }
+
                 }
             }
         }
