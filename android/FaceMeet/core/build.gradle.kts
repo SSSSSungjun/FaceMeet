@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,15 @@ plugins {
     alias(libs.plugins.hilt)
 
 }
+
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties()
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+val baseUrl =
+    localProperties.getProperty("BASE_URL") ?: error("BASE_URL not found in local.properties")
 
 android {
     namespace = "com.ssafy.facemeet.core"
@@ -16,6 +27,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 
     buildTypes {
@@ -26,10 +39,12 @@ android {
                 "proguard-rules.pro"
             )
         }
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -37,6 +52,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -52,9 +68,12 @@ dependencies {
     api(libs.androidx.ui.tooling.preview)
     api(libs.androidx.material3)
     api(libs.androidx.navigation.compose)
-
+    api("androidx.hilt:hilt-navigation-compose:1.1.0")
+    api("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+    api("androidx.compose.animation:animation")
 
     implementation(libs.hilt.android)
+    //implementation(libs.androidx.ui.desktop)
     ksp(libs.hilt.android.compiler)
 
     testImplementation(libs.junit)
@@ -64,4 +83,27 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // retrofit
+    api("com.squareup.retrofit2:retrofit:2.9.0")
+    api("com.squareup.retrofit2:converter-gson:2.9.0")
+    api("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    api("androidx.compose.runtime:runtime-livedata")
+    implementation("org.java-websocket:Java-WebSocket:1.5.4")
+
+    //dataStore (preference랑 용도 같음)
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.datastore:datastore-core:1.1.7")
+
+    api("androidx.paging:paging-compose:3.3.6")
+    api("androidx.compose.foundation:foundation:1.8.3")
+    // room
+    api(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    api(libs.androidx.room.ktx)
+
+
+    // desugar - 26어노테이션 안붙여도 되게
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

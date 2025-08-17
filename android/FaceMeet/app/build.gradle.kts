@@ -1,10 +1,29 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
 }
+
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties()
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+val kakaoNativeKey = localProperties.getProperty("kakao_native_app_key")
+    ?: error("kakao_native_app_key not found in local.properties")
+val kakaoScheme = "kakao$kakaoNativeKey"
+
+val baseUrl =
+    localProperties.getProperty("BASE_URL") ?: error("BASE_URL not found in local.properties")
+
+val googleMapAppKey =
+    localProperties.getProperty("google_map_app_key") ?: error("googleMapAppKey Unknown Error")
 
 android {
     namespace = "com.ssafy.facemeet"
@@ -18,6 +37,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["kakaoScheme"] = kakaoScheme
+        manifestPlaceholders["googleMapApiKey"] = googleMapAppKey
+
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeKey\"")
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        buildConfigField("String", "MAPS_API_KEY", "\"$googleMapAppKey\"")
+//        resValue("string", "kakao_app_key", kakaoNativeKey)
+//        resValue("string", "kakao_scheme", kakaoScheme)
     }
 
 
@@ -29,16 +56,20 @@ android {
                 "proguard-rules.pro"
             )
         }
+
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -62,4 +93,24 @@ dependencies {
     implementation(libs.androidx.navigation.compose) // 네비게이션
     implementation("androidx.core:core-splashscreen:1.0.1")
 
+    implementation("androidx.webkit:webkit:1.14.0")
+    implementation("com.google.code.gson:gson:2.11.0")
+
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.1")
+    implementation("androidx.lifecycle:lifecycle-process:2.9.2")
+
+    //glide
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // desugar - 26어노테이션 안붙여도 되게
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
+//    // room
+//    implementation(libs.androidx.room.runtime)
+//    ksp(libs.androidx.room.compiler)
+//    implementation(libs.androidx.room.ktx)
 }
