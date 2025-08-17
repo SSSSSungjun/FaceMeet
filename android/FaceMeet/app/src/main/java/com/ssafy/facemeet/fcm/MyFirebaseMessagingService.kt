@@ -82,8 +82,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         if (combinedData.isNotEmpty()) when (combinedData["type"]) {
-            "PRE_MESSAGE" -> handlePreMessage(combinedData)
-            "SCHEDULED_EVENT" -> handleScheduledEvent(combinedData)
+            "pre_message" -> handlePreMessage(combinedData)
+            "scheduled_event" -> handleScheduledEvent(combinedData)
             "CHAT" -> handleChatNotification(combinedData)
             else -> {
                 val title = combinedData["title"] ?: "알림"
@@ -161,7 +161,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
         // 알림 ID를 roomId로 고정하여 겹치지 않고 갱신되도록 함
-        sendHeadsUpNotification(title, body, "chat", roomId)
+        sendHeadsUpNotification(title, body, "CHAT", roomId)
         Log.d("FCM", "채팅 알림 전송: $title (Room ID: $roomId)")
     }
 
@@ -172,14 +172,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         id: Long? = null
     ) {
         val channelId = when (deepLink) {
-            "chat" -> "chat_channel_id"
+            "CHAT" -> "chat_channel_id"
             "ticket_event" -> "ticket_channel"
             else -> "general_channel"
         }
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelName = when (deepLink) {
-                "chat" -> "채팅 알림"
+                "CHAT" -> "채팅 알림"
                 "ticket_event" -> "이벤트 티켓 알림"
                 else -> "일반 알림"
             }
@@ -206,7 +206,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             deepLink?.let { putExtra("deep_link", it) }
             Log.d(TAG, "deepLink: $deepLink")
             when (deepLink) {
-                "chat" -> id?.let { putExtra("roomId", it) }
+                "CHAT" -> id?.let { putExtra("roomId", it.toString()) }
                 "ticket_event" -> id?.let { putExtra("settingId", it) }
             }
         }
@@ -224,7 +224,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(when (deepLink) {
 
-                "chat" -> NotificationCompat.CATEGORY_MESSAGE
+                "CHAT" -> NotificationCompat.CATEGORY_MESSAGE
                 "ticket_event" -> NotificationCompat.CATEGORY_EVENT
                 else -> NotificationCompat.CATEGORY_MESSAGE
 

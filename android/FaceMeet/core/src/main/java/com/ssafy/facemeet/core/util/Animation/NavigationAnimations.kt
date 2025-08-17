@@ -15,7 +15,7 @@ object NavigationAnimations {
     }
 
     fun defaultExitTransition(): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        fadeOut(animationSpec = tween(150))
+        fadeOut(animationSpec = tween(300))
     }
 
     fun getBottomNavEnterTransition(animationDirection: String): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
@@ -25,7 +25,10 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        slideIntoContainer(towards = direction, animationSpec = tween(1000))
+        fadeIn(animationSpec = tween(500)) + slideIntoContainer(
+            towards = direction,
+            animationSpec = tween(500)
+        )
     }
 
     fun getBottomNavExitTransition(animationDirection: String): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
@@ -35,7 +38,10 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        slideOutOfContainer(towards = direction, animationSpec = tween(1000))
+        fadeOut(animationSpec = tween(500)) + slideOutOfContainer(
+            towards = direction,
+            animationSpec = tween(500)
+        )
     }
 
 }
