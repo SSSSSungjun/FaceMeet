@@ -78,8 +78,7 @@ import com.ssafy.facemeet.core.util.constant.CommonColor
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
-    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {},
-    viewModel: MainMenuViewModel = hiltViewModel()
+    onProfile: () -> Unit = {}, onNotification: () -> Unit = {}, onMatch: () -> Unit = {}, onChat : () -> Unit = {}
 ) {
     DoubleBackToExit()
 
@@ -99,8 +98,148 @@ fun MainMenuScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadHome()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .background(CommonColor.Beige100)  // 배경색 비슷하게 조정
+            .padding(start = 16.dp, end = 16.dp, bottom = 40.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "상견례",
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                fontFamily = ChosunCentennial,
+                style = TitleTextStyle,
+                modifier = Modifier.padding(start = 6.dp)
+            )
+            IconButton(onClick = onNotification) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_notification),
+                    contentDescription = "알림 아이콘",
+                    tint = CommonColor.Brown500,
+                    modifier = Modifier
+                        .size(28.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        ProfileCardWithBackground(onProfile, onMatch)
+        Spacer(modifier = Modifier.padding(10.dp))
+
+        // 하단 버튼 2개
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = { onMatch() },
+                modifier = Modifier
+                    .weight(1f)
+                    .shadow(
+                        elevation = 12.dp,
+                        shape = RoundedCornerShape(12.dp),
+                        ambientColor = Color(0x33000000), // 연한 그림자 (20% 불투명도)
+                        spotColor = Color(0x33000000)     // 같이 써줘야 효과 있음
+                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp) // 원하는 크기로 조정
+                            .background(
+                                Color(0xFFFCE4EC),
+                                shape = RoundedCornerShape(12.dp)
+                            ), // 연한 핑크 배경
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_heart_pink),
+                            contentDescription = "인연 찾기",
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.Unspecified
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        "인연 찾기",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = CommonColor.Gray900
+                    )
+                    Spacer(modifier = Modifier.padding(1.dp))
+                    Text("관상 궁합으로 찾기", fontSize = 12.sp, color = CommonColor.Gray400)
+                }
+            }
+            Button(
+                onClick = { onChat() },
+                modifier = Modifier
+                    .weight(1f)
+                    .shadow(
+                        elevation = 12.dp,
+                        shape = RoundedCornerShape(12.dp),
+                        ambientColor = Color(0x33000000), // 연한 그림자 (20% 불투명도)
+                        spotColor = Color(0x33000000)     // 같이 써줘야 효과 있음
+                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                Color(0xFFE0F2F1), // 연한 민트 배경
+                                shape = RoundedCornerShape(12.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_chat),
+                            contentDescription = "채팅",
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.Unspecified
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        "채팅",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = CommonColor.Gray900
+                    )
+                    Spacer(modifier = Modifier.height(1.dp))
+                    Text("대화 목록", fontSize = 12.sp, color = CommonColor.Gray400)
+                }
+            }
+
+        }
     }
 
     when {

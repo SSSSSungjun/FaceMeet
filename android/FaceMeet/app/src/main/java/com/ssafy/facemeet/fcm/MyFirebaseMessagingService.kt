@@ -1,17 +1,19 @@
 package com.ssafy.facemeet.fcm
 
 import android.app.AlarmManager
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import android.content.SharedPreferences
+import android.graphics.Color
+import android.media.RingtoneManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.ssafy.facemeet.R
@@ -34,11 +36,19 @@ private const val TAG = "FCM"
 @AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
-//    @Inject
-//    lateinit var fcmService: FcmService
-
     @Inject
     lateinit var registerDeviceUseCase: RegisterDeviceUseCase
+
+    @Inject
+    lateinit var notificationDao: NotificationDao
+
+    private lateinit var sharedPreferences: SharedPreferences
+
+    override fun onCreate() {
+        super.onCreate()
+        sharedPreferences = getSharedPreferences("scheduled_events", Context.MODE_PRIVATE)
+        restoreScheduledEvents()
+    }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -47,56 +57,46 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
         val request = FcmTokenRequest(token, "android", deviceId)
 
-        GlobalScope.launch(Dispatchers.IO) { //임시
+        GlobalScope.launch(Dispatchers.IO) {
             registerDeviceUseCase.invoke(request)
-                .onSuccess { fcmTokenResponse ->
-                    Log.d("FCM", "FCM 토큰 등록 성공: $fcmTokenResponse")
+                .onSuccess {
+                    Log.d("FCM", "FCM 토큰 등록 성공")
                 }
                 .onFailure { t ->
                     Log.e("FCM", "FCM 토큰 등록 실패", t)
                 }
         }
-
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("FCM", "메시지 notification: ${remoteMessage.notification}")
         Log.d("FCM", "메시지 data: ${remoteMessage.data}")
 
-        Log.d("FCM", "type: ${remoteMessage.data["type"]}")
+        val combinedData = remoteMessage.data.toMutableMap().apply {
+            remoteMessage.notification?.let {
+                put("title", it.title ?: "알림")
+                put("body", it.body ?: "")
+            }
+        }
 
-        if (remoteMessage.data.isNotEmpty()) {
-            when (remoteMessage.data["type"]) {
-                "PRE_MESSAGE" -> handlePreMessage(
-                    remoteMessage.notification, remoteMessage.data
-                )
-
-                "SCHEDULED_EVENT" -> handleScheduledEvent(
-                    remoteMessage.data
-                )
-
-                "CHAT" -> handleChatNotification(
-                    remoteMessage.notification, remoteMessage.data
-                )
-
-                else -> {
-                    val title = remoteMessage.data["title"] ?: "알림"
-                    val body = remoteMessage.data["body"] ?: ""
-                    sendNotification(title, body)
-                }
+        if (combinedData.isNotEmpty()) when (combinedData["type"]) {
+            "PRE_MESSAGE" -> handlePreMessage(combinedData)
+            "SCHEDULED_EVENT" -> handleScheduledEvent(combinedData)
+            "CHAT" -> handleChatNotification(combinedData)
+            else -> {
+                val title = combinedData["title"] ?: "알림"
+                val body = combinedData["body"] ?: ""
+                sendGenericNotification(title, body)
             }
         } else {
             remoteMessage.notification?.let {
-                sendNotification(it.title ?: "알림", it.body ?: "")
+                sendGenericNotification(it.title ?: "알림", it.body ?: "")
             }
         }
     }
 
-    private fun handleScheduledEvent(
-        data: Map<String, String>
-    ) {
-        Log.d("FCM", "handleScheduledEvent함수호출")
-        Log.d("FCM", "data: ${data.entries}")
+    private fun handleScheduledEvent(data: Map<String, String>) {
+        Log.d("FCM", "data: ${data.keys}")
 
         try {
             val settingId = data["settingId"] ?: return
@@ -110,16 +110,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 return
             }
 
-            // 디버깅을 위한 로그 추가
-            Log.d(
-                "FCM",
-                "현재 시간: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(now)}"
-            )
-            Log.d(
-                "FCM", "트리거 시간: ${
-                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(triggerTime)
-                }"
-            )
+            Log.d("FCM", "현재 시간: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(now)}")
+            Log.d("FCM", "트리거 시간: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(triggerTime)}")
             Log.d("FCM", "시간 차이 (분): ${(triggerTime.time - now.time) / (1000 * 60)}")
 
             val bufferTime = 60 * 1000L // 1분
@@ -131,167 +123,158 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     title = data["title"],
                     body = data["body"]
                 )
-
             } else {
                 Log.d("FCM", "예약 실행: 트리거 시간까지 대기")
                 scheduleLocalEvent(
-                    context = this, // `MyFirebaseMessagingService`는 Context 상속받음
+                    context = this,
                     settingId = settingId,
                     triggerTime = triggerTime,
                     title = data["title"] ?: "없음",
                     body = data["body"] ?: "없음"
                 )
-
             }
         } catch (e: Exception) {
             Log.e("FCM", "예약 이벤트 처리 오류", e)
         }
     }
 
-    // ✅ NEW: PRE_MESSAGE → 이벤트 페이지 진입
-    private fun handlePreMessage(
-        notification: RemoteMessage.Notification?, data: Map<String, String>
+    private fun handlePreMessage(data: Map<String, String>) {
+        val title = data["title"] ?: "없음"
+        val body = data["body"] ?: "없음"
+        val settingId = data["settingId"]!!.toLong()
+        sendHeadsUpNotification(title, body, "ticket_event", settingId)
+        saveNotificationToRoom(title, body, System.currentTimeMillis(), settingId = settingId)
+    }
+
+    private fun handleChatNotification(data: Map<String, String>) {
+        val roomId = data["roomId"]?.toLongOrNull() ?: return
+        val title = data["title"] ?: "채팅 알림"
+        val body = data["body"] ?: ""
+
+        val currentScreenInfo = AppStateManager.getCurrentScreen()
+//        if (currentScreenInfo.first == "ChattingScreen" && currentScreenInfo.second == roomId) {
+//            // 이미 해당 채팅방을 보고 있으므로 알림을 보내지 않음
+//            Log.d("FCM", "사용자가 이미 채팅방에 있으므로 알림을 보내지 않음")
+//            return
+//        }
+        // 알림 ID를 roomId로 고정하여 겹치지 않고 갱신되도록 함
+        sendHeadsUpNotification(title, body, "chat", roomId)
+        Log.d("FCM", "채팅 알림 전송: $title (Room ID: $roomId)")
+    }
+
+    private fun sendHeadsUpNotification(
+        title: String,
+        body: String,
+        deepLink: String? = null,
+        id: Long? = null
     ) {
-        val title = data["title"] ?: notification?.title ?: "없음"
-        val body = data["body"] ?: notification?.body ?: "없음"
-        val settingId = data["settingId"]!!.toLong()   // 서버 계약상 항상 옴
-
-        // ✅ 공용 함수 사용
-        FcmAlarmHandler.sendEventNotification(this, title, body, settingId)
-    }
-
-
-    private fun handleChatNotification(
-        notification: RemoteMessage.Notification?, data: Map<String, String>
-    ) {
-        val roomId = data["roomId"]?.toLongOrNull()
-        val title = notification?.title ?: "채팅 알림"
-        val body = notification?.body ?: ""
-
-        Log.d("FCM", "handleChatNotification: $roomId")
-        Log.d("FCM", "handleChatNotification: ${AppStateManager.getCurrentScreen()}")
-        if (roomId != null && AppStateManager.getCurrentScreen() == "ChattingScreen" && AppStateManager.isInChatRoom(
-                roomId
-            )
-        ) {
-            Log.d("FCM", "현재 채팅방($roomId)에 있어서 알림 스킵")
-
-            // 화면 갱신만
-            sendBroadcast(Intent("ACTION_REFRESH_CHAT").apply {
-                putExtra("roomId", roomId)
-            })
-            return
+        val channelId = when (deepLink) {
+            "chat" -> "chat_channel_id"
+            "ticket_event" -> "ticket_channel"
+            else -> "general_channel"
         }
-
-        if (AppStateManager.getCurrentScreen() == "ChatListScreen") {
-            Log.d("FCM", "✅ 채팅 리스트 화면 감지됨")
-            Log.d("FCM", "📡 브로드캐스트 발송 중...")
-
-            val intent = Intent("ACTION_REFRESH_CHAT_LIST")
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
-
-            Log.d("FCM", "📡 브로드캐스트 발송 완료")
-            return
-        }
-
-        // 채팅방으로 이동하는 알림 생성
-        sendNotification(title, body, roomId)
-    }
-
-
-    fun sendNotification(title: String, body: String) {
-        val channelId = "ticket_channel"
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("facemeet://app/main")).apply {
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-        val pending = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-        )
-
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(
-                NotificationChannel(
-                    channelId,
-                    "이벤트 티켓 알림",
-                    NotificationManager.IMPORTANCE_HIGH
-                )
-            )
+            val channelName = when (deepLink) {
+                "chat" -> "채팅 알림"
+                "ticket_event" -> "이벤트 티켓 알림"
+                else -> "일반 알림"
+            }
+            val channel = NotificationChannel(
+                channelId,
+                channelName,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "백그라운드 헤드업 알림"
+                enableLights(true)
+                lightColor = Color.BLUE
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 300, 200, 300)
+                setShowBadge(true)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                setBypassDnd(false)
+            }
+            notificationManager.createNotificationChannel(channel)
+            val createdChannel = notificationManager.getNotificationChannel(channelId)
+            Log.d("FCM", "채널 [$channelName] 중요도: ${createdChannel?.importance}")
         }
-
-        val noti = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.icon_small)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pending)
-            .build()
-
-        nm.notify(System.currentTimeMillis().toInt(), noti)
-    }
-
-
-    private fun sendNotification(title: String, body: String, roomId: Long? = null) {
-        val channelId = "ticket_channel"
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val uri = if (roomId != null)
-            Uri.parse("facemeet://app/chat/$roomId")
-        else
-            Uri.parse("facemeet://app/main")
-
-        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            deepLink?.let { putExtra("deep_link", it) }
+            Log.d(TAG, "deepLink: $deepLink")
+            when (deepLink) {
+                "chat" -> id?.let { putExtra("roomId", it) }
+                "ticket_event" -> id?.let { putExtra("settingId", it) }
+            }
         }
-        val pending = PendingIntent.getActivity(
-            this, (roomId ?: 0L).toInt(),
-            intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            id?.toInt() ?: 0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(
-                NotificationChannel(channelId, "채팅 알림", NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = "채팅 메시지 알림"
-                    enableLights(true); enableVibration(true); setShowBadge(true)
-                }
-            )
-        }
-
-        val noti = NotificationCompat.Builder(this, channelId)
+        val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.icon_small)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setContentIntent(pending)
-            .build()
-
-        nm.notify((roomId ?: System.currentTimeMillis()).toInt(), noti)
+            .setCategory(when (deepLink) {
+                "chat" -> NotificationCompat.CATEGORY_MESSAGE
+                "ticket_event" -> NotificationCompat.CATEGORY_EVENT
+                else -> NotificationCompat.CATEGORY_MESSAGE
+            })
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(pendingIntent)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setVibrate(longArrayOf(0, 300, 200, 300))
+            .setLights(Color.BLUE, 1000, 1000)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            builder.setFullScreenIntent(pendingIntent, true)
+        } else {
+            builder.setTimeoutAfter(15000)
+        }
+        try {
+            val notification = builder.build()
+            notification.flags = notification.flags or Notification.FLAG_INSISTENT
+            notificationManager.notify(
+                id?.toInt() ?: 0,
+                notification
+            )
+            Log.d("FCM", "헤드업 알림 전송 완료: $title")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val activeNotifications = notificationManager.activeNotifications
+                Log.d("FCM", "현재 활성 알림 개수: ${activeNotifications.size}")
+            }
+        } catch (e: Exception) {
+            Log.e("FCM", "헤드업 알림 전송 실패", e)
+        }
+    }
+    private fun sendGenericNotification(title: String, body: String) {
+        sendHeadsUpNotification(title, body)
     }
 
 
     private fun parseDateTime(dateTimeStr: String): Date? {
-        // ISO 8601 형식과 다양한 형식 지원
         val formats = listOf(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // UTC 시간
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",      // UTC 시간
-            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // 타임존 포함
-            "yyyy-MM-dd'T'HH:mm:ssXXX",      // 타임존 포함
-            "yyyy-MM-dd'T'HH:mm:ss.SSS",     // 밀리초 포함
-            "yyyy-MM-dd'T'HH:mm:ss",         // 기본 ISO
-            "yyyy-MM-dd'T'HH:mm",            // 분까지만
-            "yyyy-MM-dd HH:mm:ss",           // 공백으로 구분
-            "yyyy-MM-dd HH:mm"               // 공백으로 구분, 분까지만
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm"
         )
 
         for (formatStr in formats) {
             try {
                 val sdf = SimpleDateFormat(formatStr, Locale.getDefault())
-                // UTC 시간인 경우 타임존 설정
                 if (formatStr.contains("'Z'")) {
                     sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
                 }
@@ -306,6 +289,75 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         return null
     }
 
+    private fun storeEvent(
+        settingId: Long, triggerTime: Date, eventDataStr: String, title: String?, body: String?
+    ) {
+        val eventInfo = mapOf(
+            "settingId" to settingId,
+            "triggerTime" to triggerTime.time.toString(),
+            "eventData" to eventDataStr,
+            "title" to title.orEmpty(),
+            "body" to body.orEmpty()
+        )
+        val json = Gson().toJson(eventInfo)
+        sharedPreferences.edit().putString("event_$settingId", json).apply()
+    }
+
+    private fun removeStoredEvent(settingId: String) {
+        sharedPreferences.edit().remove("event_$settingId").apply()
+    }
+
+    private fun restoreScheduledEvents() {
+        try {
+            val keys = sharedPreferences.all.keys.filter { it.startsWith("event_") }
+            for (key in keys) {
+                val json = sharedPreferences.getString(key, null) ?: continue
+                val eventInfo = Gson().fromJson<Map<String, String>>(
+                    json, object : TypeToken<Map<String, String>>() {}.type
+                )
+                val settingId = eventInfo["settingId"] ?: continue
+                val triggerTime =
+                    eventInfo["triggerTime"]?.toLongOrNull()?.let { Date(it) } ?: continue
+                val eventDataStr = eventInfo["eventData"] ?: continue
+                val title = eventInfo["title"] ?: "없음"
+                val body = eventInfo["body"] ?: "없음"
+
+                if (triggerTime.time > System.currentTimeMillis()) {
+                    scheduleLocalEvent(
+                        context = this,
+                        settingId = settingId,
+                        triggerTime = triggerTime,
+                        eventDataStr = eventDataStr,
+                        title = title,
+                        body = body
+                    )
+                } else {
+                    removeStoredEvent(settingId)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("FCM", "저장된 예약 복원 실패", e)
+        }
+    }
+
+    private fun saveNotificationToRoom(
+        title: String,
+        body: String,
+        triggerTime: Long,
+        settingId: Long?
+    ) {
+        Log.d(TAG, "saveNotificationToRoom")
+        CoroutineScope(Dispatchers.IO).launch {
+            val notification = NotificationEntity(
+                title = title,
+                body = body,
+                triggerTime = triggerTime,
+                type = NotificationType.TICKET,
+                settingId = settingId
+            )
+            notificationDao.insert(notification)
+        }
+    }
 
     private fun scheduleLocalEvent(
         context: Context,
@@ -338,11 +390,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     )
                 } else {
                     Log.e("FCM", "정확한 알람 권한이 없어 예약 실패: SCHEDULE_EXACT_ALARM 필요")
-                    // TODO: 유저에게 설정 권한 유도하거나 fallback 로직 넣기
                     return
                 }
             } else {
-                // Android 11 이하에서는 바로 호출 가능
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP, triggerTime.time, pendingIntent
                 )
@@ -357,44 +407,67 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 }
 
-
+// 🔥 FcmAlarmHandler도 헤드업 알림으로 수정
 object FcmAlarmHandler {
-    // ✅ 공용: 이벤트 페이지로 진입하는 알림 (public)
+
     fun sendEventNotification(context: Context, title: String, body: String, settingId: Long) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "ticket_channel"
 
-        val intent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("facemeet://app/ticket_event/$settingId")).apply {
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        // 🔥 헤드업을 위한 채널 설정
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "이벤트 티켓 알림",
+                NotificationManager.IMPORTANCE_HIGH // 헤드업을 위해 HIGH
+            ).apply {
+                enableLights(true)
+                lightColor = Color.BLUE
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 300, 200, 300)
+                setShowBadge(true)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
+            nm.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("deep_link", "ticket_event")
+            putExtra("settingId", settingId)
+        }
         val pending = PendingIntent.getActivity(
             context, settingId.toInt(),
             intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(
-                NotificationChannel(channelId, "이벤트 티켓 알림", NotificationManager.IMPORTANCE_HIGH)
-            )
-        }
-
-        val noti = NotificationCompat.Builder(context, channelId)
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.icon_small)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // 헤드업을 위해 HIGH
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pending)
-            .build()
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body)) // 헤드업 확률 증가
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
 
-        nm.notify(settingId.toInt(), noti)
+        // 🔥 Android 버전별 헤드업 설정
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            builder.setFullScreenIntent(pending, true)
+        } else {
+            builder.setTimeoutAfter(15000)
+        }
+
+        val notification = builder.build()
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+
+        nm.notify(settingId.toInt(), notification)
     }
 
-
-    // ... (기존 triggerEvent는 아래처럼 이 공용 함수를 호출)
     fun triggerEvent(
         context: Context,
         settingId: Long,
@@ -404,11 +477,24 @@ object FcmAlarmHandler {
         val finalTitle = title ?: "없음"
         val finalBody = body ?: "없음"
 
-        // ✅ 공용 함수 호출
         sendEventNotification(context, finalTitle, finalBody, settingId)
 
     }
 
-
+    fun saveNotificationToRoom(
+        dao: NotificationDao, title: String, body: String, time: Long, settingId: Long
+    ) {
+        Log.d(TAG, "saveNotificationToRoom")
+        CoroutineScope(Dispatchers.IO).launch {
+            dao.insert(
+                NotificationEntity(
+                    title = title,
+                    body = body,
+                    triggerTime = time,
+                    type = NotificationType.TICKET,
+                    settingId = settingId
+                )
+            )
+        }
+    }
 }
-

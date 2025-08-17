@@ -10,6 +10,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.domain.repository.UserRepository
+import com.ssafy.facemeet.core.util.AppStateManager
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,23 +43,44 @@ class FaceMeetApplication : Application() {
     private val appLifecycleObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             Log.d(TAG, "앱이 포그라운드로 전환되었습니다. WebSocket 재연결 시도")
-            connectWebSocket()
+
+
             applicationScope.launch {
-                userRepository.postOnline()
+                if(tokenManager.getAccessToken()!=null){
+                    connectWebSocket()
+                    userRepository.postOnline()
+                }
             }
         }
 
         override fun onResume(owner: LifecycleOwner) {
             super.onResume(owner)
             applicationScope.launch {
-                userRepository.postOnline()
+                if(tokenManager.getAccessToken()!=null){
+                    connectWebSocket()
+                    userRepository.postOnline()
+                }
             }
         }
 
+        override fun onPause(owner: LifecycleOwner) {
+            super.onPause(owner)
+            applicationScope.launch {
+                if(tokenManager.getAccessToken()!=null){
+                    connectWebSocket()
+                    userRepository.postOffline()
+                }
+            }
+        }
         override fun onStop(owner: LifecycleOwner) {
             super.onStop(owner)
+            Log.d("AppState", "onStop: dd")
+            AppStateManager.clearCurrentScreen()
             applicationScope.launch {
-                userRepository.postOffline()
+                if(tokenManager.getAccessToken()!=null){
+                    connectWebSocket()
+                    userRepository.postOffline()
+                }
             }
         }
     }

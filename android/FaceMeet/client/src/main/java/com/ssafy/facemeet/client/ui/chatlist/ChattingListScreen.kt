@@ -54,8 +54,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
-import com.ssafy.facemeet.client.ui.theme.ChosunGongseo
+import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.domain.model.ChatListItem
+import com.ssafy.facemeet.core.util.constant.CommonColor
+import kotlin.math.abs
 
 private const val TAG = "ChattingListScreen"
 
@@ -65,7 +67,6 @@ fun ChattingListScreen(
     onItemClick: (ChatListItem) -> Unit = {},
     viewModel: ChattingListViewModel = hiltViewModel()
 ) {
-
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -82,12 +83,12 @@ fun ChattingListScreen(
                 .padding(15.dp),
             text = "채팅 목록",
             fontSize = 18.sp,
-            fontFamily = ChosunGongseo
+            color= CommonColor.Brown500,
+            fontFamily = ChosunCentennial
         )
         NoticeBanner()
 
         if (!uiState.isLoading) {
-            // 로딩 중일 때 로딩 인디케이터 등을 표시
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
             // 로딩이 완료되었을 때 LazyColumn을 표시
@@ -210,10 +211,9 @@ fun ChatListElementItem(
             Box(
                 modifier = Modifier
                     .wrapContentSize()
-                    .background(color = Color.White, RoundedCornerShape(50.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFF9F8772),
+                    .background(color = Color.White, RoundedCornerShape(50.dp)).border(
+                        width =1.5.dp,
+                        color = getColorForUserId(item.nickName),
                         shape = RoundedCornerShape(50.dp)
                     ),
                 contentAlignment = Alignment.Center
@@ -281,32 +281,20 @@ fun ChatListElementItem(
     }
 }
 
+val userColors = listOf(
+    Color(0xFFF0C7B7), // Red
+    Color(0xFFB7F0DF), // Green
+    Color(0xFFC4E0FB), // Blue
+    Color(0xFFF0DBB7), // Orange
+    Color(0xFFDCC8F7), // Light Purple
+    Color(0xFFE4E5EA)  // Light Grey
+)
 
-//@Preview(showBackground = true)
-//@Composable
-//fun ChatListPreview() {
-//    Box(
-//        modifier = Modifier.background(color = Color(0xFFF4F3ED))
-//    ) {
-//        ChatListElementItem(
-//            ChatListItem(
-//                nickName = "윤성준",
-//                lastActivatedTime = "ㅇㅇ",
-//                isOnline = true,
-//                imgUrl = "",
-//                chatRoomId = 7,
-//                chatRoomStringId = "7",
-//                lastMessage = "dfs\nsfsf\nsfs",
-//                lastSendMessageTime = "",
-//                nonReadCnt = 400,
-//                blocked = false,
-//                userId = 3,
-//                deleted = false,
-//            )
-//        ) { }
-//    }
-//
-//}
+fun getColorForUserId(userId: String): Color {
+    val hash = userId.hashCode()
+    val colorIndex = abs(hash) % userColors.size
+    return userColors[colorIndex]
+}
 
 @Preview(showBackground = true)
 @Composable

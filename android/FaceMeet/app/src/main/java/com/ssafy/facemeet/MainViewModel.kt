@@ -1,5 +1,6 @@
 package com.ssafy.facemeet
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.core.data.datastore.TokenManager
@@ -65,6 +66,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun setPendingChat(roomId: Long) {
+        Log.d("AppNavHost추적중", "setPendingChat: ${roomId}")
         _pendingChat.value = roomId
     }
 
@@ -98,5 +100,7 @@ class MainViewModel @Inject constructor(
             _pendingNav.value = PendingNav.Start
         }
     }
+
+
 
 }

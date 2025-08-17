@@ -3,12 +3,12 @@ package com.ssafy.facemeet.navigation
 import LoginScreen
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -43,14 +43,45 @@ fun AppNavHost(
     val cameraVM: CameraShotViewModel = hiltViewModel()
     val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
 
-    LaunchedEffect(isLoggedIn) {
-        if (!isLoggedIn) {
-            navController.navigate(AppRoutes.Start.route) {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
+    // isLoggedIn 상태에 따라 NavHost의 시작 지점을 바로 결정
+    val startDestination = if (isLoggedIn) {
+        AppRoutes.LoginGate.route
+    } else {
+        AppRoutes.Start.route
+    }
+
+    val cameraVM: CameraShotViewModel = hiltViewModel()
+    val analyzeVM: FaceAnalyzeViewModel = hiltViewModel()
+
+    val pendingTicket by mainViewModel.pendingTicketEvent.collectAsState()
+    val pendingChat by mainViewModel.pendingChat.collectAsState()
+    val goNotif by mainViewModel.pendingNotificationCenter.collectAsState()
+
+    // 알림 및 딥링크 처리 로직
+    LaunchedEffect(isLoggedIn, pendingTicket, pendingChat, goNotif) {
+        if (!isLoggedIn) return@LaunchedEffect
+        Log.d(TAG, "AppNavHost: 로그인 성공 후 추가 라우팅 확인 ${pendingChat ?:"null"} ")
+        when {
+            pendingTicket != null -> {
+                val id = checkNotNull(pendingTicket)
+                navController.goToWithMainAsBase(ClientRoutes.TicketEvent.createRoute(id))
+                mainViewModel.clearPendingTicketEvent()
+            }
+
+            pendingChat != null -> {
+                val roomId = checkNotNull(pendingChat)
+                Log.d(TAG, "AppNavHost: pendingChat roomID : ${roomId}")
+                navController.goToWithMainAsBase(ClientRoutes.Chat.createRoute(roomId))
+                mainViewModel.clearPendingChat()
+            }
+
+            goNotif -> {
+                navController.goToWithMainAsBase(ClientRoutes.Notification.route)
+                mainViewModel.clearPendingNotificationCenter()
             }
         }
     }
+
 
     NavHost(
         navController = navController,
@@ -60,33 +91,16 @@ fun AppNavHost(
         popEnterTransition = NavigationAnimations.defaultEnterTransition(),
         popExitTransition = NavigationAnimations.defaultExitTransition()
     ) {
+
         composable(AppRoutes.Start.route) {
-            if (isLoggedIn) {
-                // ✅ 딥링크 없이 켠 경우에만 기본 분기 수행
-                LaunchedEffect(Unit) {
-                    if (!hasInitialDeepLink) {
-                        navController.navigate(AppRoutes.LoginGate.route) {
-                            launchSingleTop = true
-                            popUpTo(AppRoutes.Start.route) { inclusive = true }
-                        }
-                    }
+            LoginScreen(
+                onNavigateToKakaoLogin = {
+                    navController.navigate(AppRoutes.WebLogin.createRoute("KAKAO"))
+                },
+                onNavigateToNaverLogin = {
+                    navController.navigate(AppRoutes.WebLogin.createRoute("NAVER"))
                 }
-                // (임시 배경; 바로 이동하므로 거의 안 보임)
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF4F3ED))
-                )
-            } else {
-                LoginScreen(
-                    onNavigateToKakaoLogin = {
-                        navController.navigate(AppRoutes.WebLogin.createRoute("KAKAO"))
-                    },
-                    onNavigateToNaverLogin = {
-                        navController.navigate(AppRoutes.WebLogin.createRoute("NAVER"))
-                    }
-                )
-            }
+            )
         }
 
         composable(
@@ -95,20 +109,30 @@ fun AppNavHost(
         ) { backStackEntry ->
             val providerString = backStackEntry.arguments?.getString("provider")
             val provider = SocialProvider.from(providerString)
+
             WebLoginScreen(
                 provider = provider,
-                onLoginSuccess = { _, _ ->
+                onLoginSuccess = { hasInfo, hasFace ->
                     navController.navigate(AppRoutes.LoginGate.route) {
                         popUpTo(AppRoutes.Start.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onLoginFailed = { navController.popBackStack(AppRoutes.Start.route, false) },
-                onCancel = { navController.popBackStack(AppRoutes.Start.route, false) }
+                onLoginFailed = {
+                    navController.popBackStack(AppRoutes.Start.route, inclusive = false)
+                },
+                onCancel = {
+                    navController.popBackStack(AppRoutes.Start.route, inclusive = false)
+                }
             )
         }
 
-        composable(AppRoutes.LoginGate.route) {
+
+        composable(
+            route=AppRoutes.LoginGate.route,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None }
+        ) {
             LoginGateScreen(
                 onToRegister = {
                     navController.navigate("${SettingRoutes.Register.route}?mode=${RegisterMode.REGISTER.name}") {
@@ -137,7 +161,33 @@ fun AppNavHost(
             )
         }
 
+
         settingNavHost(navController, cameraVM, analyzeVM)
         clientNavHost(navController, bottomNavController)
+    }
+}
+
+
+/**
+ * 메인을 백스택 바닥에 깔고 그 위에 targetRoute를 올린다.
+ * → 뒤로가면 항상 메인으로 복귀.
+ */
+private fun NavController.goToWithMainAsBase(targetRoute: String) {
+    val alreadyOnMain = currentDestination?.route == ClientRoutes.MainMenu.route
+
+    if (!alreadyOnMain) {
+        navigate(ClientRoutes.MainMenu.route) {
+            popUpTo(AppRoutes.Start.route) { inclusive = true }
+            launchSingleTop = true
+            restoreState = false
+        }
+    }
+    navigate(targetRoute) {
+//        if (targetRoute.contains("chat", ignoreCase = true)){
+//            popUpTo(ClientRoutes.Chat.route) {
+//                inclusive = false // MainMenu 라우트는 제거하지 않고 남겨둠
+//            }
+//        }
+        launchSingleTop = true
     }
 }

@@ -149,7 +149,11 @@ fun InputNickName(
         Spacer(modifier = Modifier.padding(vertical = 2.dp))
         OutlinedTextField(
             value = nickname,
-            onValueChange = onNicknameChange,
+            onValueChange = {newNickname->
+                if (newNickname.length <= 30) {
+                    onNicknameChange(newNickname)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth(),
             placeholder = {

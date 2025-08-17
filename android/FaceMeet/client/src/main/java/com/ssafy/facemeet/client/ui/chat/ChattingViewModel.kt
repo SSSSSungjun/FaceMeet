@@ -24,6 +24,7 @@ import com.ssafy.facemeet.core.domain.model.ChatRoom
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesCurrentUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesLastUseCase
+import com.ssafy.facemeet.core.util.AppStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,7 +33,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -81,6 +81,8 @@ class ChattingViewModel @Inject constructor(
     private val localIdCounter = AtomicLong(0)
 
     init {
+        AppStateManager.setCurrentScreen("ChattingScreen",currentRoomId)
+
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
         }
@@ -88,12 +90,11 @@ class ChattingViewModel @Inject constructor(
         viewModelScope.launch {
             incomingMessageChannel
                 .receiveAsFlow()
-                .debounce(50)
                 .collect { batchedMessage ->
                     _unifiedMessages.update { current ->
                         val existingMessageIndex = current.indexOfFirst {
                             it.chatMessage.chatElement.senderID == batchedMessage.chatElement.senderID &&
-                                    it.chatMessage.chatElement.content == batchedMessage.chatElement.content
+                                    it.chatMessage.chatElement.createdAt == batchedMessage.chatElement.createdAt
                         }
 
                         if (existingMessageIndex != -1) {
@@ -194,6 +195,11 @@ class ChattingViewModel @Inject constructor(
                 )
             }
         }
+        webSocketManager.onMessageSentConfirmation = { content, senderId ->
+            viewModelScope.launch {
+                updateMessageStatusFromPendingToSent(content.toString(), senderId)
+            }
+        }
     }
 
     private fun handleNewMessage(newMessage: ChatMessageItem) {
@@ -206,10 +212,9 @@ class ChattingViewModel @Inject constructor(
 
             if (uiState.value.scrollState.isAtBottom) {
                 _unifiedMessages.update { current ->
-                    // 💡 즉시 업데이트 로직에도 중복 체크 추가
                     val existingMessageIndex = current.indexOfFirst {
                         it.chatMessage.chatElement.senderID == newMessage.chatElement.senderID &&
-                                it.chatMessage.chatElement.content == newMessage.chatElement.content
+                                it.chatMessage.chatElement.createdAt == newMessage.chatElement.createdAt
                     }
                     if (existingMessageIndex != -1) {
                         // 이미 존재하는 메시지이므로 업데이트
@@ -246,54 +251,39 @@ class ChattingViewModel @Inject constructor(
 
     fun sendMessage() {
         val state = _uiState.value
-        if (!state.canSendMessage || currentUserId == 0L) return
+        if (currentUserId == 0L) return
 
-        val sentMessage = createSentMessage(state.messageText.trim(), state.roomInfo)
+        val messageContent = state.messageText.trim()
+        if (messageContent.isBlank()) return
+        val sentMessage = createSentMessage(messageContent, state.roomInfo)
 
         val newItem = MessageItem(
             chatMessage = sentMessage.chatMessage,
-            status = MessageStatus.SENT,
-            localId = generateLocalId(sentMessage.chatMessage.chatElement.content),
+            status = MessageStatus.PENDING, // 💡 PENDING 상태로 시작
+            localId = generateLocalId(messageContent),
             showReadStatus = false
         )
-        _unifiedMessages.update { current ->
-            // 💡 낙관적 업데이트 시에도 기존 메시지 업데이트 로직 사용
-            val existingMessageIndex = current.indexOfFirst {
-                it.chatMessage.chatElement.senderID == sentMessage.chatMessage.chatElement.senderID &&
-                        it.chatMessage.chatElement.content == sentMessage.chatMessage.chatElement.content
-            }
 
-            if (existingMessageIndex != -1) {
-                current.toMutableList().also { list ->
-                    list[existingMessageIndex] = newItem
-                }.toList()
-            } else {
-                listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
-            }
+        _unifiedMessages.update { current ->
+            listOf(newItem) + current.take(REALTIME_MESSAGE_LIMIT)
         }
 
         _uiState.update {
             it.copy(
-                messageText = "",
-                canSendMessage = false
+                messageText = ""
             )
         }
 
         triggerScroll(ScrollEvent.ToBottom)
 
         viewModelScope.launch {
-            try {
-                webSocketManager.sendMessage(
-                    content = sentMessage.chatMessage.chatElement.content,
-                    roomId = state.roomInfo.chatRoomID,
-                    senderId = currentUserId,
-                    receiverId = state.roomInfo.partnerID
-                )
-                Log.d(TAG, "Message sent successfully")
-            } catch (e: Exception) {
-                Log.e(TAG, "Message sending failed", e)
-                _uiState.update { it.copy(error = "Message sending failed: ${e.message}") }
-            }
+            webSocketManager.sendMessage(
+                content = sentMessage.chatMessage.chatElement.content,
+                roomId = state.roomInfo.chatRoomID,
+                senderId = currentUserId,
+                receiverId = state.roomInfo.partnerID
+            )
+            Log.d(TAG, "Message sending request queued.")
         }
     }
 
@@ -340,6 +330,25 @@ class ChattingViewModel @Inject constructor(
             updatedList
         }
     }
+
+    private fun updateMessageStatusFromPendingToSent(content: String, senderId: Long) {
+        _unifiedMessages.update { current ->
+            current.map { item ->
+                // 동일한 발신자 ID와 내용을 가진 PENDING 메시지를 찾습니다.
+                if (item.chatMessage.chatElement.senderID == senderId &&
+                    item.chatMessage.chatElement.content == content &&
+                    item.status == MessageStatus.PENDING
+                ) {
+                    Log.d(TAG, "✅ 메시지 상태 업데이트: [${content}] 전송 완료로 변경")
+                    // 상태를 SENT로 변경한 새로운 객체를 반환
+                    item.copy(status = MessageStatus.SENT)
+                } else {
+                    item
+                }
+            }
+        }
+    }
+
 
     private fun createSentMessage(content: String, roomInfo: ChatRoom): MessageItem {
         val chatElement = ChatElement(
@@ -466,6 +475,7 @@ class ChattingViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        AppStateManager.clearCurrentScreen()
         endChatRoom()
     }
 

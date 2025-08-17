@@ -221,6 +221,7 @@ fun MapScreen(
     }
 
     fun openPlaceSearch() {
+
         val fields = listOf(
             Place.Field.ID,
             Place.Field.NAME,

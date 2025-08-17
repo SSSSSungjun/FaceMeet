@@ -15,6 +15,7 @@ import com.ssafy.facemeet.core.domain.model.ChatElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.pow
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Singleton
@@ -36,26 +38,26 @@ class ChatWebSocketManager @Inject constructor() {
     private val messageQueue = ConcurrentLinkedQueue<String>()
     private val isProcessingQueue = AtomicBoolean(false)
     private val receiptIdCounter = AtomicLong(0)
-
-    // Receipt 응답을 기다리는 메시지를 추적하는 맵
     private val awaitingReceipts = ConcurrentHashMap<String, String>()
 
     private var webSocket: WebSocket? = null
     private val gson = Gson()
-
     private val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
-
     private var currentUserId: Long = 0
     private var currentRoomId: Long = 0
     private var currentPartnerId: Long = 0
     private var isStompConnected = false
+    private var token: String = ""
+    private var reconnectAttempt = 0
+    private var isManualDisconnect = false
 
     private var onNewMessageReceived: ((ChatMessageItem) -> Unit)? = null
     var onNewMessageLeaved: ((ChatMessageItem) -> Unit)? = null
     private var onStompConnected: (() -> Unit)? = null
     var onReadNotification: (() -> Unit)? = null
     var onNewMessageForList: (() -> Unit)? = null
+    var onMessageSentConfirmation: ((content: String, senderId: Long) -> Unit)? = null
 
     fun setOnNewMessageCallback(callback: (ChatMessageItem) -> Unit) {
         onNewMessageReceived = callback
@@ -65,10 +67,16 @@ class ChatWebSocketManager @Inject constructor() {
         onStompConnected = callback
     }
 
+    // 💡 connect 함수 수정: 재연결 시도 횟수 초기화 및 토큰 저장
     fun connect(userId: Long, token: String, roomId: Long = 0, partnerId: Long = -1L) {
+        this.token = token
         currentUserId = userId
         currentRoomId = roomId
-        if (partnerId != -1L) currentPartnerId = partnerId
+        currentPartnerId = if (partnerId != -1L) partnerId else this.currentPartnerId
+
+        isManualDisconnect = false
+        reconnectAttempt = 0
+
         Log.d("WebSocket", "WebSocket 연결 시작 - userId: $userId")
         _connectionState.postValue(ConnectionState.CONNECTING)
 
@@ -78,6 +86,10 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     private fun tryConnection(token: String) {
+        if (isManualDisconnect) {
+            Log.d("WebSocket", "수동 연결 해제 상태, 재연결 시도 중단")
+            return
+        }
         val websocketUrl = "wss://i13d201.p.ssafy.io/api/v1/websocket?token=$token"
         val wsClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -103,13 +115,16 @@ class ChatWebSocketManager @Inject constructor() {
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 Log.e("WebSocket", "❌ 연결 실패: ${t.message}")
                 _connectionState.postValue(ConnectionState.ERROR)
-                reconnect(token)
+                reconnect()
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
                 Log.d("WebSocket", "🔌 연결 종료: $code - $reason")
                 _connectionState.postValue(ConnectionState.DISCONNECTED)
                 isStompConnected = false
+                if (!isManualDisconnect) {
+                    reconnect()
+                }
             }
         })
     }
@@ -121,7 +136,6 @@ class ChatWebSocketManager @Inject constructor() {
     }
 
     private fun handleStompMessage(message: String) {
-        Log.d("WebSocket", "처리할 메시지: $message")
         when {
             message.startsWith("CONNECTED") -> {
                 Log.d("WebSocket", "🎉 STOMP 연결 완료!")
@@ -131,15 +145,9 @@ class ChatWebSocketManager @Inject constructor() {
                 subscribeToPrivateChannel("/sub/private/$currentUserId")
                 onStompConnected?.invoke()
             }
-            message.startsWith("MESSAGE") -> {
-                parseStompMessage(message)
-            }
-            message.startsWith("RECEIPT") -> {
-                handleReceipt(message)
-            }
-            message.startsWith("ERROR") -> {
-                Log.e("WebSocket", "❌ STOMP 오류: $message")
-            }
+            message.startsWith("MESSAGE") -> parseStompMessage(message)
+            message.startsWith("RECEIPT") -> handleReceipt(message)
+            message.startsWith("ERROR") -> Log.e("WebSocket", "❌ STOMP 오류: $message")
         }
     }
 
@@ -177,25 +185,25 @@ class ChatWebSocketManager @Inject constructor() {
         if (isProcessingQueue.compareAndSet(false, true)) {
             CoroutineScope(Dispatchers.IO).launch {
                 while (messageQueue.isNotEmpty() || awaitingReceipts.isNotEmpty()) {
-                    // 큐에서 다음 메시지 프레임을 가져옴
                     val frameToSend = messageQueue.peek()
                     if (frameToSend != null) {
                         val receiptId = frameToSend.lines().find { it.startsWith("receipt:") }?.substringAfter("receipt:")?.trim()
+                        if (awaitingReceipts.containsKey(receiptId)) {
+                            delay(50)
+                            continue
+                        }
 
-                        // 이미 전송하고 Receipt를 기다리는 중인지 확인
-                        if (!awaitingReceipts.containsKey(receiptId)) {
-                            val success = sendStompFrame(frameToSend)
-                            if (success) {
-                                if (receiptId != null) {
-                                    awaitingReceipts[receiptId] = frameToSend
-                                }
-                                messageQueue.poll()
-                            } else {
-                                Log.e("WebSocket", "메시지 전송 실패. 재시도를 위해 큐에 유지합니다.")
-                                delay(500)
-                                isProcessingQueue.set(false)
-                                break
+                        val success = sendStompFrame(frameToSend)
+                        if (success) {
+                            if (receiptId != null) {
+                                awaitingReceipts[receiptId] = frameToSend
                             }
+                            messageQueue.poll()
+                        } else {
+                            Log.e("WebSocket", "메시지 전송 실패. 재시도를 위해 큐에 유지합니다.")
+                            isProcessingQueue.set(false)
+                            reconnect() // 전송 실패 시 즉시 재연결 시도
+                            break
                         }
                     }
                     delay(50)
@@ -224,8 +232,16 @@ class ChatWebSocketManager @Inject constructor() {
             "receiverId" to receiverId,
             "content" to content,
         )
+
         enqueueStompMessage("/pub/chat.private", gson.toJson(messageRequest))
         Log.d("WebSocket", "메시지 전송 요청 완료 (큐에 추가) - ${gson.toJson(messageRequest)}")
+
+        if (!isStompConnected) {
+            Log.w("WebSocket", "STOMP 연결이 끊어져 있습니다. 메시지 전송을 위해 즉시 재연결 시도.")
+            // 재시도 횟수를 초기화하고 즉시 연결을 시작
+            reconnectAttempt = 0
+            reconnect()
+        }
     }
 
     fun markAsRead(roomId: Long, userId: Long, senderId: Long) {
@@ -246,7 +262,7 @@ class ChatWebSocketManager @Inject constructor() {
         )
         enqueueStompMessage("/pub/chat.leave", gson.toJson(leaveRequest))
         Log.d("WebSocket", "나가기 처리 요청 완료 (큐에 추가): ${gson.toJson(leaveRequest)}")
-        //unsubscribe(currentUserId)
+        unsubscribe(currentUserId)
     }
 
     private fun parseStompMessage(message: String) {
@@ -255,7 +271,6 @@ class ChatWebSocketManager @Inject constructor() {
         if (bodyStart != -1 && bodyStart + 1 < lines.size) {
             val body = lines.subList(bodyStart + 1, lines.size).joinToString("\n").replace("\u0000", "")
             Log.d("WebSocket", "수신된 메시지 바디: $body")
-
             try {
                 if (body.startsWith("{")) {
                     val jsonObject = gson.fromJson(body, JsonObject::class.java)
@@ -278,6 +293,9 @@ class ChatWebSocketManager @Inject constructor() {
                             val messageResponse = gson.fromJson(body, ChatElement::class.java)
                             Log.d("WebSocket", "💬 일반 메시지 파싱: $messageResponse")
                             handleChatMessage(messageResponse)
+                            if (messageResponse.senderID == currentUserId) {
+                                onMessageSentConfirmation?.invoke(messageResponse.content.toString(), messageResponse.senderID)
+                            }
                         }
                     }
                 }
@@ -310,10 +328,26 @@ class ChatWebSocketManager @Inject constructor() {
         onNewMessageLeaved?.invoke(messageItem)
     }
 
-    private fun reconnect(token: String) {
-        webSocket?.cancel()
+    // 💡 reconnect 함수 수정: 지수 백오프 전략 적용
+    private fun reconnect() {
+        if (isManualDisconnect) {
+            Log.d("WebSocket", "수동 연결 해제 상태, 재연결 시도 중단")
+            return
+        }
+
         CoroutineScope(Dispatchers.IO).launch {
-            tryConnection(token)
+            reconnectAttempt++
+            val delayMillis = 1000L * 2.0.pow(reconnectAttempt.toDouble()).toLong()
+            Log.d("WebSocket", "재연결 시도 #$reconnectAttempt, ${delayMillis}ms 후 재시도")
+
+            // 최대 지연 시간 설정 (예: 60초)
+            val maxDelay = 60000L
+            val finalDelay = if (delayMillis > maxDelay) maxDelay else delayMillis
+
+            delay(finalDelay)
+            if (isActive) {
+                tryConnection(token)
+            }
         }
     }
 
@@ -325,11 +359,14 @@ class ChatWebSocketManager @Inject constructor() {
         }
     }
 
+    // 💡 disconnect 함수 수정: STOMP DISCONNECT 후 웹소켓 연결 해제
     fun disconnect() {
         Log.d("WebSocket", "연결 종료")
+        isManualDisconnect = true
         if (isStompConnected) {
             val disconnectFrame = "DISCONNECT\n\n\u0000"
             webSocket?.send(disconnectFrame)
+            Log.d("WebSocket", "📤 STOMP DISCONNECT 전송")
         }
         webSocket?.close(1000, "정상 종료")
         webSocket = null

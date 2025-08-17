@@ -24,7 +24,7 @@ class LoginGateViewModel @Inject constructor(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
-    /** 화면 이동 이벤트 */
+
     sealed interface Nav {
         data object ToRegister : Nav
         data object ToCamera : Nav
@@ -35,7 +35,7 @@ class LoginGateViewModel @Inject constructor(
     private val _nav = MutableSharedFlow<Nav>(extraBufferCapacity = 1)
     val nav: SharedFlow<Nav> = _nav
 
-    /** 로딩/에러 표시용 (필요 없으면 빼도 됨) */
+
     data class UiState(
         val loading: Boolean = false,
         val error: String? = null,

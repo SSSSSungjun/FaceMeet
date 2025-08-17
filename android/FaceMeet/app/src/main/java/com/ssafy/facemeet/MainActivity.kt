@@ -37,8 +37,6 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var tokenExpirationNotifier: TokenExpirationNotifier
 
-    private lateinit var navController: NavHostController
-    private var pendingDeepLink: Intent? = null     // ← 초기화 전 들어올 수도 있으니 보관
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +45,19 @@ class MainActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
 
-        startService(Intent(this, OfflineNotifyService::class.java))
+        val extras = intent.extras
+        if (extras != null) {
+            for (key in extras.keySet()) {
+                val value = extras.get(key)
+                Log.d("FCM_EXTRA", "$key: key , $value : value")
+            }
+        }
+
+        handleNotificationIntent(intent)
+
+        val serviceIntent = Intent(this, OfflineNotifyService::class.java)
+        startService(serviceIntent)
+
         lifecycleScope.launch {
             tokenExpirationNotifier.tokenExpiredEvent.collect {
                 Toast.makeText(this@MainActivity, "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_LONG)
@@ -67,32 +77,11 @@ class MainActivity : ComponentActivity() {
                 val nc = rememberNavController()
                 LaunchedEffect(Unit) { this@MainActivity.navController = nc }
 
-                if (isLoggedIn != null) {
-                    // 처음 인텐트에 딥링크 있었는지 플래그 (빈화면 방지용)
-                    val hasInitialDeepLink = remember { intent?.data != null }
-
-                    AppNavHost(
-                        isLoggedIn = isLoggedIn == true,
-                        mainViewModel = mainViewModel,
-                        navController = nc,
-                        hasInitialDeepLink = hasInitialDeepLink
-                    )
-
-                    // ✅ NavHost가 붙은 후 한 프레임 뒤에 “직접 라우팅”
-                    LaunchedEffect(nc, isLoggedIn) {
-                        withFrameNanos { }
-                        val route = mapDeepLinkToRoute(intent?.data)
-                        if (route != null) {
-                            nc.goToWithMainThenNotification(route)
-                        } else if (isLoggedIn == true && !hasInitialDeepLink) {
-                            // 딥링크 없이 진입 시 기본 진입(예: LoginGate나 Main)
-                            nc.navigate(com.ssafy.facemeet.navigation.AppRoutes.LoginGate.route) {
-                                launchSingleTop = true
-                                popUpTo(com.ssafy.facemeet.navigation.AppRoutes.Start.route) {
-                                    inclusive = true
-                                }
-                            }
-                        }
+                    // NavHost 생성 완료 후 한 번 의도 전달(선택)
+                    LaunchedEffect(intent) {
+                        handleNotificationIntent(intent)
+                        intent.removeExtra("deep_link")
+                        intent.removeExtra("settingId")
                     }
                 }
             }
@@ -101,10 +90,40 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (!this::navController.isInitialized) return
-        val route = mapDeepLinkToRoute(intent.data) ?: return
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
 
-        navController.goToWithMainThenNotification(route)
+    // MainActivity
+    private fun handleNotificationIntent(intent: Intent) {
+        lifecycleScope.launch {
+            Log.d("MainActivity", "handleNotificationIntent: ${intent.getStringExtra("deep_link")}")
+            Log.d(TAG, "*handleNotificationIntent 진입")
+            var deepLink = intent.getStringExtra("deep_link")
+            if(deepLink == null){
+                deepLink = intent.getStringExtra("type")
+            }
+            Log.d(TAG, "deepLink: $deepLink")
+            when (deepLink) {
+                "ticket_event" -> {
+                    Log.d(TAG, "handleNotificationIntent: ticket_event")
+                    val id = intent.getLongExtra("settingId", -1L)
+                    Log.d(TAG, "handleNotificationIntent: ${id}")
+                    if (id > 0) {
+                        Log.d(TAG, "id > 0")
+                        mainViewModel.setPendingTicketEvent(id)
+                    }
+                }
+
+                "CHAT" -> {
+                    val roomId = intent.getStringExtra("roomId")?.toLong()
+                    Log.d(TAG, "deepLink: $roomId")
+                    mainViewModel.setPendingChat(roomId?: 0L)
+                }
+                "notification_center" -> mainViewModel.setPendingNotificationCenter()
+            }
+        }
+
     }
 
 }
