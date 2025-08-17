@@ -244,7 +244,8 @@ fun PartnerProfileContent(
                     text = "${result.nickname} (${result.age}세)",
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
-                    color = CommonColor.Gray900
+                    color = CommonColor.Gray900,
+                    textAlign = TextAlign.Center
                 )
 
                 // ● 접속 중

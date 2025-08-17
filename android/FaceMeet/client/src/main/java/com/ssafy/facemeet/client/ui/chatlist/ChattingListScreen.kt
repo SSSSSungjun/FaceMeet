@@ -56,6 +56,7 @@ import com.ssafy.facemeet.client.R
 import com.ssafy.facemeet.client.ui.profile.partner.dialog.RoomExitDialog
 import com.ssafy.facemeet.client.ui.theme.ChosunCentennial
 import com.ssafy.facemeet.core.domain.model.ChatListItem
+import com.ssafy.facemeet.core.util.constant.CommonColor
 import kotlin.math.abs
 
 private const val TAG = "ChattingListScreen"
@@ -82,6 +83,7 @@ fun ChattingListScreen(
                 .padding(15.dp),
             text = "채팅 목록",
             fontSize = 18.sp,
+            color= CommonColor.Brown500,
             fontFamily = ChosunCentennial
         )
         NoticeBanner()
