@@ -81,7 +81,7 @@ fun LoginScreen(
                     shape = RoundedCornerShape(5.dp)
                 ),
             contentPadding = PaddingValues(0.dp),
-            onClick = onNavigateToKakaoLogin,
+            onClick = {/*onNavigateToKakaoLogin*/},
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 contentColor = Color.Black

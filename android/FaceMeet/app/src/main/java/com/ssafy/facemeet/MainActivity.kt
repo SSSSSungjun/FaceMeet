@@ -109,10 +109,10 @@ class MainActivity : ComponentActivity() {
             }
             Log.d(TAG, "deepLink: $deepLink")
             when (deepLink) {
-                "ticket_event" -> {
+                "SCHEDULED_EVENT" -> {
                     Log.d(TAG, "handleNotificationIntent: ticket_event")
                     val id = intent.getLongExtra("settingId", -1L)
-                    Log.d(TAG, "handleNotificationIntent: ${id}")
+                    Log.d(TAG, "handleNotificationIntent: $id")
                     if (id > 0) {
                         Log.d(TAG, "id > 0")
                         mainViewModel.setPendingTicketEvent(id)
@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                     mainViewModel.setPendingChat(roomId ?: 0L)
                 }
 
-                "notification_center" -> mainViewModel.setPendingNotificationCenter()
+                "PRE_MESSAGE" -> mainViewModel.setPendingNotificationCenter()
             }
         }
 

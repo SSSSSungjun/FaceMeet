@@ -25,9 +25,9 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        fadeIn(animationSpec = tween(500)) + slideIntoContainer(
+        fadeIn(animationSpec = tween(300)) + slideIntoContainer(
             towards = direction,
-            animationSpec = tween(500)
+            animationSpec = tween(300)
         )
     }
 
@@ -38,9 +38,9 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        fadeOut(animationSpec = tween(500)) + slideOutOfContainer(
+        fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
             towards = direction,
-            animationSpec = tween(500)
+            animationSpec = tween(300)
         )
     }
 

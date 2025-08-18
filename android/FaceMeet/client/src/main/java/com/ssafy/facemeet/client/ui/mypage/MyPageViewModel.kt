@@ -71,6 +71,7 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun navigateToLogout() {
         viewModelScope.launch {
             val success = logout()
@@ -88,6 +89,7 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun navigateToWithdraw() {
         viewModelScope.launch {
             val success = withdraw()

@@ -206,7 +206,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             deepLink?.let { putExtra("deep_link", it) }
             Log.d(TAG, "deepLink: $deepLink")
             when (deepLink) {
-                "CHAT" -> id?.let { putExtra("roomId", it.toString()) }
+                "CHAT" -> id?.let { putExtra("roomId", it) }
                 "ticket_event" -> id?.let { putExtra("settingId", it) }
             }
         }
