@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,6 +37,7 @@ fun LoginScreen(
     onNavigateToKakaoLogin: () -> Unit,
     onNavigateToNaverLogin: () -> Unit
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -81,7 +83,10 @@ fun LoginScreen(
                     shape = RoundedCornerShape(5.dp)
                 ),
             contentPadding = PaddingValues(0.dp),
-            onClick = {/*onNavigateToKakaoLogin*/},
+            onClick = {
+                onNavigateToKakaoLogin()
+                //Toast.makeText(context, "카카오 로그인을 이용하실 수 없습니다.", Toast.LENGTH_SHORT).show()
+            },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 contentColor = Color.Black
