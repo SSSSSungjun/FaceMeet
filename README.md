@@ -27,6 +27,13 @@
    <img src="/img/네이버로그인.jpg" width="30%">
 </p>
 
+### 기본 정보 입력
+<p align="center">
+  <img src="/img/관상분석%20-1.jpg" width="30%">
+    <img src="/img/지도.jpg" width="30%">
+     <img src="/img/선호나이입력.jpg" width="30%">
+</p>
+
 ### 관상 촬영
 <p align="center">
   <img src="/img/관상분석%20-1.jpg" width="30%">
@@ -36,9 +43,8 @@
 
 ### 관상 결과 확인
 <p align="center">
-  <img src="/img/관상결과.jpg" width="30%">
- <img src="/img/관상분석특징별결과.jpg" width="30%">
-  <img src="/img/관상상세결과.jpg" width="30%">
+  <img src="/img/상세관상1.jpg" width="30%">
+  <img src="/img/상세관상2.jpg" width="30%">
 </p>
 
 ### 상대 매칭
@@ -50,26 +56,77 @@
 
 ### 채팅 
 <p align="center">
+  <img src="/img/채팅시작.jpg" width="30%">
   <img src="/img/채팅.jpg" width="30%">
 </p>
 
 ### 상대 프로필 및 관상 확인
 <p align="center">
-  <img src="/img/채팅상대프로필.jpg" width="30%">
+  <img src="/img/상대방상세프로필.jpg" width="30%">
 </p>
 
 ### 상대 차단
 <p align="center">
-  <img src="/img/차단하려는화면.jpg" width="30%">
+  <img src="/img/상대방간단프로필.jpg" width="30%">
    <img src="/img/차단토글.jpg"width="30%">
-    <img src="/img/채팅상대프로필.jpg.jpg" width="30%">
+    <img src="/img/차단완료.jpg" width="30%">
 </p>
 
 ### 상대 신고
 <p align="center">
-  <img src="/img/채팅상대프로필.jpg" width="30%">
+  <img src="/img/상대방간단프로필.jpg" width="30%">
+  <img src="/img/신고하기화면.jpg" width="30%">
+  <img src="/img/신고완료.jpg" width="30%">
 </p>
 
+### 채팅방 나가기
+<p align="center">
+  <img src="/img/상대방간단프로필.jpg" width="30%">
+  <img src="/img/채팅방나가기토글.jpg" width="30%">
+</p>
+
+### 마이페이지
+<p align="center">
+  <img src="/img/마이페이지.jpg" width="30%">
+</p>
+
+### 차단 목록 확인 & 차단 해제
+<p align="center">
+  <img src="/img/차단목록.jpg" width="30%">
+  <img src="/img/차단해제토글.jpg" width="30%">
+  <img src="/img/차단목록빈칸.jpg" width="30%">
+</p>
+
+## 이벤트 알림
+### 수신 & 알림함 확인 & 매칭권 획득
+<p align="center">
+  <img src="/img/알림온화면.jpg" width="30%">
+  <img src="/img/매칭권 알림 목록.jpg" width="30%">
+  <img src="/img/매칭권획득성공.jpg" width="30%">
+</p>
+
+## 관리자 페이지
+### 신고 확인 및 처리
+<p align="center">
+  <img src="/img/관리자/신고조회.png" width="30%">
+  <img src="/img/관리자/신고채팅조회.png" width="30%">
+  <img src="/img/관리자/신고처리.png" width="30%">
+  <img src="/img/관리자/신고완료.png" width="30%">
+</p>
+
+### 블랙리스트 목록 조회 및 해제
+<p align="center">
+  <img src="/img/관리자/블랙리스트조회.png" width="30%">
+  <img src="/img/관리자/블랙리스트확인.png" width="30%">
+  <img src="/img/관리자/블랙리스트완료.png" width="30%">
+</p>
+
+### 이벤트 목록 조회 및 등록
+<p align="center">
+  <img src="/img/관리자/이벤트조회.png" width="30%">
+  <img src="/img/관리자/이벤트등록.png" width="30%">
+  <img src="/img/관리자/이벤트완료.png" width="30%">
+</p>
 ---
 
 ## 🚀 주요 기능
