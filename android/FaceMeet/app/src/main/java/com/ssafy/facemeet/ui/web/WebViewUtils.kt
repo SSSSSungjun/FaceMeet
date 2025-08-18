@@ -24,6 +24,7 @@ object WebViewUtils {
         onCancel: () -> Unit
     ) {
         url?.let { currentUrl ->
+            Log.d(TAG, "checkForTokens: $currentUrl")
             when {
                 isCancelUrl(currentUrl) -> {
                     onCancel()
@@ -35,9 +36,11 @@ object WebViewUtils {
                     view?.stopLoading()
 
                     view?.evaluateJavascript("document.body.innerText") { result ->
+                        Log.d(TAG, "checkForTokens: $result")
                         if (result != null && result != "null" && result.contains("accessToken")) {
                             val cleanText = result.replace("\"", "").replace("\\", "")
                             val tokens = parseTokensFromText(cleanText)
+                            Log.d(TAG, "checkForTokens: $tokens")
                             if (tokens != null) {
                                 onTokenExtracted(
                                     tokens.accessToken,
@@ -96,24 +99,17 @@ object WebViewUtils {
         }
     }
 
-    fun clearWebViewData(context: Context) {
+    suspend fun clearWebViewData(webView: WebView, context: Context) {
         try {
-            val webView = WebView(context)
-
-            // 쿠키 삭제
-            val cookieManager = CookieManager.getInstance()
-            cookieManager.removeAllCookies(null) // 모든 쿠키 삭제
-            cookieManager.flush() // 동기화
-
-            // 캐시 삭제
             webView.clearCache(true)
-
-            // 웹 스토리지 삭제 (DOM Storage)
-            WebStorage.getInstance().deleteAllData()
-
-            // 기타 데이터 삭제
             webView.clearHistory()
             webView.clearFormData()
+
+            val cookieManager = CookieManager.getInstance()
+            cookieManager.removeAllCookies(null)
+            cookieManager.flush()
+
+            WebStorage.getInstance().deleteAllData()
         } catch (e: Exception) {
             Log.e(TAG, "clearWebViewData: ${e.message}", )
         }

@@ -117,6 +117,7 @@ fun AppNavHost(
             WebLoginScreen(
                 provider = provider,
                 onLoginSuccess = { hasInfo, hasFace ->
+                    Log.d("LoginGateScreen", "로그인 성공 시도")
                     navController.navigate(AppRoutes.LoginGate.route) {
                         popUpTo(AppRoutes.Start.route) { inclusive = false }
                         launchSingleTop = true

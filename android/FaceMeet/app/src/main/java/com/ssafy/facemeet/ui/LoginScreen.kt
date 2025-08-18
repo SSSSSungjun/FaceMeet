@@ -1,3 +1,4 @@
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,7 @@ fun LoginScreen(
     onNavigateToKakaoLogin: () -> Unit,
     onNavigateToNaverLogin: () -> Unit
 ) {
+
     val context = LocalContext.current
     Column(
         modifier = Modifier
@@ -84,8 +86,8 @@ fun LoginScreen(
                 ),
             contentPadding = PaddingValues(0.dp),
             onClick = {
-                onNavigateToKakaoLogin()
-                //Toast.makeText(context, "카카오 로그인을 이용하실 수 없습니다.", Toast.LENGTH_SHORT).show()
+                //onNavigateToKakaoLogin()
+                Toast.makeText(context, "카카오 로그인을 이용하실 수 없습니다.", Toast.LENGTH_SHORT).show()
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,

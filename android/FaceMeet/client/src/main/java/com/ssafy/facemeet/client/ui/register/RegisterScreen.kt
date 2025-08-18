@@ -80,6 +80,7 @@ fun RegisterScreen(
             .padding(10.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
+        Log.d(TAG, "RegisterScreen: ${uiState.selectedAddress.toString()}")
         Column(
             modifier = Modifier
                 .fillMaxWidth()

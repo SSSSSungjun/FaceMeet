@@ -3,6 +3,7 @@ package com.ssafy.facemeet.core.util.Animation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,9 +26,9 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        fadeIn(animationSpec = tween(300)) + slideIntoContainer(
+        fadeIn(animationSpec = spring(stiffness = 500f)) + slideIntoContainer(
             towards = direction,
-            animationSpec = tween(300)
+            animationSpec = spring(stiffness = 500f)
         )
     }
 
@@ -38,9 +39,9 @@ object NavigationAnimations {
             AnimatedContentTransitionScope.SlideDirection.Right
         }
 
-        fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+        fadeOut(animationSpec = spring(stiffness = 500f)) + slideOutOfContainer(
             towards = direction,
-            animationSpec = tween(300)
+            animationSpec = spring(stiffness = 500f)
         )
     }
 

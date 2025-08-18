@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.client.ui.register
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.client.navigation.setting.RegisterMode
@@ -56,13 +57,14 @@ class RegisterViewModel @Inject constructor(
 
     // 최초에 기존 정보 불러오기
     fun loadInitial(mode: RegisterMode) = viewModelScope.launch {
+        Log.d(TAG, "RegisterScreen: $mode ")
         when (mode) {
             RegisterMode.REGISTER -> updateAddressFromStore()
             RegisterMode.EDIT -> getUserInfoUseCase().onSuccess { user ->
                 _uiState.update {
                     it.copy(
                         nickname = user.nickname,
-                        selectedAddress = user.address,
+                        selectedAddress = (if( mapDataStore.address==null) user.address else mapDataStore.address).toString(),
                         selectedAgeRange = user.preferAgeLower..user.preferAgeUpper,
                         hasLocation = true // 좌표는 mapDataStore로 관리
                     )

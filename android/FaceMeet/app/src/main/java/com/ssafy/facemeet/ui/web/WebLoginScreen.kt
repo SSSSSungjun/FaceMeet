@@ -37,17 +37,50 @@ fun WebLoginScreen(
 ) {
     val context = LocalContext.current
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
-    var isCacheCleared by remember { mutableStateOf(false) }
-
-    val url = when (provider) {
-        SocialProvider.NAVER -> BASE_NAVER_URL
-        SocialProvider.KAKAO -> BASE_KAKAO_URL
-        else -> ""
+    val webView = remember {
+        WebView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            // WebView 설정은 여기서 한 번만 해줍니다.
+            configureWebView(
+                onTokenExtracted = { accessToken, refreshToken, hasInfo, hasFace ->
+                    mainHandler.post {
+                        Toast.makeText(context, "로그인 성공하였습니다.", Toast.LENGTH_SHORT).show()
+                    }
+                    viewModel.saveToken(refreshToken, accessToken)
+                    onLoginSuccess(hasInfo, hasFace)
+                },
+                onError = { error ->
+                    mainHandler.post {
+                        Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT).show()
+                    }
+                    onLoginFailed()
+                },
+                onCancel = {
+                    mainHandler.post {
+                        Toast.makeText(context, "로그인 취소", Toast.LENGTH_SHORT).show()
+                    }
+                    onCancel()
+                },
+                onDismiss = {}
+            )
+        }
     }
 
+    var isCacheCleared by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
-        WebViewUtils.clearWebViewData(context)
-        isCacheCleared = true
+        WebViewUtils.clearWebViewData(webView, context)
+
+        val url = when (provider) {
+            SocialProvider.NAVER -> BASE_NAVER_URL
+            SocialProvider.KAKAO -> BASE_KAKAO_URL
+            else -> ""
+        }
+
+        webView.loadUrl(url)
     }
 
     Box(
@@ -56,40 +89,9 @@ fun WebLoginScreen(
             .systemBarsPadding(),
     ) {
         Log.d(TAG, "WebLoginScreen: isCacheCleared : $isCacheCleared")
-        if (isCacheCleared) {
-            AndroidView(
-                factory = {
-                    WebView(context).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        configureWebView(
-                            onTokenExtracted = { accessToken, refreshToken, hasInfo, hasFace ->
-                                mainHandler.post {
-                                    Toast.makeText(context, "로그인 성공하였습니다.", Toast.LENGTH_SHORT).show()
-                                }
-                                viewModel.saveToken(refreshToken, accessToken)
-                                onLoginSuccess(hasInfo, hasFace)
-                            },
-                            onError = { error ->
-                                mainHandler.post {
-                                    Toast.makeText(context, "로그인 에러", Toast.LENGTH_SHORT).show()
-                                }
-                                onLoginFailed()
-                            },
-                            onCancel = {
-                                mainHandler.post {
-                                    Toast.makeText(context, "로그인 취소", Toast.LENGTH_SHORT).show()
-                                }
-                                onCancel()
-                            },
-                            onDismiss = {}
-                        )
-                        loadUrl(url)
-                    }
-                },
-            )
-        }
+        AndroidView(
+            factory = { webView },
+            update = {}
+        )
     }
 }
