@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>관상 분석</title>
+    <style>
+      .preview-container {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 20px;
+      }
+      .preview-block {
+        text-align: center;
+      }
+      img {
+        max-width: 280px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+      fieldset {
+        margin-bottom: 18px;
+      }
+      hr {
+        margin: 26px 0;
+      }
+      .result-block {
+        margin-bottom: 36px;
+      }
+      .gpt-block {
+        background: #f9f9f9;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        margin-top: 30px;
+      }
+      .gpt-block h2 {
+        margin-top: 0;
+      }
+      .gpt-block pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>이미지 업로드: 관상 분석 (4장)</h1>
+
+    <form method="POST" enctype="multipart/form-data" onsubmit="sendWithToken(event)">
+      {% csrf_token %}
+      <fieldset>
+        <legend>분석 세트 1</legend>
+        <div>
+          <label for="image1">정면 이미지 1:</label>
+          <input type="file" name="image1" id="image1" accept="image/*" required />
+        </div>
+        <div>
+          <label for="side_image1">측면 이미지 1:</label>
+          <input type="file" name="side_image1" id="side_image1" accept="image/*" required />
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>분석 세트 2</legend>
+        <div>
+          <label for="image2">정면 이미지 2:</label>
+          <input type="file" name="image2" id="image2" accept="image/*" required />
+        </div>
+        <div>
+          <label for="side_image2">측면 이미지 2:</label>
+          <input type="file" name="side_image2" id="side_image2" accept="image/*" required />
+        </div>
+      </fieldset>
+      <button type="submit" style="margin-top:15px;">분석하기</button>
+    </form>
+
+    <hr />
+
+    <!-- 에러 메시지 -->
+    {% if error %}
+      <p style="color:red; font-weight:bold;">에러 발생: {{ error }}</p>
+    {% endif %}
+
+    <!-- 분석 결과 세트 1 -->
+    {% if result1 %}
+      <div class="result-block">
+        <h2>🔍 분석 결과 세트 1</h2>
+        <div class="preview-container">
+          <div class="preview-block">
+            <label>정면 이미지 미리보기</label><br />
+            {% if preview.image1 %}
+              <img src="{{ preview.image1 }}" alt="정면1" />
+            {% else %}
+              <div style="color:#999;">업로드된 정면 이미지가 없습니다.</div>
+            {% endif %}
+          </div>
+          <div class="preview-block">
+            <label>측면 이미지 미리보기</label><br />
+            {% if preview.side_image1 %}
+              <img src="{{ preview.side_image1 }}" alt="측면1" />
+            {% else %}
+              <div style="color:#999;">업로드된 측면 이미지가 없습니다.</div>
+            {% endif %}
+          </div>
+          {% if composed_image1_url %}
+            <h4>합성된 관상 이미지</h4>
+            <img src="{{ composed_image1_url }}" class="composed-image" alt="합성1" />
+          {% endif %}
+        </div>
+        <h4>결과:</h4>
+        {% if result1.items %}
+          <ul>
+            {% for key, value in result1.items %}
+              <li>
+                <strong>{{ key }}</strong>: {{ value }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>분석 결과가 없습니다.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- 분석 결과 세트 2 -->
+    {% if result2 %}
+      <div class="result-block">
+        <h2>🔍 분석 결과 세트 2</h2>
+        <div class="preview-container">
+          <div class="preview-block">
+            <label>정면 이미지 미리보기</label><br />
+            {% if preview.image2 %}
+              <img src="{{ preview.image2 }}" alt="정면2" />
+            {% else %}
+              <div style="color:#999;">업로드된 정면 이미지가 없습니다.</div>
+            {% endif %}
+          </div>
+          <div class="preview-block">
+            <label>측면 이미지 미리보기</label><br />
+            {% if preview.side_image2 %}
+              <img src="{{ preview.side_image2 }}" alt="측면2" />
+            {% else %}
+              <div style="color:#999;">업로드된 측면 이미지가 없습니다.</div>
+            {% endif %}
+          </div>
+          {% if composed_image1_url %}
+            <h4>합성된 관상 이미지</h4>
+            <img src="{{ composed_image1_url }}" class="composed-image" alt="합성1" />
+          {% endif %}
+        </div>
+        <h4>결과:</h4>
+        {% if result2.items %}
+          <ul>
+            {% for key, value in result2.items %}
+              <li>
+                <strong>{{ key }}</strong>: {{ value }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>분석 결과가 없습니다.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- GPT 종합 해석 결과 (1, 2개 모두 표시) -->
+    {% if analysis_data %}
+      <div class="gpt-block">
+        <h2>🧠 GPT 종합 해석 결과 세트 1</h2>
+        <pre>{{ analysis_data }}</pre>
+      </div>
+    {% endif %}
+
+    {% if gpt_result2 %}
+      <div class="gpt-block">
+        <h2>🧠 GPT 종합 해석 결과 세트 2</h2>
+        <pre>{{ gpt_result2 }}</pre>
+      </div>
+    {% endif %}
+  </body>
+</html>
+
+

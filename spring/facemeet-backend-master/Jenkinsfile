@@ -1,0 +1,13 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Print Message') {
+            steps {
+                script {
+                    echo '✅ This should appear in the Console Outㄴㅇㄹput!!'
+                }
+            }
+        }
+    }
+}
