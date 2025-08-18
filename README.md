@@ -22,14 +22,20 @@
 - AI와 빅데이터 기반의 매칭 
 
 ### 메인페이지
-![mainpage](/img/상견례%20메인사진.jpg)
+<p align="center">
+  <img src="/img/상견례%20메인사진.jpg" width="50%">
+</p>
 
 ### 관상 페이지
-| ![facepage-1](/img/관상분석%20-1.jpg) | ![facepage-2](/img/관상분석%20-2.jpg) |
+<p align="center">
+  <img src="/img/관상분석%20-1.jpg" width="40%">
+  <img src="/img/관상분석%20-2.jpg" width="40%">
+</p>
 
 ### 채팅 페이지
-![chating](/img/채팅.jpg) 
-
+<p align="center">
+  <img src="/img/채팅.jpg" width="50%">
+</p>
 
 ---
 
