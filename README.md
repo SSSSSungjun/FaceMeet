@@ -21,20 +21,53 @@
 - mediapipe를 사용한 관상 분석
 - AI와 빅데이터 기반의 매칭 
 
-### 메인페이지
+### 회원가입 & 로그인
 <p align="center">
-  <img src="/img/상견례%20메인사진.jpg" width="50%">
+  <img src="/img/상견례%20메인사진.jpg" width="30%">
+   <img src="/img/네이버로그인.jpg" width="30%">
 </p>
 
-### 관상 페이지
+### 관상 촬영
 <p align="center">
-  <img src="/img/관상분석%20-1.jpg" width="40%">
-  <img src="/img/관상분석%20-2.jpg" width="40%">
+  <img src="/img/관상분석%20-1.jpg" width="30%">
+    <img src="/img/전면사진.png" width="30%">
+     <img src="/img/옆면사진.png" width="30%">
 </p>
 
-### 채팅 페이지
+### 관상 결과 확인
 <p align="center">
-  <img src="/img/채팅.jpg" width="50%">
+  <img src="/img/관상결과.jpg" width="30%">
+ <img src="/img/관상분석특징별결과.jpg" width="30%">
+  <img src="/img/관상상세결과.jpg" width="30%">
+</p>
+
+### 상대 매칭
+<p align="center">
+  <img src="/img/매칭버튼.jpg" width="30%">
+   <img src="/img/매칭권획득화면.png" width="30%">
+    <img src="/img/매칭대상찾는중.png" width="30%">
+</p>
+
+### 채팅 
+<p align="center">
+  <img src="/img/채팅.jpg" width="30%">
+</p>
+
+### 상대 프로필 및 관상 확인
+<p align="center">
+  <img src="/img/채팅상대프로필.jpg" width="30%">
+</p>
+
+### 상대 차단
+<p align="center">
+  <img src="/img/차단하려는화면.jpg" width="30%">
+   <img src="/img/차단토글.jpg"width="30%">
+    <img src="/img/채팅상대프로필.jpg.jpg" width="30%">
+</p>
+
+### 상대 신고
+<p align="center">
+  <img src="/img/채팅상대프로필.jpg" width="30%">
 </p>
 
 ---
@@ -117,11 +150,11 @@
 
 | 🧑‍💻 **이름**    | 🏆 **역할**        | 🚀 **이메일주소**        |
 |:----------------:|:-----------------:|:-----------------------:|
-| **천지윤**       | 팀장, 안드로이드   |  schabc8436@gmail.com   |
+| **천지윤**       | 팀장, 안드로이드   |  gunbam715@gmail.com  |
 | **윤성준**       | 안드로이드        |  schabc8436@gmail.com |
-| **김소은**       | 백엔드            |   schabc8436@gmail.com|
+| **김소은**       | 백엔드            |   prgrm0505@gmail.com
 | **손초희**       | 백엔드           | schabc8436@gmail.com |
-| **김규미**       | 프론트엔드       | schabc8436@gmail.com |
+| **김규미**       | 프론트엔드       | sgxz3112@gmail.com |
 | **우태헌**       | AI              |  schabc8436@gmail.com |
 
 ## 🛠 담당 파트  
@@ -130,10 +163,17 @@
 - **PM**
   - 전체 일정 관리 및 파트 분배 / QA 담당
 - **안드로이드**
-  - 전체 일정 관리 및 파트 분배 / QA 담당
+  - 마이페이지
+  - 관상 보기
+  - FCM 알림
+  - Mlkit 사진 촬영
+
 
 ### 윤성준  
 - **안드로이드**
+    - 소셜 로그인
+    - 채팅(실시간 채팅 전송, 읽음 처리, 안읽음 메시지 수) 구현
+    - 채팅방 나가기 , 신고, 차단 
   
 
 ### 김소은  
