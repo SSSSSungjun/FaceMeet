@@ -127,7 +127,7 @@ class ChattingViewModel @Inject constructor(
         //loadInitialMessages(currentRoomId)
         if (!uiState.value.roomInfo.deleted && !uiState.value.roomInfo.blocked) {
             Log.d("ChatDebug", "상대방 앱: '읽음' 알림 전송")
-            markAsRead()
+            //markAsRead()
         }
     }
 
