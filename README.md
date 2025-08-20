@@ -4,14 +4,20 @@
 - [🌐상견례 서비스 바로가기]()
 - [🎬영상 포트폴리오]()
 
+<br>
+
 ---
 
 ## 📑 목차
 1. [📋 프로젝트 소개](#-프로젝트-소개)
 2. [🚀 주요 기능](#-주요-기능)
 3. [🛠️ 기술 스택](#-기술-스택)
-4. [👨‍👩‍👧‍👦 팀원 정보](#-팀원-정보)
-5. [📌 기타 정보](#-기타-정보)
+4. [🏗️ 아키텍처](#️-아키텍처)
+5. [📚 ERD](#-erd)
+6. [👨‍👩‍👧‍👦 팀원 정보](#-팀원-정보)
+7. [📌 기타 정보](#-기타-정보)
+
+<br>
 
 ---
 
@@ -20,6 +26,8 @@
 
 - mediapipe를 사용한 관상 분석
 - AI와 빅데이터 기반의 매칭 
+
+<br>
 
 ### 회원가입 & 로그인
 <p align="center">
@@ -97,16 +105,15 @@
   <img src="/img/차단목록빈칸.jpg" width="30%">
 </p>
 
-## 이벤트 알림
-### 수신 & 알림함 확인 & 매칭권 획득
+### 이벤트 알림 & 매칭권 획득
 <p align="center">
   <img src="/img/알림온화면.jpg" width="30%">
   <img src="/img/매칭권 알림 목록.jpg" width="30%">
   <img src="/img/매칭권획득성공.jpg" width="30%">
 </p>
 
-## 관리자 페이지
-### 신고 확인 및 처리
+### 관리자 페이지
+#### 신고 확인 및 처리
 <p align="center">
   <img src="/img/관리자/신고조회.png" width="30%">
   <img src="/img/관리자/신고채팅조회.png" width="30%">
@@ -114,19 +121,22 @@
   <img src="/img/관리자/신고완료.png" width="30%">
 </p>
 
-### 블랙리스트 목록 조회 및 해제
+#### 블랙리스트 목록 조회 및 해제
 <p align="center">
   <img src="/img/관리자/블랙리스트조회.png" width="30%">
   <img src="/img/관리자/블랙리스트확인.png" width="30%">
   <img src="/img/관리자/블랙리스트완료.png" width="30%">
 </p>
 
-### 이벤트 목록 조회 및 등록
+#### 이벤트 목록 조회 및 등록
 <p align="center">
   <img src="/img/관리자/이벤트조회.png" width="30%">
   <img src="/img/관리자/이벤트등록.png" width="30%">
   <img src="/img/관리자/이벤트완료.png" width="30%">
 </p>
+
+<br>
+
 ---
 
 ## 🚀 주요 기능
@@ -142,12 +152,15 @@
     - 기본적으로 하루에 한개씩 매칭권 제공
     - 메칭권 선축순 획득을 통해 추가 획득 가능
 
+<br>
+
 ---
 
 ## 🛠️ 기술 스택
 
 ### 💻 안드로이드
-![Vue.js](https://img.shields.io/badge/vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)
+![Vue.js](https://img.shields.io/badge/kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Vue.js](https://img.shields.io/badge/android_studio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white)
 
 ### ⚙️ 백엔드 (Spring Boot)
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
@@ -156,7 +169,7 @@
 ![YAML](https://img.shields.io/badge/yaml-black.svg?style=for-the-badge&logo=yaml&logoColor=white)
 
 
-### ⚙️ 백엔드 (Spring Boot)
+### ⚙️ 백엔드 (Django)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![Django](https://img.shields.io/badge/django-092E20?style=for-the-badge&logo=django&logoColor=white)
 
@@ -176,6 +189,7 @@
 ![Jenkins](https://img.shields.io/badge/jenkins-%232C5263.svg?style=for-the-badge&logo=jenkins&logoColor=white)
 ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+![Firebase](https://img.shields.io/badge/Firebase-DD2C00?style=for-the-badge&logo=firebase&logoColor=white)
 
 
 ### 👊 협업 툴
@@ -194,11 +208,12 @@
 
 ---
 
-
-### 🏗️ 아키텍처
+## 🏗️ 아키텍처
 ![architecture](/img/인프라.png)
 
-### 📚 ERD
+---
+
+## 📚 ERD
 ![erd](/img/erd.png)
 
 ---
@@ -213,6 +228,7 @@
 | **손초희**       | 백엔드           | schabc8436@gmail.com |
 | **김규미**       | 프론트엔드       | sgxz3112@gmail.com |
 | **우태헌**       | AI              |  schabc8436@gmail.com |
+
 
 ## 🛠 담당 파트  
 
@@ -237,10 +253,11 @@
 - **백엔드 개발**  
   - DB 설계
   - 소셜 로그인 
-  - Spring Security  + JWT 
+  - Spring Security + JWT 
   - FCM 알림 
   - Redis 캐싱 
   - 관리자 이벤트 기능
+  - 에러 처리
 
 
 ### 손초희  
@@ -276,6 +293,8 @@
 ### 공통 파트
 - **완성도를 위한 QA -> 3차 QA까지 했으며 약 150개**
 - 기획, 요구사항 명세서, ERD구성, API 명세서
+
+<br>
 
 ---
 
