@@ -147,7 +147,8 @@
 ## 🛠️ 기술 스택
 
 ### 💻 안드로이드
-![Vue.js](https://img.shields.io/badge/vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)
+![Vue.js](https://img.shields.io/badge/kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Vue.js](https://img.shields.io/badge/android_studio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white)
 
 ### ⚙️ 백엔드 (Spring Boot)
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
@@ -156,7 +157,7 @@
 ![YAML](https://img.shields.io/badge/yaml-black.svg?style=for-the-badge&logo=yaml&logoColor=white)
 
 
-### ⚙️ 백엔드 (Spring Boot)
+### ⚙️ 백엔드 (Django)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![Django](https://img.shields.io/badge/django-092E20?style=for-the-badge&logo=django&logoColor=white)
 
@@ -176,6 +177,7 @@
 ![Jenkins](https://img.shields.io/badge/jenkins-%232C5263.svg?style=for-the-badge&logo=jenkins&logoColor=white)
 ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+![Firebase](https://img.shields.io/badge/Firebase-DD2C00?style=for-the-badge&logo=firebase&logoColor=white)
 
 
 ### 👊 협업 툴
@@ -194,11 +196,12 @@
 
 ---
 
-
-### 🏗️ 아키텍처
+## 🏗️ 아키텍처
 ![architecture](/img/인프라.png)
 
-### 📚 ERD
+---
+
+## 📚 ERD
 ![erd](/img/erd.png)
 
 ---
@@ -237,10 +240,11 @@
 - **백엔드 개발**  
   - DB 설계
   - 소셜 로그인 
-  - Spring Security  + JWT 
+  - Spring Security + JWT 
   - FCM 알림 
   - Redis 캐싱 
   - 관리자 이벤트 기능
+  - 에러 처리
 
 
 ### 손초희  
