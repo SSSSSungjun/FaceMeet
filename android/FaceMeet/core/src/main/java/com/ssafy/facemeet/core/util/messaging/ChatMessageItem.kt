@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.data.socket.model
+package com.ssafy.facemeet.core.util.messaging
 
 import com.ssafy.facemeet.core.domain.model.ChatElement
 

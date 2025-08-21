@@ -15,8 +15,6 @@ class AuthInterceptor @Inject constructor(
         val original = chain.request()
         val path = original.url.encodedPath
 
-        
-        // ✅ refresh 요청은 Authorization 절대 금지
         if (path.contains("/auth/refresh")) {
             return chain.proceed(
                 original.newBuilder()
@@ -24,7 +22,6 @@ class AuthInterceptor @Inject constructor(
                     .build()
             )
         }
-
 
         val request = chain.request().newBuilder().apply {
             val token = runBlocking { tokenManager.getAccessToken() }

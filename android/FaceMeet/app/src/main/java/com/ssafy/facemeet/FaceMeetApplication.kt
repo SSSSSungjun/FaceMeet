@@ -8,8 +8,8 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.ssafy.facemeet.core.data.datastore.TokenManager
-import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.domain.repository.UserRepository
+import com.ssafy.facemeet.core.domain.usecase.ConnectChatWebSocketUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +26,7 @@ class FaceMeetApplication : Application() {
     @Inject
     lateinit var tokenManager: TokenManager
     @Inject
-    lateinit var chatWebSocketManager: ChatWebSocketManager
+    lateinit var connectChatWebSocketUseCase: ConnectChatWebSocketUseCase
     @Inject
     lateinit var userRepository: UserRepository
 
@@ -100,7 +100,7 @@ class FaceMeetApplication : Application() {
 
             if (userId != null && !accessToken.isNullOrEmpty()) {
                 Log.d(TAG, "userId: $userId, accessToken 유효. WebSocket 연결 시작.")
-                chatWebSocketManager.connect(userId, accessToken)
+                connectChatWebSocketUseCase.invoke(userId, accessToken)
             } else {
                 Log.w(TAG, "userId 또는 accessToken이 유효하지 않아 WebSocket 연결을 건너뜁니다.")
             }

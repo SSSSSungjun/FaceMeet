@@ -5,12 +5,12 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.ssafy.facemeet.core.data.remote.dto.request.MatchingUserRequest
-import com.ssafy.facemeet.core.data.repository.util.ChatPagingSource
-import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
+import com.ssafy.facemeet.core.data.remote.repository.page.ChatPagingSource
 import com.ssafy.facemeet.core.domain.model.ChatListItem
 import com.ssafy.facemeet.core.domain.model.ChattingAll
 import com.ssafy.facemeet.core.domain.model.Matching
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
+import com.ssafy.facemeet.core.util.messaging.ChatMessageItem
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

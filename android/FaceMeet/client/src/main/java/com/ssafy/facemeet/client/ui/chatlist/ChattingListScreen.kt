@@ -88,10 +88,9 @@ fun ChattingListScreen(
         )
         NoticeBanner()
 
-        if (!uiState.isLoading) {
+        if (uiState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
-            // 로딩이 완료되었을 때 LazyColumn을 표시
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(uiState.chatList) { item ->
                     ChatListElementItem(

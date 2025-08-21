@@ -1,5 +1,5 @@
 // core/data/repository/MatchRepositoryImpl.kt
-package com.ssafy.facemeet.core.data.repository
+package com.ssafy.facemeet.core.data.remote.repository
 
 import com.ssafy.facemeet.core.data.remote.datasource.MatchRemoteDataSource
 import com.ssafy.facemeet.core.domain.repository.MatchRepository

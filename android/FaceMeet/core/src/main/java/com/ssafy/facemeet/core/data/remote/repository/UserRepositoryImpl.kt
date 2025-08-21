@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.data.repository
+package com.ssafy.facemeet.core.data.remote.repository
 
 import android.util.Log
 import com.ssafy.facemeet.core.data.remote.datasource.UserRemoteDataSource

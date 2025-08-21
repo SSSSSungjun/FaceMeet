@@ -3,7 +3,7 @@ package com.ssafy.facemeet.core.di
 import com.ssafy.facemeet.core.data.remote.api.PartnerApiService
 import com.ssafy.facemeet.core.data.remote.api.UserApiService
 import com.ssafy.facemeet.core.data.remote.datasource.UserRemoteDataSource
-import com.ssafy.facemeet.core.data.repository.UserRepositoryImpl
+import com.ssafy.facemeet.core.data.remote.repository.UserRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.UserRepository
 import com.ssafy.facemeet.core.domain.usecase.DeleteUserUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetHomeInfoUseCase

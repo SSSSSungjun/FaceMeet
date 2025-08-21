@@ -2,6 +2,7 @@ package com.ssafy.facemeet.core.util
 
 import android.util.Log
 
+//FCM 알람 여부 처리
 object AppStateManager {
     private var _currentScreen: String? = null
     private var _currentRoomId: Long? = null
@@ -13,11 +14,6 @@ object AppStateManager {
     }
 
     fun getCurrentScreen(): String? = _currentScreen
-
-    fun isInChatRoom(roomId: Long): Boolean {
-        return _currentScreen == "ChattingScreen" && _currentRoomId == roomId
-    }
-
     fun getCurrentRoomId(): Long? = _currentRoomId
 
     fun clearCurrentScreen() {

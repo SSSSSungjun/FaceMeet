@@ -1,5 +1,5 @@
 // core/data/repository/MatchTicketRepositoryImpl.kt
-package com.ssafy.facemeet.core.data.repository
+package com.ssafy.facemeet.core.data.remote.repository
 
 import com.google.gson.Gson
 import com.ssafy.facemeet.core.data.remote.datasource.MatchTicketRemoteDataSource

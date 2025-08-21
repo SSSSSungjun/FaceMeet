@@ -1,13 +1,12 @@
 package com.ssafy.facemeet.core.di
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.ssafy.facemeet.core.BuildConfig
 import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.remote.api.FaceService
 import com.ssafy.facemeet.core.data.remote.interceptor.AuthInterceptor
 import com.ssafy.facemeet.core.data.remote.interceptor.TokenAuthenticator
-import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +16,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -35,6 +35,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @Named("rest")
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         authenticator: TokenAuthenticator
@@ -53,7 +54,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(@Named("rest") okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
@@ -61,12 +62,22 @@ object NetworkModule {
             .build()
     }
 
+
     @Provides
     @Singleton
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun provideChatWebSocketManager(): ChatWebSocketManager {
-        return ChatWebSocketManager()
+    @Named("ws")
+    fun provideWebSocket(): OkHttpClient {
+        return OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .pingInterval(10, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .build()
     }
+
+    @Provides @Singleton
+    fun provideGson(): Gson = GsonBuilder().create()
 
     @Provides
     @Singleton

@@ -2,7 +2,7 @@ package com.ssafy.facemeet.core.di
 
 import com.ssafy.facemeet.core.data.remote.api.BlockApiService
 import com.ssafy.facemeet.core.data.remote.datasource.BlockRemoteDataSource
-import com.ssafy.facemeet.core.data.repository.BlockRepositoryImpl
+import com.ssafy.facemeet.core.data.remote.repository.BlockRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.BlockRepository
 import com.ssafy.facemeet.core.domain.usecase.DeleteBlockUserUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetBlockListUseCase

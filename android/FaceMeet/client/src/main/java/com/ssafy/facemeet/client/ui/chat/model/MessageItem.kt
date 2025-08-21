@@ -1,6 +1,6 @@
 package com.ssafy.facemeet.client.ui.chat.model
 
-import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
+import com.ssafy.facemeet.core.util.messaging.ChatMessageItem
 
 data class MessageItem(
     val chatMessage: ChatMessageItem,

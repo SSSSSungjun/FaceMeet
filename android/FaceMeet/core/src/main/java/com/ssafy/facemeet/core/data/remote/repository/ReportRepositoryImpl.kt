@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.data.repository
+package com.ssafy.facemeet.core.data.remote.repository
 
 import com.ssafy.facemeet.core.data.remote.api.ReportApiService
 import com.ssafy.facemeet.core.data.remote.dto.request.ReportRequest

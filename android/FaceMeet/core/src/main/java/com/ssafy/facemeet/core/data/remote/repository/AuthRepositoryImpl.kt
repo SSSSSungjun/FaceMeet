@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.data.repository
+package com.ssafy.facemeet.core.data.remote.repository
 
 import android.util.Log
 import com.ssafy.facemeet.core.data.remote.datasource.AuthRemoteDataSource
@@ -7,13 +7,10 @@ import com.ssafy.facemeet.core.data.remote.dto.request.RefreshTokenRequest
 import com.ssafy.facemeet.core.data.remote.mapper.toDomain
 import com.ssafy.facemeet.core.domain.model.Auth
 import com.ssafy.facemeet.core.domain.repository.AuthRepository
-import com.ssafy.facemeet.core.util.constant.HttpStatus
 import javax.inject.Inject
-import javax.inject.Singleton
 
 private const val TAG = "AuthRepositoryImpl"
 
-@Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authDataRemoteDataSource: AuthRemoteDataSource
 ) : AuthRepository {
@@ -21,7 +18,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun onBoarding(request: OnboardingRequest): Result<Auth> {
         return runCatching {
             val response = authDataRemoteDataSource.postOnboarding(request)
-            if (response.isSuccessful && response.body()?.status == HttpStatus.OK) {
+            if (response.isSuccessful && response.body()?.status == 200) {
                 val resBody = response.body()?.toDomain()
                     ?: return Result.failure(Exception("Empty response"))
                 Result.success(resBody)

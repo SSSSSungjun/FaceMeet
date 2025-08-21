@@ -1,11 +1,13 @@
-package com.ssafy.facemeet.core.data.repository.util
+package com.ssafy.facemeet.core.data.remote.repository.page
 
 import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
-import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
+import com.ssafy.facemeet.core.util.messaging.ChatMessageItem
+import com.ssafy.facemeet.core.util.messaging.MessageType
+
+private const val TAG = "ChatPagingSource"
 
 class ChatPagingSource(
     private val chatRepository: ChatRepository,
@@ -18,12 +20,12 @@ class ChatPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ChatMessageItem> {
         return try {
             val response = if (params.key == null) {
-                Log.d("ChatPagingSource", "초기 로딩: Last API 사용")
+                Log.d(TAG, "초기 로딩: Last API 사용")
                 chatRepository.getChattingMessagesCurrent(roomId, 30, 0)
             } else {
 
                 val page = params.key ?: 0
-                Log.d("ChatPagingSource", "페이징 로딩: Current API 사용 - page: $page")
+                Log.d(TAG, "페이징 로딩: Current API 사용 - page: $page")
                 chatRepository.getChattingMessagesCurrent(roomId, params.loadSize, page)
             }
 
@@ -40,10 +42,7 @@ class ChatPagingSource(
                     val currentPage = chattingAllResponse.messages.currentPage.toInt()
                     val totalPages = chattingAllResponse.messages.totalPages.toInt()
 
-                    Log.d(
-                        "ChatPagingSource",
-                        "현재 페이지: $currentPage, 전체 페이지: $totalPages, size : ${messages.size}"
-                    )
+                    Log.d(TAG, "현재 페이지: $currentPage, 전체 페이지: $totalPages, size : ${messages.size}")
 
                     val prevKey = if (currentPage > 0) currentPage - 1 else null
                     val nextKey = if (currentPage < totalPages - 1) currentPage + 1 else null
@@ -55,18 +54,18 @@ class ChatPagingSource(
                     )
                 },
                 onFailure = { throwable ->
-                    Log.e("ChatPagingSource", "API 호출 실패", throwable)
+                    Log.e(TAG, "API 호출 실패", throwable)
                     LoadResult.Error(throwable)
                 }
             )
         } catch (e: Exception) {
-            Log.e("ChatPagingSource", "예외 발생", e)
+            Log.e(TAG, "예외 발생", e)
             LoadResult.Error(e)
         }
     }
 
     override fun getRefreshKey(state: PagingState<Int, ChatMessageItem>): Int? {
-        Log.d("ChatPagingSource", "getRefreshKey 호출")
+        Log.d(TAG, "getRefreshKey 호출")
         return 0
     }
 }

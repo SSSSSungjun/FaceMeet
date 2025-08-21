@@ -2,7 +2,7 @@ package com.ssafy.facemeet.core.di
 
 import com.ssafy.facemeet.core.data.remote.api.MatchApiService
 import com.ssafy.facemeet.core.data.remote.datasource.MatchRemoteDataSource
-import com.ssafy.facemeet.core.data.repository.MatchRepositoryImpl
+import com.ssafy.facemeet.core.data.remote.repository.MatchRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.MatchRepository
 import com.ssafy.facemeet.core.domain.usecase.GetMatchRemainUseCase
 import dagger.Module

@@ -127,6 +127,7 @@ fun PartnerProfileContent(
     roomId: Long,
     partnerId: Long
 ) {
+
     val context = LocalContext.current
     var showReportDialog by remember { mutableStateOf(false) }
     var showBlockedDialog by remember { mutableStateOf(false) }
@@ -183,7 +184,7 @@ fun PartnerProfileContent(
         showDialog = showExitDialog,
         onDismiss = { showExitDialog = false },
         onConfirm = {
-            viewModel.exitChatRoom(roomId)
+            viewModel.exitChatRoom(partnerId,roomId)
         }
     )
 

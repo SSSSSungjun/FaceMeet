@@ -59,10 +59,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,18 +96,17 @@ import com.ssafy.facemeet.client.ui.chat.model.ChatNaviEvent
 import com.ssafy.facemeet.client.ui.chat.model.ChatUiState
 import com.ssafy.facemeet.client.ui.chat.model.MessageStatus
 import com.ssafy.facemeet.client.ui.chat.model.ScrollEvent
-import com.ssafy.facemeet.core.data.socket.model.ChatMessageItem
-import com.ssafy.facemeet.core.data.socket.model.ConnectionState
-import com.ssafy.facemeet.core.data.socket.model.MessageType
 import com.ssafy.facemeet.core.domain.model.ChatElement
 import com.ssafy.facemeet.core.util.AppStateManager
 import com.ssafy.facemeet.core.util.format.ParsingTimeData.toFullDateString
 import com.ssafy.facemeet.core.util.format.ParsingTimeData.toHourMinuteString
+import com.ssafy.facemeet.core.util.messaging.ChatMessageItem
+import com.ssafy.facemeet.core.util.messaging.ConnectionState
+import com.ssafy.facemeet.core.util.messaging.MessageType
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -134,24 +133,31 @@ fun ChattingScreen(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    var isInitialEntry by rememberSaveable { mutableStateOf(true) }
 
     DisposableEffect(lifecycleOwner, roomId) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
 
-                Lifecycle.Event.ON_RESUME  -> {
+                Lifecycle.Event.ON_RESUME -> {
                     AppStateManager.setCurrentScreen("ChattingScreen", roomId)
-                    viewModel.onScreenResume()
+                    if (!isInitialEntry) {
+                        AppStateManager.setCurrentScreen("ChattingScreen", roomId)
+                        viewModel.onScreenResume()
+                    }
+                    isInitialEntry = false
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
                     AppStateManager.clearCurrentScreen()
                     viewModel.onScreenPause()
                 }
-                Lifecycle.Event.ON_STOP->{
+
+                Lifecycle.Event.ON_STOP -> {
                     AppStateManager.clearCurrentScreen()
                     viewModel.onScreenPause()
                 }
+
                 else -> {}
             }
         }
@@ -168,7 +174,7 @@ fun ChattingScreen(
     val uiState by viewModel.uiState.collectAsState()
     val messageState by viewModel.messageState.collectAsState()
     val navigationEvent by viewModel.naviEvent.collectAsStateWithLifecycle(null)
-    val connectionState by viewModel.connectionState.observeAsState(ConnectionState.DISCONNECTED)
+    val connectionState by viewModel.connectionState.collectAsState(ConnectionState.DISCONNECTED)
 
     val pagedMessages = messageState.pagedMessages.collectAsLazyPagingItems()
     val unifiedMessages by viewModel.unifiedMessages.collectAsState()
@@ -418,8 +424,6 @@ fun ChattingScreen(
                 messageText = uiState.messageText,
                 onMessageChange = viewModel::updateMessageText,
                 onSendClick = viewModel::sendMessage,
-                //canSend = uiState.canSendMessage && connectionState == ConnectionState.CONNECTED,
-               // isConnected = connectionState != ConnectionState.DISCONNECTED
             )
         }
 
@@ -442,7 +446,7 @@ private fun RenderMessage(
     if (isMyMessage) {
         Log.d(
             "WebSocket-ReadStatus",
-            "🎨 UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus messageState : $messageStatus"
+            " UI 렌더링 - 메시지 [${message.chatElement.content}]: isMyMessage=$isMyMessage, showReadStatus=$showReadStatus messageState : $messageStatus"
         )
     }
     when (message.messageType) {
@@ -626,7 +630,7 @@ fun ChatHeader(
     uiState: ChatUiState
 ) {
 
-    val context =LocalContext.current
+    val context = LocalContext.current
 
     Row(
         modifier = Modifier
@@ -646,7 +650,7 @@ fun ChatHeader(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier=Modifier.weight(1f),
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.Center
         ) {
             Image(
@@ -662,9 +666,9 @@ fun ChatHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clickable {
-                    if(!uiState.roomInfo.blocked || !uiState.roomInfo.deleted){
+                    if (!uiState.roomInfo.blocked || !uiState.roomInfo.deleted) {
                         onPartnerProfile()
-                    }else{
+                    } else {
                         Toast.makeText(context, "상대방의 프로필을 볼 수 없습니다..", Toast.LENGTH_SHORT).show()
                     }
                 }

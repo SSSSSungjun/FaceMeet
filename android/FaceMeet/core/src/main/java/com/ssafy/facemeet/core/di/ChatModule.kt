@@ -4,7 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ssafy.facemeet.core.data.remote.api.ChatApiService
 import com.ssafy.facemeet.core.data.remote.datasource.ChatRemoteDataSource
-import com.ssafy.facemeet.core.data.repository.ChatRepositoryImpl
+import com.ssafy.facemeet.core.data.remote.repository.ChatRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.ChatRepository
 import com.ssafy.facemeet.core.domain.usecase.GetChattingListUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetChattingMessagesCurrentUseCase

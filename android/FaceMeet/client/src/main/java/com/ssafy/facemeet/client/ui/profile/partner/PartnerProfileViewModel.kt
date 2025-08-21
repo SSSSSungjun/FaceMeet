@@ -7,12 +7,13 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ssafy.facemeet.core.data.datastore.TokenManager
 import com.ssafy.facemeet.core.data.remote.api.UserApiService
 import com.ssafy.facemeet.core.data.remote.dto.request.ReportRequest
 import com.ssafy.facemeet.core.data.remote.dto.response.PartnerFaceInfoResponse
 import com.ssafy.facemeet.core.data.remote.dto.response.ReportCategoryResponse
-import com.ssafy.facemeet.core.data.repository.ReportRepositoryImpl
-import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
+import com.ssafy.facemeet.core.data.remote.repository.ReportRepositoryImpl
+import com.ssafy.facemeet.core.domain.usecase.LeaveChatRoomUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostBlockUserUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,12 +32,15 @@ private const val TAG = "PartnerProfileViewModel"
 @HiltViewModel
 class PartnerProfileViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val chatWebSocketManager: ChatWebSocketManager,
+    private val leaveChatRoomUseCase: LeaveChatRoomUseCase,
     private val userApiService: UserApiService,
     private val reportRepository: ReportRepositoryImpl,
     private val postBlockUserUseCase: PostBlockUserUseCase,
-    private val postChattingLeaveUseCase: PostChattingLeaveUseCase
+    private val postChattingLeaveUseCase: PostChattingLeaveUseCase,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
+
+    private var myId = 0L
 
     private val _partnerFaceInfo = MutableStateFlow<PartnerFaceInfoResponse?>(null)
     val partnerFaceInfo: StateFlow<PartnerFaceInfoResponse?> = _partnerFaceInfo.asStateFlow()
@@ -59,9 +63,15 @@ class PartnerProfileViewModel @Inject constructor(
     private val _exitRoomEvent = MutableSharedFlow<Unit>()
     val exitRoomEvent: SharedFlow<Unit> = _exitRoomEvent.asSharedFlow()
 
+    init {
+        viewModelScope.launch {
+            myId = tokenManager.getUserPK()?.toLong() ?: 0L
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
-    fun exitChatRoom(roomId: Long) {
-        chatWebSocketManager.leaveRoom()
+    fun exitChatRoom(partnerId: Long, roomId: Long) {
+        leaveChatRoomUseCase.invoke(myId, partnerId, roomId)
         viewModelScope.launch {
             postChattingLeaveUseCase.invoke(roomId).onSuccess {
                 _exitRoomEvent.emit(Unit)

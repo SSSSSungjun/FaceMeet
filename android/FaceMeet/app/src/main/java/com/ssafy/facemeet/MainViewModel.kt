@@ -88,15 +88,11 @@ class MainViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
-            // suspend 버전이 있으면 우선 사용하고, 없으면 sync로 폴백
             runCatching {
-                // 예: tokenManager.clearTokens() 가 suspend 라면 이걸 사용
                 tokenManager.clearTokens()
             }.recoverCatching {
-                // 프로젝트에 clearTokensSync()만 있으면 여기서 처리
-                tokenManager.clearTokensSync()
+                tokenManager.clearTokens()
             }
-            // 필요하면 isLoading 초기화 등 부가 상태 리셋
             _pendingNav.value = PendingNav.Start
         }
     }

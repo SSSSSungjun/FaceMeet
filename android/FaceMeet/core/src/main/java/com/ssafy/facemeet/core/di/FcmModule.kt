@@ -2,7 +2,7 @@ package com.ssafy.facemeet.core.di
 
 import com.ssafy.facemeet.core.data.remote.api.FcmApiService
 import com.ssafy.facemeet.core.data.remote.datasource.FcmRemoteDataSource
-import com.ssafy.facemeet.core.data.repository.FcmRepositoryImpl
+import com.ssafy.facemeet.core.data.remote.repository.FcmRepositoryImpl
 import com.ssafy.facemeet.core.domain.repository.FcmRepository
 import com.ssafy.facemeet.core.domain.usecase.DeleteDeviceUseCase
 import com.ssafy.facemeet.core.domain.usecase.DeleteSubscriptionUseCase

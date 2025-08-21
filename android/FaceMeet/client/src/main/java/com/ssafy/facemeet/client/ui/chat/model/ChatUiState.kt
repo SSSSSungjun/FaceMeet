@@ -1,6 +1,6 @@
 package com.ssafy.facemeet.client.ui.chat.model
 
-import com.ssafy.facemeet.core.data.socket.model.ConnectionState
+import com.ssafy.facemeet.core.util.messaging.ConnectionState
 import com.ssafy.facemeet.core.domain.model.ChatRoom
 
 data class ChatUiState(

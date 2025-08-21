@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.data.socket.model
+package com.ssafy.facemeet.core.util.messaging
 
 enum class MessageType {
     TEXT, SYSTEM, DATE , CHAT_END

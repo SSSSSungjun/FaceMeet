@@ -116,7 +116,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d("FCM", "트리거 시간: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(triggerTime)}")
             Log.d("FCM", "시간 차이 (분): ${(triggerTime.time - now.time) / (1000 * 60)}")
 
-            val bufferTime = 60 * 1000L // 1분
+            val bufferTime = 1000L // 1분
             if (triggerTime.time < (now.time + bufferTime)) {
                 Log.d("FCM", "즉시 실행: 트리거 시간이 현재 시간보다 이전이거나 1분 이내")
                 triggerEvent(

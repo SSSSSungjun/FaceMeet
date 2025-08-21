@@ -8,9 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.ssafy.facemeet.client.ui.mypage.model.MyPageNaviEvent
 import com.ssafy.facemeet.client.ui.mypage.model.MyPageUiState
 import com.ssafy.facemeet.core.data.datastore.TokenManager
-import com.ssafy.facemeet.core.data.socket.ChatWebSocketManager
 import com.ssafy.facemeet.core.domain.usecase.DeleteSubscriptionUseCase
 import com.ssafy.facemeet.core.domain.usecase.DeleteUserUseCase
+import com.ssafy.facemeet.core.domain.usecase.DisconnectChatWebSocketUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetDeviceTokensUseCase
 import com.ssafy.facemeet.core.domain.usecase.GetUserInfoUseCase
 import com.ssafy.facemeet.core.domain.usecase.LogoutUseCase
@@ -32,7 +32,7 @@ private const val TAG = "MyPageViewModel"
 class MyPageViewModel @Inject constructor(
     private val userInfoUserUseCase: GetUserInfoUseCase,
     private val tokenManager: TokenManager,
-    private val chatWebSocketManager: ChatWebSocketManager,
+    private val disconnectChatWebSocketUseCase: DisconnectChatWebSocketUseCase,
     private val userLogoutUseCase: LogoutUseCase,
     private val userDeleteUserUseCase: DeleteUserUseCase,
     private val postSubscriptionUseCase: PostSubscriptionUseCase,
@@ -157,7 +157,7 @@ class MyPageViewModel @Inject constructor(
         return try {
             userLogoutUseCase().onSuccess {
                 tokenManager.clearTokens()
-                chatWebSocketManager.disconnect()
+                disconnectChatWebSocketUseCase.invoke()
                 deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
             }.onFailure { e ->
                 tokenManager.clearTokens()
@@ -173,7 +173,7 @@ class MyPageViewModel @Inject constructor(
         return try {
             userDeleteUserUseCase().onSuccess {
                 tokenManager.clearTokens()
-                chatWebSocketManager.disconnect()
+                disconnectChatWebSocketUseCase.invoke()
                 deleteSubscriptionUseCase.invoke(TOPIC.ONE.value)
             }.onFailure { e ->
                 Log.d(TAG, "logout: ${e.message}")

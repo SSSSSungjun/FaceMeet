@@ -1,4 +1,4 @@
-package com.ssafy.facemeet.core.data.repository// BlockRepositoryImpl.kt
+package com.ssafy.facemeet.core.data.remote.repository// BlockRepositoryImpl.kt
 
 import android.util.Log
 import com.ssafy.facemeet.core.data.remote.datasource.BlockRemoteDataSource
