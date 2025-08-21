@@ -13,6 +13,7 @@ import com.levelup.FaceMeet.exception.ErrorCode;
 import com.levelup.FaceMeet.repository.fcm.FcmTokenRepository;
 import com.levelup.FaceMeet.repository.fcm.FcmTopicRepository;
 import com.levelup.FaceMeet.repository.fcm.TopicSubscriptionRepository;
+import com.levelup.FaceMeet.service.fcm.messaging.ScheduledMessagingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,8 @@ public class FcmTopicService {
     private final FcmTokenHandler fcmTokenHandler;
     private final TopicSubscriptionRepository topicSubscriptionRepository;
     private final CacheManager cacheManager;
+
+    private final ScheduledMessagingService scheduledMessagingService;
 
     @Value("${event.default-topic-name}")
     private String defaultTopicName;
@@ -121,6 +124,7 @@ public class FcmTopicService {
         // event 토픽인 경우 해당 유저의 캐시 삭제
         if (defaultTopicName.equals(topic.getName())) {
             evictUserInfoCache(userId);
+            scheduledMessagingService.sendScheduledMessagesToUser(userId);
         }
 
         return buildResponse(userId, topicId, result);

@@ -1,7 +1,6 @@
 package com.levelup.FaceMeet.dto;
 
 import com.levelup.FaceMeet.domain.Setting;
-import com.levelup.FaceMeet.domain.User;
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -45,7 +44,7 @@ public class SettingDTO {
         @NotBlank(message = "알림 메시지 내용은 필수입니다.")
         private String messageBody;
 
-        private Map<String, String> data;
+        private Map<String, String> messageData;
     }
 
     @Getter

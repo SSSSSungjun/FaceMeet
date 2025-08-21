@@ -3,9 +3,8 @@ package com.levelup.FaceMeet.controller.admin;
 import com.levelup.FaceMeet.dto.FcmMessageDTO;
 import com.levelup.FaceMeet.dto.FcmMessageDTO.*;
 import com.levelup.FaceMeet.security.dto.CustomUserDetails;
-import com.levelup.FaceMeet.service.fcm.FcmMessageService;
+import com.levelup.FaceMeet.service.fcm.messaging.ImmediateMessagingService;
 import com.levelup.FaceMeet.service.fcm.FcmTopicService;
-import com.levelup.FaceMeet.service.fcm.MessageSchedulerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,9 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "FcmAdminController", description = "어드민 FCM 관리 기능 제공")
 public class FcmAdminController {
 
-    private final FcmMessageService fcmMessageService;
+    private final ImmediateMessagingService immediateMessagingService;
     private final FcmTopicService fcmTopicService;
-    private final MessageSchedulerService messageSchedulerService;
 
     // === 메시지 전송 ===
     @PostMapping("/messages/token")
@@ -32,7 +30,7 @@ public class FcmAdminController {
     public ResponseEntity<?> sendTokenMessage(@RequestBody FcmTokenMessageRequest request) {
         log.debug("메시지를 전송합니다.");
 
-        fcmMessageService.sendMessageByToken(request);
+        immediateMessagingService.sendMessageByToken(request);
         return ResponseEntity.ok().build();
     }
 
@@ -41,7 +39,7 @@ public class FcmAdminController {
     public ResponseEntity<?> sendTopicMessage(@RequestBody @Valid FcmTopicMessageRequest request) {
         log.debug("토픽 기반 메시지 전송: {}", request.getTopicId());
 
-        fcmMessageService.sendMessageByTopic(request);
+        immediateMessagingService.sendMessageByTopic(request);
         return ResponseEntity.ok().build();
     }
 
@@ -50,21 +48,11 @@ public class FcmAdminController {
     public ResponseEntity<?> sendMessageToUser(@RequestBody @Valid FcmUserMessageRequest request) {
         log.debug("사용자 기반 메시지 전송: {}", request.getUserId());
 
-        fcmMessageService.sendMessageByUserId(request);
+        immediateMessagingService.sendMessageByUserId(request);
         return ResponseEntity.ok().build();
     }
 
-//    @PostMapping("/messages/schedule")
-//    @Operation(summary = "토픽 메시지 예약", description = "토픽 메시지를 예약합니다.")
-//    public ResponseEntity<FcmMessageDTO.ScheduledTopicMessageResponse> scheduleEvent(
-//            @Valid @RequestBody FcmMessageDTO.ScheduledTopicMessageRequest request) {
-//
-//        FcmMessageDTO.ScheduledTopicMessageResponse response = messageSchedulerService.scheduleMessage(request);
-//
-//        return ResponseEntity.ok(response);
-//    }
-
-    // === 토픽 구독 관리 ===
+    // === 토픽 관리 ===
     @PostMapping("/topics")
     @Operation(summary = "FCM 토픽 등록", description = "새로운 알림 토픽을 등록합니다.")
     public ResponseEntity<?> createTopic(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody @Valid FcmMessageDTO.FcmTopicUpsertRequest request) {

@@ -1,5 +1,6 @@
 package com.levelup.FaceMeet.domain;
 
+import com.levelup.FaceMeet.dto.SettingDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -58,5 +59,32 @@ public class Setting {
         if (currentCnt == null && couponCount != null) {
             currentCnt = couponCount;
         }
+    }
+
+    public boolean update(SettingDTO.SettingUpdateRequest request) {
+        boolean timeChanged = false;
+
+        if (request.getTitle() != null && !request.getTitle().trim().isEmpty()) {
+            this.title = request.getTitle();
+        }
+
+        if (request.getCouponCount() != null) {
+            this.couponCount = request.getCouponCount();
+        }
+
+        if (request.getStartTime() != null && !request.getStartTime().equals(this.startTime)) {
+            this.startTime = request.getStartTime();
+            timeChanged = true;
+        }
+
+        if (request.getEndTime() != null) {
+            this.endTime = request.getEndTime();
+        }
+
+        return timeChanged;
+    }
+
+    public void softDelete() {
+        this.isActive = false;
     }
 }

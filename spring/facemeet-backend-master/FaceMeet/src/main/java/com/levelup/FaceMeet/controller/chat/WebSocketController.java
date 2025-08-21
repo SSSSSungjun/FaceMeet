@@ -6,7 +6,7 @@ import com.levelup.FaceMeet.dto.UserInfoDTO;
 import com.levelup.FaceMeet.service.chat.ChatRoomService;
 import com.levelup.FaceMeet.service.chat.ChatService;
 import com.levelup.FaceMeet.service.chat.SessionUserService;
-import com.levelup.FaceMeet.service.fcm.FcmMessageService;
+import com.levelup.FaceMeet.service.fcm.messaging.ImmediateMessagingService;
 import com.levelup.FaceMeet.service.user.UserBlockService;
 import com.levelup.FaceMeet.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +36,7 @@ public class WebSocketController {
     private UserBlockService userBlockService;
 
     @Autowired
-    private FcmMessageService fcmMessageService;
-
+    private ImmediateMessagingService immediateMessagingService;
 
     @Autowired
     private UserService userService;
@@ -57,7 +56,7 @@ public class WebSocketController {
 
         boolean isBlocked = userBlockService.isBlockedByPartner(req.getReceiverId(), req.getSenderId());
         //추후 삭제하겠습니다. 무조검 알림 보냄
-        fcmMessageService.sendChatMessageByUserId(sender.getNickname() , req.getContent(), req.getRoomId(), req.getReceiverId());
+        immediateMessagingService.sendChatMessageByUserId(sender.getNickname() , req.getContent(), req.getRoomId(), req.getReceiverId());
 
 
         if (isBlocked) {

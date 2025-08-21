@@ -2,10 +2,8 @@ package com.levelup.FaceMeet.controller.fcm;
 
 import com.levelup.FaceMeet.dto.FcmMessageDTO.*;
 import com.levelup.FaceMeet.security.dto.CustomUserDetails;
-import com.levelup.FaceMeet.service.fcm.FcmMessageService;
 import com.levelup.FaceMeet.service.fcm.FcmTokenService;
 import com.levelup.FaceMeet.service.fcm.FcmTopicService;
-import com.levelup.FaceMeet.service.fcm.MessageSchedulerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,10 +21,8 @@ import java.util.List;
 @Tag(name = "FcmController", description = "유저 FCM 사용 기능 제공")
 public class FcmController {
 
-    private final FcmMessageService fcmMessageService;
     private final FcmTokenService fcmTokenService;
     private final FcmTopicService fcmTopicService;
-    private final MessageSchedulerService messageSchedulerService;
 
     // === 토큰 관리 ===
     @PutMapping("/tokens")
@@ -73,9 +69,6 @@ public class FcmController {
         log.debug("토픽 구독: 사용자 {}, 토픽 {}", userDetails.getUserId(), topicId);
 
         FcmTopicSubscriptionResponse response = fcmTopicService.subscribeTopic(userDetails.getUserId(), topicId);
-        if(topicId == 1L) {
-            fcmMessageService.sendScheduledMessages(userDetails.getUserId());
-        }
         return ResponseEntity.ok(response);
     }
 

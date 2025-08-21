@@ -1,4 +1,4 @@
-package com.levelup.FaceMeet.listener;
+package com.levelup.FaceMeet.event.listener;
 
 import com.levelup.FaceMeet.service.chat.SessionUserService;
 import org.springframework.beans.factory.annotation.Autowired;

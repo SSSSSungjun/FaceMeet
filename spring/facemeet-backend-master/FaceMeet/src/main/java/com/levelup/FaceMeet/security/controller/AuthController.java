@@ -9,8 +9,7 @@ import com.levelup.FaceMeet.security.dto.response.StatusResponse;
 import com.levelup.FaceMeet.security.dto.response.TokenResponseStatus;
 import com.levelup.FaceMeet.security.service.RefreshTokenService;
 import com.levelup.FaceMeet.security.util.JwtUtil;
-import com.levelup.FaceMeet.service.fcm.FcmMessageService;
-import com.levelup.FaceMeet.service.fcm.FcmTopicService;
+import com.levelup.FaceMeet.security.util.RedisUtil;
 import com.levelup.FaceMeet.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -31,12 +31,11 @@ import java.util.Map;
 @Tag(name = "AuthController", description = "회원가입/로그인/로그아웃 및 토큰 관리 기능 제공")
 public class AuthController {
 
+    private final RedisUtil redisUtil;
     private final RefreshTokenService refreshTokenService;
     private final JwtUtil jwtUtil;
     private final UserService userService;
     private final JwtProperties jwtProperties;
-    private final FcmTopicService fcmTopicService;
-    private final FcmMessageService fcmMessageService;
 
     @GetMapping("/oauth2/kakao")
     @Operation(summary = "카카오 소셜 로그인 URL 제공 (Swagger 테스트용)", description = "카카오 소셜 로그인에 필요한 인증 URL을 반환합니다.")
@@ -136,8 +135,6 @@ public class AuthController {
         Long userId = userDetails.getUserId();
 
         userService.updateUser(userId, signupRequest);
-        fcmTopicService.subscribeTopic(userId, 1L);
-        fcmMessageService.sendScheduledMessages(userDetails.getUserId());
 
         return ResponseEntity.ok(StatusResponse.addStatus(200));
     }

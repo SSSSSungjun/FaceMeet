@@ -235,6 +235,7 @@ public class FcmMessageDTO {
         private String title;
         private String body;
         private Map<String, String> messageData;
+        private LocalDateTime scheduledTime;
         private Boolean isRead;
 
         public static NotificationResponse from(ScheduledMessage message, Boolean isRead) {
@@ -244,6 +245,7 @@ public class FcmMessageDTO {
                     .title(message.getTitle())
                     .body(message.getBody())
                     .messageData(message.getMessageData())
+                    .scheduledTime(message.getScheduledTime())
                     .isRead(isRead)
                     .build();
         }

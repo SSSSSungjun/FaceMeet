@@ -4,9 +4,9 @@ import com.levelup.FaceMeet.dto.FaceDTO.*;
 import com.levelup.FaceMeet.dto.FcmMessageDTO.NotificationResponse;
 import com.levelup.FaceMeet.dto.UserInfoDTO.*;
 import com.levelup.FaceMeet.security.dto.CustomUserDetails;
-import com.levelup.FaceMeet.service.fcm.UserNotificationHistoryService;
+import com.levelup.FaceMeet.service.fcm.history.NotificationHistoryService;
+import com.levelup.FaceMeet.service.fcm.messaging.ScheduledMessagingService;
 import com.levelup.FaceMeet.service.user.UserProfileService;
-import com.levelup.FaceMeet.service.fcm.FcmMessageService;
 import com.levelup.FaceMeet.service.user.FaceService;
 import com.levelup.FaceMeet.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,10 +29,10 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final FcmMessageService fcmMessageService;
     private final UserProfileService userProfileService;
     private final FaceService faceService;
-    private final UserNotificationHistoryService userNotificationHistoryService;
+    private final NotificationHistoryService notificationHistoryService;
+    private final ScheduledMessagingService scheduledMessagingService;
 
     @GetMapping("/home")
     @Operation(summary = "메인 화면 정보 조회", description = "회원별 홈화면 필요 정보 조회 기능입니다.")
@@ -108,7 +108,7 @@ public class UserController {
 
         userService.setUserOnline(userDetails.getUserId());
 
-        fcmMessageService.sendScheduledMessages(userDetails.getUserId());
+        scheduledMessagingService.sendScheduledMessagesToUser(userDetails.getUserId());
 
         return ResponseEntity.ok().build();
     }
@@ -143,7 +143,7 @@ public class UserController {
     @GetMapping("/me/notifications")
     @Operation(summary = "받은 알림 목록 조회", description = "특정 유저가 받은 알림 목록을 조회합니다.")
     public ResponseEntity<List<NotificationResponse>> getNotificationList(@AuthenticationPrincipal CustomUserDetails userDetails){
-        List<NotificationResponse> response = userNotificationHistoryService.getNotificationList(userDetails.getUserId());
+        List<NotificationResponse> response = notificationHistoryService.getUserNotificationList(userDetails.getUserId());
         return ResponseEntity.ok(response);
     }
 
@@ -151,15 +151,15 @@ public class UserController {
     @Operation(summary = "읽지 않은 알림 수 조회", description = "특정 유저가 읽지 않은 알림의 개수를 조회합니다.")
     public ResponseEntity<Long> getUnreadCount(@AuthenticationPrincipal CustomUserDetails userDetails){
 
-        Long unreadCount = userNotificationHistoryService.getUnreadCount(userDetails.getUserId());
+        Long unreadCount = notificationHistoryService.getUnreadCount(userDetails.getUserId());
         return ResponseEntity.ok(unreadCount);
     }
 
     @PostMapping("/me/notifications/{notificationId}")
     @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 처리 합니다.")
-    public ResponseEntity<Integer> readNotification(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long notificationId){
+    public ResponseEntity<Void> readNotification(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long notificationId){
 
-        Integer success = userNotificationHistoryService.read(userDetails.getUserId(), notificationId);
-        return ResponseEntity.ok(success);
+        notificationHistoryService.markAsRead(userDetails.getUserId(), notificationId);
+        return ResponseEntity.ok().build();
     }
 }
