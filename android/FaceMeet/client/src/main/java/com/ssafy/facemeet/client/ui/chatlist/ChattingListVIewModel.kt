@@ -13,13 +13,13 @@ import com.ssafy.facemeet.core.domain.usecase.LeaveChatRoomUseCase
 import com.ssafy.facemeet.core.domain.usecase.ObserveChatEventsUseCase
 import com.ssafy.facemeet.core.domain.usecase.PostChattingLeaveUseCase
 import com.ssafy.facemeet.core.util.AppStateManager
-import com.ssafy.facemeet.core.util.messaging.ChatMessageItem
 import com.ssafy.facemeet.core.util.messaging.WebSocketEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,26 +46,24 @@ class ChattingListViewModel @Inject constructor(
 
     init {
         AppStateManager.setCurrentScreen("ChattingListScreen")
-        observeWebSocketEvents()
         viewModelScope.launch {
             currentUserId = tokenManager.getUserPK()?.toLong() ?: 0L
         }
+        initializeChatting()
     }
 
     private fun observeWebSocketEvents() {
         observeChatEventsUseCase()
             .onEach { event ->
+                Log.d(TAG, "Received event: $event")
                 when (event) {
                     is WebSocketEvent.NewMessage -> {
-                        Log.d(TAG, "새로운 메시지 수신 - 채팅 리스트 새로고침!")
-                        // 새 메시지가 왔을 때 채팅 리스트 갱신
-                        if (shouldRefreshChatList(event.messageItem)) {
-                            loadChattingList()
-                        }
+                        Log.d(TAG, "새로운 메시지 수신 - 업데이트 시도")
+                        loadChattingList()
                     }
 
                     is WebSocketEvent.UserLeft -> {
-                        Log.d(TAG, "사용자 나가기 이벤트 - 채팅 리스트 새로고침!")
+                        Log.d(TAG, "사용자 나가기 이벤트 - 전체 리스트 새로고침!")
                         loadChattingList()
                     }
 
@@ -89,10 +87,6 @@ class ChattingListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun shouldRefreshChatList(messageItem: ChatMessageItem): Boolean {
-        return messageItem.chatElement.senderID != currentUserId
-    }
-
     fun initializeChatting() {
         viewModelScope.launch {
             Log.d(TAG, "채팅 리스트 WebSocket 연결 초기화 시작")
@@ -103,13 +97,13 @@ class ChattingListViewModel @Inject constructor(
             if (token != null && currentUserId != 0L) {
                 connectChatWebSocketUseCase.invoke(currentUserId, token)
                 Log.d(TAG, "WebSocket 연결 요청 완료: userId=$currentUserId")
+                observeWebSocketEvents()
             } else {
                 Log.e(TAG, "토큰 또는 사용자 ID가 없습니다.")
                 _uiState.value = _uiState.value.copy(
                     error = "인증 정보가 없습니다."
                 )
             }
-
             loadChattingList()
         }
     }
@@ -121,20 +115,25 @@ class ChattingListViewModel @Inject constructor(
             getChattingListUseCase()
                 .onSuccess { chatList ->
                     Log.d(TAG, "loadChattingList: 로드 성공 - ${chatList.size}개 채팅방")
-                    _uiState.value = _uiState.value.copy(
-                        chatList = chatList.toMutableList(),
-                        isLoading = false
-                    )
+                    _uiState.update {
+                        it.copy(
+                            chatList = chatList,
+                            isLoading = false
+                        )
+                    }
                 }
                 .onFailure { exception ->
                     Log.e(TAG, "채팅 리스트 불러오기 실패: ${exception.message}")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "채팅 리스트를 불러오는데 실패했습니다: ${exception.message}"
-                    )
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = "채팅 리스트를 불러오는데 실패했습니다: ${exception.message}"
+                        )
+                    }
                 }
         }
     }
+
 
     fun clickExitRoom() {
         _uiState.value = _uiState.value.copy(showExitDialog = true)

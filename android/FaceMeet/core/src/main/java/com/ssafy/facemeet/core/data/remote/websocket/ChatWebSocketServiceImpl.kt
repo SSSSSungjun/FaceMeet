@@ -18,6 +18,7 @@ import com.ssafy.facemeet.core.util.messaging.MessageType
 import com.ssafy.facemeet.core.util.messaging.WebSocketEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -60,7 +61,8 @@ class ChatWebSocketServiceImpl @Inject constructor(
     private var isManualDisconnect = false
 
     private val _events = MutableSharedFlow<WebSocketEvent>(
-        replay = 0,
+        replay = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
         extraBufferCapacity = 64
     )
     override val events: Flow<WebSocketEvent> = _events.asSharedFlow()
@@ -151,7 +153,7 @@ class ChatWebSocketServiceImpl @Inject constructor(
 
             @SuppressLint("SuspiciousIndentation")
             override fun onMessage(webSocket: WebSocket, text: String) {
-                if (text.isEmpty() || text == null ) {
+                if (text.isEmpty() || text == null) {
                     Log.d(TAG, "수신된 메시지는 $text")
                     return
                 }

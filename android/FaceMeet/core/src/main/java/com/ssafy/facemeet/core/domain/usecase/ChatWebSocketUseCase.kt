@@ -1,5 +1,6 @@
 package com.ssafy.facemeet.core.domain.usecase
 
+import android.util.Log
 import com.ssafy.facemeet.core.domain.repository.ChatWebSocketRepository
 import com.ssafy.facemeet.core.util.messaging.WebSocketEvent
 import kotlinx.coroutines.flow.Flow
@@ -48,5 +49,8 @@ class LeaveChatRoomUseCase @Inject constructor(
 class ObserveChatEventsUseCase @Inject constructor(
     private val repository: ChatWebSocketRepository
 ) {
-    operator fun invoke(): Flow<WebSocketEvent> = repository.events
+    operator fun invoke(): Flow<WebSocketEvent>{
+        Log.d("ChatWebSocketUseCase", "invoke: ${repository.events}")
+        return repository.events
+    }
 }

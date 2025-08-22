@@ -20,14 +20,7 @@ class GetChattingListUseCase @Inject constructor(
     private val repository: ChatRepository
 ) {
     suspend operator fun invoke(): Result<List<ChatListItem>> {
-//        return repository.getChattingList().map { list ->
-//            list
-//                .filter { !it.blocked } // 차단된 채팅 제외
-//                .sortedWith(
-//                    compareByDescending<ChatListItem> { it.lastSeen }
-//                )
-//        }
-        Log.d(TAG, "invoke: 채팅리스트")
+        Log.d(TAG, "invoke: 채팅리스트 Flow")
         return repository.getChattingList()
     }
 }
